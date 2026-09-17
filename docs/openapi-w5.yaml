@@ -1,0 +1,92 @@
+openapi: 3.0.3
+info:
+  title: PTT WebCom API — W5 Hardening / Headless
+  version: 5.0.0-w5
+servers:
+  - url: http://127.0.0.1:3001/api
+  - url: https://webecom.ngoinhahomnay.vn/api
+tags:
+  - name: Headless
+  - name: Agency
+paths:
+  /v1/headless/admin/api-keys:
+    get:
+      tags: [Headless]
+      summary: List API keys
+      responses:
+        '200': { description: Keys }
+    post:
+      tags: [Headless]
+      summary: Create API key (secret returned once)
+      responses:
+        '200': { description: Key + api_key secret }
+  /v1/headless/admin/api-keys/{id}/revoke:
+    post:
+      tags: [Headless]
+      summary: Revoke API key
+      responses:
+        '200': { description: Revoked }
+  /v1/headless/meta:
+    get:
+      tags: [Headless]
+      summary: API version + scopes for current key
+      security: [{ ApiKeyAuth: [] }]
+      responses:
+        '200': { description: Meta }
+  /v1/headless/products:
+    get:
+      tags: [Headless]
+      summary: Catalog (scope product.read)
+      security: [{ ApiKeyAuth: [] }]
+      responses:
+        '200': { description: Products }
+  /v1/headless/carts:
+    post:
+      tags: [Headless]
+      summary: Create cart (scope cart.write)
+      security: [{ ApiKeyAuth: [] }]
+      responses:
+        '200': { description: Cart }
+  /v1/headless/checkout:
+    post:
+      tags: [Headless]
+      summary: Checkout (scope checkout.write + Idempotency-Key)
+      security: [{ ApiKeyAuth: [] }]
+      responses:
+        '200': { description: Order }
+  /v1/headless/storefronts/{id}/runtime:
+    get:
+      tags: [Headless]
+      summary: Content runtime (scope content.read)
+      security: [{ ApiKeyAuth: [] }]
+      responses:
+        '200': { description: Runtime }
+  /v1/admin/storefronts/{id}/agency/deliveries:
+    get:
+      tags: [Agency]
+      summary: List agency deliveries
+      responses:
+        '200': { description: Deliveries }
+    post:
+      tags: [Agency]
+      summary: Submit delivery + white-label preview
+      responses:
+        '200': { description: Delivery }
+  /v1/admin/agency/deliveries/{id}/transition:
+    post:
+      tags: [Agency]
+      summary: Advance delivery workflow
+      responses:
+        '200': { description: Updated }
+  /v1/admin/storefronts/{id}/preview-token/revoke:
+    post:
+      tags: [Agency]
+      summary: Revoke staging preview token
+      responses:
+        '200': { description: Revoked }
+components:
+  securitySchemes:
+    ApiKeyAuth:
+      type: http
+      scheme: bearer
+      description: hk_live_… API key

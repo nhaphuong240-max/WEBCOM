@@ -1,0 +1,47 @@
+meta {
+  name: WebCom-W5
+  type: http
+  seq: 1
+}
+
+vars {
+  baseUrl: http://127.0.0.1:3001/api
+  tenantId: ten_aura
+  storefrontId: sf_aura
+}
+
+get {
+  url: {{baseUrl}}/health
+}
+
+post {
+  url: {{baseUrl}}/v1/headless/admin/api-keys
+  headers: {
+    x-tenant-id: {{tenantId}}
+    x-actor-id: bruno
+    content-type: application/json
+  }
+  body: {
+    name: bruno-key
+    storefront_id: {{storefrontId}}
+  }
+}
+
+get {
+  url: {{baseUrl}}/v1/admin/storefronts/{{storefrontId}}/agency/deliveries
+  headers: {
+    x-tenant-id: {{tenantId}}
+  }
+}
+
+post {
+  url: {{baseUrl}}/v1/admin/storefronts/{{storefrontId}}/agency/deliveries
+  headers: {
+    x-tenant-id: {{tenantId}}
+    content-type: application/json
+  }
+  body: {
+    title: Bruno delivery
+    agency_name: Bruno Agency
+  }
+}

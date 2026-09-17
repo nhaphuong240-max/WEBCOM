@@ -5,6 +5,7 @@ export const websiteNav = [
   { href: '/website/builder', label: 'Site Builder', mockup: '06' },
   { href: '/website/golive', label: 'Go-live', mockup: '07' },
   { href: '/website/analytics', label: 'Web Analytics', mockup: '09' },
+  { href: '/website/agency', label: 'Agency / Headless', mockup: 'W5' },
 ] as const;
 
 export const mainNav = [

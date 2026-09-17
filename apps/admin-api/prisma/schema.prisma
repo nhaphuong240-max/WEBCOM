@@ -37,6 +37,8 @@ model Tenant {
   cwvSnapshots CwvSnapshot[]
   aiActions   AiAction[]
   analyticsIncidents AnalyticsIncident[]
+  apiKeys     ApiKey[]
+  agencyDeliveries AgencyDelivery[]
 
   @@map("tenants")
 }
@@ -106,6 +108,8 @@ model Storefront {
   cwvSnapshots     CwvSnapshot[]
   aiActions        AiAction[]
   analyticsIncidents AnalyticsIncident[]
+  apiKeys          ApiKey[]
+  agencyDeliveries AgencyDelivery[]
 
   @@unique([tenantId, slug])
   @@index([tenantId])
@@ -774,4 +778,51 @@ model AnalyticsIncident {
 
   @@index([tenantId, storefrontId, status])
   @@map("analytics_incidents")
+}
+
+/// W5 — Headless API keys (scoped, rate-limited)
+model ApiKey {
+  id           String     @id @default(uuid())
+  tenantId     String     @map("tenant_id")
+  storefrontId String?    @map("storefront_id")
+  name         String
+  /// public prefix shown in UI (e.g. hk_live_xxxx)
+  keyPrefix    String     @map("key_prefix")
+  /// sha256 of full secret
+  keyHash      String     @map("key_hash")
+  /// scopes: product.read,cart.write,checkout.write,customer.write,content.read
+  scopes       String[]   @default([])
+  rateLimitRpm Int        @default(120) @map("rate_limit_rpm")
+  status       String     @default("active") // active|revoked
+  lastUsedAt   DateTime?  @map("last_used_at")
+  createdAt    DateTime   @default(now()) @map("created_at")
+  revokedAt    DateTime?  @map("revoked_at")
+  tenant       Tenant     @relation(fields: [tenantId], references: [id])
+  storefront   Storefront? @relation(fields: [storefrontId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, status])
+  @@index([keyPrefix])
+  @@map("api_keys")
+}
+
+/// W5 — Agency delivery workflow
+model AgencyDelivery {
+  id           String     @id @default(uuid())
+  tenantId     String     @map("tenant_id")
+  storefrontId String     @map("storefront_id")
+  title        String
+  agencyName   String     @map("agency_name")
+  /// submitted|in_review|accepted|installed|staging|published|rejected
+  status       String     @default("submitted")
+  notes        String     @default("")
+  previewToken String?    @map("preview_token")
+  whiteLabelHost String?  @map("white_label_host")
+  annotations  Json       @default("[]")
+  createdAt    DateTime   @default(now()) @map("created_at")
+  updatedAt    DateTime   @updatedAt @map("updated_at")
+  tenant       Tenant     @relation(fields: [tenantId], references: [id])
+  storefront   Storefront @relation(fields: [storefrontId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, storefrontId, status])
+  @@map("agency_deliveries")
 }

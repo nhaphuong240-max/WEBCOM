@@ -570,7 +570,7 @@ async function main() {
         templates_seeded: templates.length,
         brand_kit: 'bkit_aura_sf_1',
         experiment: 'hero_cta_v1',
-        phase: 'W4',
+        phase: 'W5',
         list_price: 459000,
         discount_percent: 10,
         unit_price_after_discount: 413100,

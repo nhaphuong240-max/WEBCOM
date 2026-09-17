@@ -1,0 +1,5 @@
+{
+  "code": "sample-theme",
+  "tokens": { "accent": "#c45a6a", "ink": "#1a1214", "cream": "#faf6f4" },
+  "sections": { "home": ["hero", "trust", "featured"] }
+}

@@ -11,6 +11,8 @@ import { CustomerModule } from './customer/customer.module';
 import { OrganizationModule } from './organization/organization.module';
 import { WebsiteModule } from './website/website.module';
 import { AnalyticsModule } from './analytics/analytics.module';
+import { HeadlessModule } from './headless/headless.module';
+import { AgencyModule } from './agency/agency.module';
 import { HealthController } from './health/health.controller';
 import { MeController } from './iam/me.controller';
 import { AuthController } from './iam/auth.controller';
@@ -30,6 +32,8 @@ import { TenancyController } from './tenancy/tenancy.controller';
     OrganizationModule,
     WebsiteModule,
     AnalyticsModule,
+    HeadlessModule,
+    AgencyModule,
   ],
   controllers: [HealthController, MeController, AuthController, TenancyController],
 })

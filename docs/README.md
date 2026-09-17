@@ -9,7 +9,8 @@ Tài liệu được viết lại từ SRS Master v4.0 và Kiến trúc hệ th�
 | 3 | [03_Kien_truc_He_thong_va_Cong_nghe_PTT_Commerce_Intelligence_OS_v3.md](./03_Kien_truc_He_thong_va_Cong_nghe_PTT_Commerce_Intelligence_OS_v3.md) | Arch 3.0 | Target architecture, stack, data, event/Temporal, Website/AI, DevSecOps, ADR |
 | 4 | [04_Ke_hoach_Trien_khai_WebCom_v1.md](./04_Ke_hoach_Trien_khai_WebCom_v1.md) | Plan 1.0 | Kế hoạch triển khai WebCom: phase W0–W5, mockup→FR, test, rủi ro, milestone |
 
-OpenAPI / Bruno theo phase: `openapi-w1.yaml` · `openapi-w2.yaml` · `openapi-w3.yaml` · `openapi-w4.yaml` · `bruno/WebCom-W*.bru`.
+OpenAPI / Bruno theo phase: `openapi-w1.yaml` … `openapi-w5.yaml` · `bruno/WebCom-W*.bru`.
+Runbooks: `docs/runbooks/`.
 
 ## Thứ tự đọc khuyến nghị
 

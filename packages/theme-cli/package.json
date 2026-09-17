@@ -1,0 +1,11 @@
+{
+  "name": "@ptt/theme-cli",
+  "version": "0.0.1",
+  "private": true,
+  "bin": {
+    "ptt-theme": "./bin/ptt-theme.js"
+  },
+  "scripts": {
+    "lint-sample": "node ./bin/ptt-theme.js lint ./fixtures/sample-theme.json"
+  }
+}

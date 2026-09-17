@@ -3,6 +3,7 @@ import { Be_Vietnam_Pro, Syne } from 'next/font/google';
 import '@ptt/ui/styles.css';
 import { CartProvider } from '../lib/cart';
 import { getRuntime } from '../lib/api';
+import { PwaRegister } from '../components/PwaRegister';
 
 const body = Be_Vietnam_Pro({
   subsets: ['vietnamese', 'latin'],
@@ -20,11 +21,18 @@ export async function generateMetadata(): Promise<Metadata> {
   try {
     const rt = await getRuntime();
     return {
-      title: String(rt.storefront.seo_title || (rt.home?.seo as { title?: string } | null)?.title || 'AURA Beauty · PTT'),
+      title: String(
+        rt.storefront.seo_title ||
+          (rt.home?.seo as { title?: string } | null)?.title ||
+          'AURA Beauty · PTT',
+      ),
       description:
         rt.storefront.seo_description ||
         (rt.home?.seo as { description?: string })?.description ||
         'AURA Beauty storefront',
+      manifest: '/manifest.webmanifest',
+      appleWebApp: { capable: true, title: 'AURA' },
+      themeColor: '#c45a6a',
       openGraph: {
         title: String(rt.storefront.seo_title || 'AURA Beauty'),
         description: rt.storefront.seo_description || undefined,
@@ -34,7 +42,8 @@ export async function generateMetadata(): Promise<Metadata> {
   } catch {
     return {
       title: 'AURA Beauty · Powered by PTT',
-      description: 'W2 storefront — Aura Commerce Lite',
+      description: 'W5 storefront — Aura Commerce Lite + PWA',
+      manifest: '/manifest.webmanifest',
     };
   }
 }
@@ -52,7 +61,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           } as React.CSSProperties
         }
       >
-        <CartProvider>{children}</CartProvider>
+        <CartProvider>
+          {children}
+          <PwaRegister />
+        </CartProvider>
       </body>
     </html>
   );

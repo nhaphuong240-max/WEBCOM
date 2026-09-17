@@ -2,6 +2,7 @@ import { Body, Controller, Headers, Post, UseGuards } from '@nestjs/common';
 import { z } from 'zod';
 import { AppError, type RequestContext } from '@ptt/shared-kernel';
 import { StorefrontContextGuard } from '../common/storefront-context.guard';
+import { CheckoutRateLimitGuard } from '../common/checkout-rate-limit.guard';
 import { ReqContext } from '../common/req-context.decorator';
 import { CheckoutService } from './checkout.service';
 
@@ -18,7 +19,7 @@ const schema = z.object({
 });
 
 @Controller('v1/checkout')
-@UseGuards(StorefrontContextGuard)
+@UseGuards(StorefrontContextGuard, CheckoutRateLimitGuard)
 export class CheckoutController {
   constructor(private readonly checkout: CheckoutService) {}
 

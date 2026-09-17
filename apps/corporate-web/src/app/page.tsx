@@ -70,8 +70,19 @@ export default function CorporateHome() {
           có lãi.
         </h1>
         <p style={{ maxWidth: '36ch', opacity: 0.85, fontSize: 18, marginBottom: 28 }}>
-          Website Commerce + CRM + Revenue Intelligence — mockup 01 GTM v1 (W2).
+          Website Commerce + CRM + Revenue Intelligence — Corporate GTM (W5).
         </p>
+        <div style={{ display: 'flex', gap: 14, marginBottom: 28, flexWrap: 'wrap', fontSize: 14 }}>
+          <a href="/case-studies" style={{ color: '#7dd3fc' }}>
+            Case / ROI
+          </a>
+          <a href="/resources" style={{ color: '#7dd3fc' }}>
+            Resources
+          </a>
+          <a href="/pricing" style={{ color: '#7dd3fc' }}>
+            Pricing
+          </a>
+        </div>
         <div style={{ display: 'flex', gap: 10, marginBottom: 40, flexWrap: 'wrap' }}>
           {['Website', 'Social', 'POS', 'Marketplace'].map((c) => (
             <button

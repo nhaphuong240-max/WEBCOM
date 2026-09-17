@@ -464,9 +464,18 @@ Repo chạy được, design system từ mockup, auth tenant, admin/storefront s
 - Security: CSP, WAF rules checkout, pen-test light.
 
 ## Exit criteria
-- [ ] SLA Standard: 99.9% storefront; RPO/RTO theo NFR.
-- [ ] Headless API authenticated, versioned, rate-limited.
-- [ ] Runbooks: publish fail, payment, CDN, pixel.
+- [x] SLA Standard: 99.9% storefront; RPO/RTO theo NFR (documented in `docs/runbooks/dr-restore.md`).
+- [x] Headless API authenticated, versioned, rate-limited (`/v1/headless/*` + API keys + RPM).
+- [x] Runbooks: publish fail, payment, CDN, pixel (+ DR drill).
+
+### W5 ship notes (MVP)
+- PWA: manifest + SW offline shell + install prompt.
+- Security: CSP/headers (Next + nginx), checkout RPM guard.
+- Agency: delivery workflow + white-label host + preview revoke.
+- Corporate: case/ROI, resources, pricing pages + systemd unit.
+- Theme CLI alpha: `@ptt/theme-cli` lint.
+- Perf: `perf/k6/storefront.js`, `checkout-smoke.js`.
+- OpenAPI: `docs/openapi-w5.yaml` · Bruno: `docs/bruno/WebCom-W5.bru` · E2E: `scripts/e2e-w5.sh`.
 
 ---
 
