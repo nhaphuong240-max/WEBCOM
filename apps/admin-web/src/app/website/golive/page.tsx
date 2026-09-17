@@ -21,13 +21,17 @@ async function waive(code: string, formData: FormData) {
 
 async function publish() {
   'use server';
-  await apiJson(`/v1/admin/storefronts/${SF}/publish`, 'POST', {});
+  const job = await apiJson<{ job_id?: string }>(`/v1/admin/storefronts/${SF}/publish`, 'POST', {});
+  await apiJson(`/v1/admin/storefronts/${SF}/health-window`, 'POST', {
+    publish_job_id: job.job_id,
+  });
   await apiJson(`/v1/admin/storefronts/${SF}/onboarding/advance`, 'POST', {
     step: 'golive',
     done: true,
   });
   revalidatePath('/website/golive');
   revalidatePath('/website/themes');
+  revalidatePath('/website/analytics');
 }
 
 export default async function GolivePage() {

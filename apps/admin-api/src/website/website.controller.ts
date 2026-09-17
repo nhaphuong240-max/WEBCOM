@@ -68,28 +68,6 @@ export class WebsiteController {
     });
   }
 
-  @Post('v1/events')
-  @UseGuards(StorefrontContextGuard)
-  track(@ReqContext() ctx: RequestContext, @Body() body: unknown) {
-    const parsed = z
-      .object({
-        storefront_id: z.string().min(1),
-        name: z.string().min(1),
-        session_id: z.string().optional(),
-        customer_id: z.string().optional(),
-        payload: z.record(z.unknown()).optional(),
-      })
-      .safeParse(body);
-    if (!parsed.success) throw AppError.validation('Invalid event', parsed.error.flatten());
-    return this.website.trackEvent(ctx.tenantId, {
-      storefrontId: parsed.data.storefront_id,
-      name: parsed.data.name,
-      sessionId: parsed.data.session_id,
-      customerId: parsed.data.customer_id,
-      payload: parsed.data.payload as Record<string, string | number | boolean | null> | undefined,
-    });
-  }
-
   @Get('v1/admin/storefronts/:id/events')
   @UseGuards(TenantAuthGuard)
   events(

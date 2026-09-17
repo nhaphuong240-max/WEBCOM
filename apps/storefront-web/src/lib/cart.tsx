@@ -88,15 +88,11 @@ export function CartProvider({ children }: { children: ReactNode }) {
         body: JSON.stringify({ sku_id: skuId, qty }),
       });
       setCart(updated);
-      void storeApi('/v1/events', {
-        method: 'POST',
-        cache: 'no-store',
-        body: JSON.stringify({
-          storefront_id: STOREFRONT_ID,
-          name: 'add_to_cart',
-          payload: { sku_id: skuId, qty },
-        }),
-      }).catch(() => undefined);
+      const { trackEvent } = await import('./analytics');
+      void trackEvent({
+        name: 'add_to_cart',
+        payload: { sku_id: skuId, qty },
+      });
     },
     [ensureCart],
   );

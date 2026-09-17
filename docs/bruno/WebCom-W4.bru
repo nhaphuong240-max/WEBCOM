@@ -1,0 +1,61 @@
+meta {
+  name: WebCom-W4
+  type: http
+  seq: 1
+}
+
+vars {
+  baseUrl: http://127.0.0.1:3001/api
+  tenantId: ten_aura
+  storefrontId: sf_aura
+}
+
+get {
+  url: {{baseUrl}}/health
+}
+
+get {
+  url: {{baseUrl}}/v1/admin/storefronts/{{storefrontId}}/analytics?days=7
+  headers: {
+    x-tenant-id: {{tenantId}}
+    x-actor-id: bruno
+  }
+}
+
+get {
+  url: {{baseUrl}}/v1/admin/storefronts/{{storefrontId}}/cwv
+  headers: {
+    x-tenant-id: {{tenantId}}
+  }
+}
+
+get {
+  url: {{baseUrl}}/v1/admin/storefronts/{{storefrontId}}/experiments
+  headers: {
+    x-tenant-id: {{tenantId}}
+  }
+}
+
+post {
+  url: {{baseUrl}}/v1/admin/ai/actions
+  headers: {
+    x-tenant-id: {{tenantId}}
+    content-type: application/json
+  }
+  body: {
+    storefront_id: {{storefrontId}}
+    kind: headline_variants
+    payload: {
+      headline: Serum tái tạo da đêm
+    }
+  }
+}
+
+post {
+  url: {{baseUrl}}/v1/admin/storefronts/{{storefrontId}}/health-window
+  headers: {
+    x-tenant-id: {{tenantId}}
+    content-type: application/json
+  }
+  body: {}
+}

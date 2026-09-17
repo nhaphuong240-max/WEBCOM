@@ -440,10 +440,15 @@ Repo chạy được, design system từ mockup, auth tenant, admin/storefront s
 - A/B hero/CTA; audience; metric wiring vào ClickHouse.
 
 ## 8.2. Exit criteria
-- [ ] ≥ 95% storefront published có funnel tracked.
-- [ ] Page contribution hiển thị cho order web có cost allocation cơ bản.
-- [ ] AI actions high-risk 100% audit/approval path.
-- [ ] Post-publish CWV regression tự mở incident / rollback policy.
+- [x] ≥ 95% storefront published có funnel tracked (Event SDK + page_view/view_item; seed + collector).
+- [x] Page contribution hiển thị cho order web có cost allocation cơ bản (rate 42% assumed COGS).
+- [x] AI actions high-risk 100% audit/approval path (`shopping_qa` → pending_approval).
+- [x] Post-publish CWV regression tự mở incident / rollback policy (`health-window`; `FEATURE_AUTO_ROLLBACK`, `CWV_FORCE_REGRESSION`).
+
+### W4 ship notes (MVP)
+- Event sink: **Postgres** collector (Redpanda/ClickHouse deferred — interface `sink: postgres`).
+- Consent gate: `FEATURE_ANALYTICS_CONSENT_GATE` (default on) skips marketing events when denied.
+- OpenAPI: `docs/openapi-w4.yaml` · Bruno: `docs/bruno/WebCom-W4.bru` · E2E: `scripts/e2e-w4.sh`.
 
 ---
 

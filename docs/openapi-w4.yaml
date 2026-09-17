@@ -1,0 +1,93 @@
+openapi: 3.0.3
+info:
+  title: PTT WebCom API — W4 Analytics & Conversion
+  version: 4.0.0-w4
+servers:
+  - url: http://127.0.0.1:3001/api
+  - url: https://webecom.ngoinhahomnay.vn/api
+tags:
+  - name: Events
+  - name: Analytics
+  - name: CWV
+  - name: Experiments
+  - name: AI
+paths:
+  /v1/events:
+    post:
+      tags: [Events]
+      summary: First-party event collector (consent-aware; Postgres sink)
+      responses:
+        '201': { description: Stored or skipped }
+  /v1/admin/storefronts/{id}/analytics:
+    get:
+      tags: [Analytics]
+      summary: Funnel + KPI + contribution dashboard
+      parameters:
+        - { name: days, in: query, schema: { type: integer } }
+      responses:
+        '200': { description: Dashboard }
+  /v1/admin/storefronts/{id}/analytics/landings:
+    get:
+      tags: [Analytics]
+      summary: Page contribution table
+      responses:
+        '200': { description: Landings }
+  /v1/admin/storefronts/{id}/cwv:
+    get:
+      tags: [CWV]
+      summary: CWV summary + regression flag
+      responses:
+        '200': { description: CWV }
+    post:
+      tags: [CWV]
+      summary: Record CWV snapshot
+      responses:
+        '200': { description: Snapshot }
+  /v1/admin/storefronts/{id}/health-window:
+    post:
+      tags: [CWV]
+      summary: Post-publish synthetic CWV + checkout canary; may open incident / auto-rollback
+      responses:
+        '200': { description: Health result }
+  /v1/admin/storefronts/{id}/experiments:
+    get:
+      tags: [Experiments]
+      summary: List experiments
+      responses:
+        '200': { description: Experiments }
+    post:
+      tags: [Experiments]
+      summary: Upsert experiment
+      responses:
+        '200': { description: Experiment }
+  /v1/admin/storefronts/{id}/experiments/{code}/stats:
+    get:
+      tags: [Experiments]
+      summary: Variant exposure / CVR stats
+      responses:
+        '200': { description: Stats }
+  /v1/storefronts/{id}/experiments/{code}/assign:
+    get:
+      tags: [Experiments]
+      summary: Assign variant for session
+      parameters:
+        - { name: session_id, in: query, required: true, schema: { type: string } }
+      responses:
+        '200': { description: Assignment }
+  /v1/admin/ai/actions:
+    get:
+      tags: [AI]
+      summary: List AI assist actions
+      responses:
+        '200': { description: Actions }
+    post:
+      tags: [AI]
+      summary: Create AI action (high-risk → pending_approval)
+      responses:
+        '200': { description: Action }
+  /v1/admin/ai/actions/{id}/review:
+    post:
+      tags: [AI]
+      summary: Approve/reject high-risk AI action (audited)
+      responses:
+        '200': { description: Reviewed }

@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { StoreShell } from '../components/StoreShell';
 import { formatVnd, getProducts, getRuntime } from '../lib/api';
 import { AddToCartButton } from '../components/AddToCartButton';
+import { HeroBlock } from '../components/HeroBlock';
 
 export const dynamic = 'force-dynamic';
 
@@ -40,50 +41,13 @@ export default async function HomePage({
       cream={cream}
       ink={ink}
     >
-      <section
-        style={{
-          minHeight: '42vh',
-          padding: '36px 20px',
-          color: '#fff',
-          background:
-            'radial-gradient(circle at 70% 30%, rgba(255,180,160,.55), transparent 45%), linear-gradient(165deg, #1a1514 0%, #3d2c28 40%, #c4a090 100%)',
-          display: 'flex',
-          flexDirection: 'column',
-          justifyContent: 'flex-end',
-        }}
-      >
-        <div style={{ fontSize: 12, opacity: 0.8, letterSpacing: '0.04em' }}>
-          {hero?.eyebrow || 'AURA Beauty'}
-        </div>
-        <h1
-          style={{
-            fontFamily: 'var(--ptt-font-display)',
-            fontSize: 36,
-            letterSpacing: '-0.04em',
-            margin: '6px 0 10px',
-            fontWeight: 800,
-          }}
-        >
-          {hero?.headline || 'Serum tái tạo da đêm'}
-        </h1>
-        <Link
-          href={hero?.cta_href || '/products/glow-serum-30ml'}
-          style={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            height: 44,
-            padding: '0 18px',
-            background: accent,
-            color: '#fff',
-            borderRadius: 8,
-            fontWeight: 700,
-            textDecoration: 'none',
-            width: 'fit-content',
-          }}
-        >
-          {hero?.cta || 'Mua ngay'}
-        </Link>
-      </section>
+      <HeroBlock
+        eyebrow={hero?.eyebrow || 'AURA Beauty'}
+        headline={hero?.headline || 'Serum tái tạo da đêm'}
+        cta={hero?.cta || 'Mua ngay'}
+        ctaHref={hero?.cta_href || '/products/glow-serum-30ml'}
+        accent={accent}
+      />
 
       <div style={{ padding: '14px 14px 8px', display: 'flex', gap: 8, overflowX: 'auto' }}>
         {collections.map((c) => (

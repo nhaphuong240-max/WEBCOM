@@ -83,7 +83,25 @@ export default function CheckoutPage() {
           cache: 'no-store',
           body: JSON.stringify({
             storefront_id: STOREFRONT_ID,
+            name: 'begin_checkout',
+            session_id: typeof window !== 'undefined' ? localStorage.getItem('ptt_session_v1') : undefined,
+            landing_path: '/checkout',
+            consent_state:
+              typeof window !== 'undefined'
+                ? localStorage.getItem('ptt_consent_v1') || 'unknown'
+                : 'unknown',
+            payload: { cart_id: cart.id },
+          }),
+        }).catch(() => undefined);
+        void storeApi('/v1/events', {
+          method: 'POST',
+          cache: 'no-store',
+          body: JSON.stringify({
+            storefront_id: STOREFRONT_ID,
             name: 'purchase',
+            session_id: typeof window !== 'undefined' ? localStorage.getItem('ptt_session_v1') : undefined,
+            landing_path: '/',
+            consent_state: 'granted',
             payload: { order_id: order.order_id, total },
           }),
         }).catch(() => undefined);

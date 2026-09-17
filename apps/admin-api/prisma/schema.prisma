@@ -33,6 +33,10 @@ model Tenant {
   publishJobs PublishJob[]
   onboarding  OnboardingProgress[]
   previewTokens StagingPreviewToken[]
+  experiments Experiment[]
+  cwvSnapshots CwvSnapshot[]
+  aiActions   AiAction[]
+  analyticsIncidents AnalyticsIncident[]
 
   @@map("tenants")
 }
@@ -98,6 +102,10 @@ model Storefront {
   publishJobs      PublishJob[]
   onboarding       OnboardingProgress?
   previewTokens    StagingPreviewToken[]
+  experiments      Experiment[]
+  cwvSnapshots     CwvSnapshot[]
+  aiActions        AiAction[]
+  analyticsIncidents AnalyticsIncident[]
 
   @@unique([tenantId, slug])
   @@index([tenantId])
@@ -491,11 +499,16 @@ model StorefrontEvent {
   name         String
   sessionId    String?    @map("session_id")
   customerId   String?    @map("customer_id")
+  landingPath  String?    @map("landing_path")
+  consentState String?    @map("consent_state") // granted|denied|unknown
+  experimentId String?    @map("experiment_id")
+  variantKey   String?    @map("variant_key")
   payload      Json       @default("{}")
   createdAt    DateTime   @default(now()) @map("created_at")
   storefront   Storefront @relation(fields: [storefrontId], references: [id], onDelete: Cascade)
 
   @@index([tenantId, storefrontId, name])
+  @@index([tenantId, storefrontId, landingPath])
   @@index([createdAt])
   @@map("storefront_events")
 }
@@ -670,4 +683,95 @@ model StagingPreviewToken {
 
   @@index([tenantId, storefrontId])
   @@map("staging_preview_tokens")
+}
+
+/// W4 — A/B experiment (hero/CTA)
+model Experiment {
+  id           String     @id @default(uuid())
+  tenantId     String     @map("tenant_id")
+  storefrontId String     @map("storefront_id")
+  code         String
+  name         String
+  /// draft | running | paused | completed
+  status       String     @default("draft")
+  /// primary metric: purchase_cvr | add_to_cart_rate
+  metric       String     @default("purchase_cvr")
+  /// [{ key, weight, headline?, cta?, cta_href? }]
+  variants     Json       @default("[]")
+  startedAt    DateTime?  @map("started_at")
+  endedAt      DateTime?  @map("ended_at")
+  createdAt    DateTime   @default(now()) @map("created_at")
+  updatedAt    DateTime   @updatedAt @map("updated_at")
+  tenant       Tenant     @relation(fields: [tenantId], references: [id])
+  storefront   Storefront @relation(fields: [storefrontId], references: [id], onDelete: Cascade)
+
+  @@unique([storefrontId, code])
+  @@index([tenantId, storefrontId, status])
+  @@map("experiments")
+}
+
+/// W4 — CWV / synthetic measurements (post-publish health)
+model CwvSnapshot {
+  id           String     @id @default(uuid())
+  tenantId     String     @map("tenant_id")
+  storefrontId String     @map("storefront_id")
+  /// baseline | synthetic | rum | canary
+  source       String     @default("synthetic")
+  path         String     @default("/")
+  device       String     @default("mobile")
+  lcpMs        Float      @map("lcp_ms")
+  inpMs        Float?     @map("inp_ms")
+  cls          Float?
+  publishJobId String?    @map("publish_job_id")
+  createdAt    DateTime   @default(now()) @map("created_at")
+  tenant       Tenant     @relation(fields: [tenantId], references: [id])
+  storefront   Storefront @relation(fields: [storefrontId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, storefrontId, createdAt])
+  @@map("cwv_snapshots")
+}
+
+/// W4 — Guardrailed AI assist actions
+model AiAction {
+  id           String     @id @default(uuid())
+  tenantId     String     @map("tenant_id")
+  storefrontId String?    @map("storefront_id")
+  /// theme_match_explain | headline_variants | shopping_qa
+  kind         String
+  /// low | high
+  risk         String     @default("low")
+  /// draft | pending_approval | approved | rejected | applied
+  status       String     @default("draft")
+  input        Json       @default("{}")
+  output       Json       @default("{}")
+  requestedBy  String?    @map("requested_by")
+  reviewedBy   String?    @map("reviewed_by")
+  reviewNote   String?    @map("review_note")
+  createdAt    DateTime   @default(now()) @map("created_at")
+  updatedAt    DateTime   @updatedAt @map("updated_at")
+  tenant       Tenant     @relation(fields: [tenantId], references: [id])
+  storefront   Storefront? @relation(fields: [storefrontId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, status, risk])
+  @@map("ai_actions")
+}
+
+/// W4 — Publish health / CWV regression incidents
+model AnalyticsIncident {
+  id           String     @id @default(uuid())
+  tenantId     String     @map("tenant_id")
+  storefrontId String     @map("storefront_id")
+  /// cwv_regression | checkout_canary_fail
+  kind         String
+  severity     String     @default("warn") // warn | critical
+  status       String     @default("open") // open | acknowledged | resolved | auto_rolled_back
+  evidence     Json       @default("{}")
+  publishJobId String?    @map("publish_job_id")
+  createdAt    DateTime   @default(now()) @map("created_at")
+  resolvedAt   DateTime?  @map("resolved_at")
+  tenant       Tenant     @relation(fields: [tenantId], references: [id])
+  storefront   Storefront @relation(fields: [storefrontId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, storefrontId, status])
+  @@map("analytics_incidents")
 }

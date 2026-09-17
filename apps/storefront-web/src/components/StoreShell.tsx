@@ -5,6 +5,7 @@ import { useCart } from '../lib/cart';
 import { BottomNav } from './BottomNav';
 import { ConsentBanner } from './ConsentBanner';
 import { TrackingPixels } from './TrackingPixels';
+import { PageViewTracker } from './PageViewTracker';
 
 export function StoreShell({
   children,
@@ -43,6 +44,7 @@ export function StoreShell({
         } as React.CSSProperties
       }
     >
+      <PageViewTracker />
       <TrackingPixels gtmId={gtm} pixelId={pixel} />
       <header
         style={{

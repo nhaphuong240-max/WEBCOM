@@ -483,6 +483,78 @@ async function main() {
     update: {},
   });
 
+  // ─── W4 Analytics seed ─────────────────────────────────────
+  await prisma.experiment.upsert({
+    where: { storefrontId_code: { storefrontId, code: 'hero_cta_v1' } },
+    create: {
+      id: 'exp_hero_cta_v1',
+      tenantId,
+      storefrontId,
+      code: 'hero_cta_v1',
+      name: 'Hero CTA A/B',
+      status: 'running',
+      metric: 'purchase_cvr',
+      variants: [
+        { key: 'control', weight: 1, headline: 'Serum tái tạo da đêm', cta: 'Mua ngay' },
+        {
+          key: 'benefit',
+          weight: 1,
+          headline: 'Serum tái tạo da đêm — kết quả sau 7 đêm',
+          cta: 'Dùng thử',
+        },
+      ],
+      startedAt: new Date(),
+    },
+    update: { status: 'running' },
+  });
+
+  await prisma.cwvSnapshot.deleteMany({ where: { storefrontId, source: 'baseline' } });
+  await prisma.cwvSnapshot.create({
+    data: {
+      id: 'cwv_aura_baseline',
+      tenantId,
+      storefrontId,
+      source: 'baseline',
+      path: '/',
+      device: 'mobile',
+      lcpMs: 1750,
+      inpMs: 72,
+      cls: 0.03,
+    },
+  });
+
+  const sampleEvents: Array<{ name: string; path: string; session: string; total?: number }> = [
+    { name: 'page_view', path: '/', session: 'ses_seed_1' },
+    { name: 'page_view', path: '/', session: 'ses_seed_2' },
+    { name: 'page_view', path: '/products/glow-serum-30ml', session: 'ses_seed_3' },
+    { name: 'view_item', path: '/products/glow-serum-30ml', session: 'ses_seed_1' },
+    { name: 'view_item', path: '/products/glow-serum-30ml', session: 'ses_seed_2' },
+    { name: 'add_to_cart', path: '/products/glow-serum-30ml', session: 'ses_seed_1' },
+    { name: 'begin_checkout', path: '/checkout', session: 'ses_seed_1' },
+    { name: 'purchase', path: '/', session: 'ses_seed_1', total: 413100 },
+    { name: 'experiment_exposed', path: '/', session: 'ses_seed_1' },
+    { name: 'experiment_exposed', path: '/', session: 'ses_seed_2' },
+  ];
+  await prisma.storefrontEvent.deleteMany({
+    where: { id: { startsWith: 'evt_w4_seed_' } },
+  });
+  for (const [i, e] of sampleEvents.entries()) {
+    await prisma.storefrontEvent.create({
+      data: {
+        id: `evt_w4_seed_${i}`,
+        tenantId,
+        storefrontId,
+        name: e.name,
+        sessionId: e.session,
+        landingPath: e.path,
+        consentState: 'granted',
+        experimentId: e.name.startsWith('experiment') || e.name === 'purchase' ? 'exp_hero_cta_v1' : null,
+        variantKey: e.session === 'ses_seed_1' ? 'control' : e.name === 'experiment_exposed' ? 'benefit' : null,
+        payload: e.total ? { total: e.total } : {},
+      },
+    });
+  }
+
   // eslint-disable-next-line no-console
   console.log(
     JSON.stringify(
@@ -497,7 +569,8 @@ async function main() {
         storefront_status: 'staging',
         templates_seeded: templates.length,
         brand_kit: 'bkit_aura_sf_1',
-        phase: 'W3',
+        experiment: 'hero_cta_v1',
+        phase: 'W4',
         list_price: 459000,
         discount_percent: 10,
         unit_price_after_discount: 413100,

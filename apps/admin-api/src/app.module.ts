@@ -10,6 +10,7 @@ import { OrdersModule } from './orders/orders.module';
 import { CustomerModule } from './customer/customer.module';
 import { OrganizationModule } from './organization/organization.module';
 import { WebsiteModule } from './website/website.module';
+import { AnalyticsModule } from './analytics/analytics.module';
 import { HealthController } from './health/health.controller';
 import { MeController } from './iam/me.controller';
 import { AuthController } from './iam/auth.controller';
@@ -28,6 +29,7 @@ import { TenancyController } from './tenancy/tenancy.controller';
     CustomerModule,
     OrganizationModule,
     WebsiteModule,
+    AnalyticsModule,
   ],
   controllers: [HealthController, MeController, AuthController, TenancyController],
 })
