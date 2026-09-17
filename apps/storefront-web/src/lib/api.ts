@@ -1,5 +1,3 @@
-import { headers } from 'next/headers';
-
 const API_BASE =
   (typeof window === 'undefined'
     ? process.env.INTERNAL_API_URL || process.env.ADMIN_API_URL
@@ -11,7 +9,7 @@ const ENV_TENANT = process.env.NEXT_PUBLIC_TENANT_ID || 'ten_aura';
 const ENV_BRAND = process.env.NEXT_PUBLIC_BRAND_ID || 'brd_aura';
 const ENV_STOREFRONT = process.env.NEXT_PUBLIC_STOREFRONT_ID || 'sf_aura';
 
-/** @deprecated prefer getStoreContext() for host-aware multi-tenant */
+/** Env fallbacks — client components use these; SSR prefers host-resolved context. */
 export const TENANT_ID = ENV_TENANT;
 export const BRAND_ID = ENV_BRAND;
 export const STOREFRONT_ID = ENV_STOREFRONT;
@@ -19,6 +17,8 @@ export const STOREFRONT_ID = ENV_STOREFRONT;
 export async function getStoreContext() {
   if (typeof window === 'undefined') {
     try {
+      // Dynamic import so client bundles (cart/analytics) never pull next/headers.
+      const { headers } = await import('next/headers');
       const h = await headers();
       return {
         tenantId: h.get('x-ptt-tenant-id') || ENV_TENANT,
@@ -26,7 +26,7 @@ export async function getStoreContext() {
         storefrontId: h.get('x-ptt-storefront-id') || ENV_STOREFRONT,
       };
     } catch {
-      /* outside request */
+      /* outside request / build */
     }
   }
   return { tenantId: ENV_TENANT, brandId: ENV_BRAND, storefrontId: ENV_STOREFRONT };
