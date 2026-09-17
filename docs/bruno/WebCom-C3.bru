@@ -1,0 +1,88 @@
+meta {
+  name: WebCom-C3
+  type: folder
+}
+
+meta {
+  name: Health C3
+  type: http
+  seq: 1
+}
+get {
+  url: {{baseUrl}}/api/health
+}
+
+meta {
+  name: RFM refresh
+  type: http
+  seq: 2
+}
+post {
+  url: {{baseUrl}}/api/v1/admin/crm/rfm/refresh
+  headers {
+    x-tenant-id: {{tenantId}}
+    x-brand-id: {{brandId}}
+  }
+}
+
+meta {
+  name: RFM summary
+  type: http
+  seq: 3
+}
+get {
+  url: {{baseUrl}}/api/v1/admin/crm/rfm/summary
+  headers {
+    x-tenant-id: {{tenantId}}
+    x-brand-id: {{brandId}}
+  }
+}
+
+meta {
+  name: Create segment
+  type: http
+  seq: 4
+}
+post {
+  url: {{baseUrl}}/api/v1/admin/segments
+  headers {
+    content-type: application/json
+    x-tenant-id: {{tenantId}}
+    x-brand-id: {{brandId}}
+  }
+  body: json
+  {
+    "name": "Champions email",
+    "logic": "AND",
+    "rules": [
+      { "field": "rfm_segment", "op": "eq", "value": "Champions" },
+      { "field": "consent_email", "op": "eq", "value": true }
+    ]
+  }
+}
+
+meta {
+  name: Preview segment
+  type: http
+  seq: 5
+}
+post {
+  url: {{baseUrl}}/api/v1/admin/segments/{{segmentId}}/preview
+  headers {
+    x-tenant-id: {{tenantId}}
+    x-brand-id: {{brandId}}
+  }
+}
+
+meta {
+  name: Materialize segment
+  type: http
+  seq: 6
+}
+post {
+  url: {{baseUrl}}/api/v1/admin/segments/{{segmentId}}/materialize
+  headers {
+    x-tenant-id: {{tenantId}}
+    x-brand-id: {{brandId}}
+  }
+}

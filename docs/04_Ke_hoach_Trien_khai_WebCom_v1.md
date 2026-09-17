@@ -695,6 +695,172 @@ Repo chạy được, design system từ mockup, auth tenant, admin/storefront s
 
 ---
 
+# 9o. Nhánh C — Customer Growth (kế hoạch)
+
+> Sau B6 · Canvas: `canvases/ke-hoach-nhanh-c-customer-growth.canvas.tsx` · ~16 tuần · C1–C6.
+
+| Wave | Focus | Exit chính |
+|---|---|---|
+| C1 | Customer 360 profile | Hồ sơ thống nhất: order + inbox + consent · admin `/customers` · **shipped** `wave: C1` |
+| C2 | Identity match / merge | Match phone/email/social · merge/unmerge + audit · **shipped** `wave: C2` |
+| C3 | RFM + Segmentation | RFM job; segment rule AND/OR; audience preview · **shipped** `wave: C3` |
+| C4 | Loyalty ledger | Earn on CONFIRMED; redeem checkout; tier; ledger · **shipped** `wave: C4` |
+| C5 | Journey MVP | Trigger→condition→delay→action stub; consent + frequency cap · **shipped** `wave: C5` |
+| C6 | NBA + service recovery | Playbook + NBA + AI care/nba approval · **shipped** `wave: C6` |
+
+**Phạm vi:** FR-CRM · FR-SEG · FR-LOY · FR-JRN · FR-CX. **Không** full Revenue Intelligence / Content-KOL (nhánh D) · không broadcast partner live (stub trước).
+
+## Nguyên tắc
+- Identity hợp nhất theo phone/email/social/marketplace/loyalty ID + consent (SRS §3 · BP-CRM).
+- Marketing action kiểm tra consent + channel policy + frequency cap (**BR-011**).
+- AI care / NBA draft high-risk → approval (**BR-018**); không auto-refund / auto-mass-send.
+- Tái sử dụng: `Customer` (W2), Social inbox (B1–B2/B6), OMS attribution (B2+), AI Gateway (A6), Audit.
+
+## Phụ thuộc từ code hiện tại
+| Asset | Trạng thái | Việc nhánh C |
+|---|---|---|
+| `Customer` (email/phone/consent_marketing) | Register/login storefront | Mở rộng profile, identities, tags, RFM fields |
+| `InboxConversation.customerId` | Optional | Auto-link / match sau C2 |
+| `Order` attribution | Shipped B2+ | Feed RFM + loyalty earn |
+| `AiAction` / approval | A6 + B6 `social_reply` | Thêm kind `care_reply` / `nba_suggest` |
+| Voucher / promo engine | Chưa đủ FR-LOY | Hook redeem điểm ↔ voucher stub |
+
+## Wave C1 — Customer 360 profile (tuần 1–2)
+### Exit criteria
+- [x] Mở rộng `Customer`: addresses/tags/notes/lifetime; consent email/sms/zns/messenger.
+- [x] Admin `CrmModule`: list/search/get 360 (orders + conversations + consent).
+- [x] Storefront account vẫn dùng cùng `Customer` (register/login).
+- [x] Health `wave: C1` · `openapi-c1.yaml` · Bruno · `scripts/e2e-c1.sh` · runbook.
+
+### API (tóm tắt)
+| Method | Path | Mô tả |
+|---|---|---|
+| POST | `/api/v1/admin/customers/ensure` | Upsert phone/email |
+| GET | `/api/v1/admin/customers` | Search |
+| GET | `/api/v1/admin/customers/:id` | 360 snapshot |
+| PATCH | `/api/v1/admin/customers/:id` | Profile |
+| PATCH | `/api/v1/admin/customers/:id/consent` | Channel consents |
+| POST | `/api/v1/admin/customers/:id/link-inbox` | Link threads by phone |
+
+**SRS:** FR-CRM (profile slice).
+
+## Wave C2 — Identity match / merge (tuần 3–5)
+### Exit criteria
+- [x] `CustomerIdentity` (type: phone/email/meta/zalo/shopee/loyalty …) unique theo tenant.
+- [x] Match candidate queue; merge → survivor + audit before/after; unmerge soft.
+- [x] Auto-attach inbox thread / guest order khi signal khớp.
+- [x] Health `wave: C2` · `openapi-c2.yaml` · Bruno · `scripts/e2e-c2.sh` · runbook · admin `/customers/matches`.
+
+### API (tóm tắt)
+| Method | Path | Mô tả |
+|---|---|---|
+| GET/POST | `/api/v1/admin/customers/:id/identities` | List / add identity |
+| DELETE | `/api/v1/admin/customers/:id/identities/:identityId` | Remove (non-primary) |
+| POST | `/api/v1/admin/crm/matches/scan` | Scan shared signals |
+| GET | `/api/v1/admin/crm/matches` | Match queue |
+| POST | `/api/v1/admin/crm/matches/:id/dismiss` | Dismiss |
+| POST | `/api/v1/admin/crm/merge` | Merge → survivor |
+| POST | `/api/v1/admin/crm/merge/:eventId/unmerge` | Soft unmerge |
+| GET | `/api/v1/admin/crm/merge-events` | Audit |
+
+**SRS:** FR-CRM · BP-CRM · BR-006 (no hard-delete).
+
+## Wave C3 — RFM + Segmentation (tuần 6–8)
+### Exit criteria
+- [x] Job RFM (R/F/M scores + segment label) theo tenant; refresh theo lịch stub (`rfm_job_runs`).
+- [x] `Segment` + `SegmentRule` (AND/OR, field/op/value, time window).
+- [x] Preview audience count + sample IDs; materialize membership snapshot.
+- [x] Admin `/segments` · Health `wave: C3` · `openapi-c3.yaml` · Bruno · `scripts/e2e-c3.sh` · runbook.
+
+### API (tóm tắt)
+| Method | Path | Mô tả |
+|---|---|---|
+| POST | `/api/v1/admin/crm/rfm/refresh` | Score all active customers |
+| GET | `/api/v1/admin/crm/rfm/summary` | Counts by label |
+| GET | `/api/v1/admin/crm/rfm/customers` | Filter by rfm_segment |
+| GET/POST | `/api/v1/admin/segments` | List / create |
+| GET/PATCH/DELETE | `/api/v1/admin/segments/:id` | CRUD |
+| POST | `/api/v1/admin/segments/:id/preview` | Count + sample |
+| POST | `/api/v1/admin/segments/:id/materialize` | Snapshot memberships |
+| GET | `/api/v1/admin/segments/:id/members` | Materialized list |
+
+**SRS:** FR-SEG.
+
+## Wave C4 — Loyalty ledger (tuần 9–11)
+### Exit criteria
+- [x] `LoyaltyAccount` / `LoyaltyLedger` (earn/redeem/expire/adjust+reason); tier rules.
+- [x] Earn trên order `CONFIRMED` (idempotent theo order_id); redeem ở checkout stub (điểm→discount).
+- [x] Referral code cơ bản (1 level) + fraud soft check.
+- [x] Admin `/loyalty` · Health `wave: C4` · `openapi-c4.yaml` · Bruno · `scripts/e2e-c4.sh` · runbook.
+
+### API (tóm tắt)
+| Method | Path | Mô tả |
+|---|---|---|
+| GET | `/api/v1/admin/loyalty/status` | Flags + defaults |
+| POST | `/api/v1/admin/loyalty/accounts/ensure` | Wallet + referral code |
+| POST | `/api/v1/admin/loyalty/earn-order/:orderId` | Earn idempotent |
+| POST | `/api/v1/admin/loyalty/redeem` | Redeem points |
+| POST | `/api/v1/admin/loyalty/adjust` | Manual ±points + reason |
+| POST | `/api/v1/admin/loyalty/expire` | Expire stub |
+| POST | `/api/v1/admin/loyalty/referral/apply` | Referral + soft fraud |
+| POST | `/api/v1/checkout` | `loyalty_points` optional |
+
+**SRS:** FR-LOY.
+
+## Wave C5 — Journey MVP (tuần 12–14)
+### Exit criteria
+- [x] `Journey` / `JourneyStep` / `JourneyEnrollment`: Trigger → Condition → Delay → Action → Exit.
+- [x] Actions stub: tag, voucher issue, Messenger/Zalo/email/SMS **stub send**.
+- [x] Guard: consent + frequency cap + conflict (1 journey active / customer / category).
+- [x] Admin `/journeys` · enroll + run-once drain · Health `wave: C5` · OpenAPI/Bruno/e2e/runbook.
+
+### API (tóm tắt)
+| Method | Path | Mô tả |
+|---|---|---|
+| GET/POST | `/api/v1/admin/journeys` | List / create |
+| POST | `/api/v1/admin/journeys/drain` | Drain due enrollments |
+| PATCH | `/api/v1/admin/journeys/:id` | Update / activate / replace steps |
+| POST | `/api/v1/admin/journeys/:id/enroll` | Enroll (+ auto drain) |
+| GET | `/api/v1/admin/journeys/:id/enrollments` | Enrollments |
+| GET | `/api/v1/admin/journey-enrollments/:id/logs` | Run logs |
+
+**SRS:** FR-JRN · BR-011 · BP-JOURNEY.
+
+## Wave C6 — NBA + service recovery (tuần 15–16)
+### Exit criteria
+- [x] `ServiceTicket` link customer/order; playbook triggers (delay COD, fail payment, negative keyword stub).
+- [x] NBA recommend (call/voucher/live invite/no-contact) + evidence fields; owner assign.
+- [x] AI kind `care_reply` / `nba_suggest` → pending_approval → apply draft only (không auto-refund/send).
+- [x] Admin `/recovery` + Customer 360 recovery panel · Health `wave: C6` · e2e-c6 · runbook.
+
+**API (tóm tắt)**
+| Method | Path | Mục đích |
+|---|---|---|
+| GET | `/api/v1/admin/cx/status` | Feature flags C6 |
+| GET/POST | `/api/v1/admin/cx/tickets` | List / create ticket |
+| GET/PATCH | `/api/v1/admin/cx/tickets/:id` | Detail / update |
+| POST | `/api/v1/admin/cx/tickets/:id/care-reply` | AI care_reply → pending_approval |
+| POST | `/api/v1/admin/cx/playbooks/scan` | Scan delay_cod / fail_payment / negative_keyword |
+| POST | `/api/v1/admin/cx/nba/suggest` | Rule NBA |
+| POST | `/api/v1/admin/cx/nba/suggest-ai` | AI nba_suggest → pending_approval |
+| GET | `/api/v1/admin/cx/nba` | List NBA |
+| PATCH | `/api/v1/admin/cx/nba/:id` | Accept / dismiss / owner |
+| POST | `/api/v1/admin/cx/nba/:id/apply` | Apply stub (không refund) |
+
+**SRS:** FR-CX · BR-018 · runbook `docs/runbooks/nba-service-recovery.md`.
+
+## Won't (nhánh C)
+- Broadcast production ZNS/Email/SMS (chỉ stub + policy).
+- Journey holdout / contribution ROI đầy đủ (nhánh D RI).
+- Community UGC / KOL affiliate (Content branch).
+- Custom objects / workflow builder enterprise.
+- Auto-refund / mass send không approval.
+
+## Definition of Done mỗi wave
+Prisma migration · Nest module · Admin UI · `health.wave = Cn` · OpenAPI + Bruno · `scripts/e2e-cn.sh` · runbook · cập nhật bảng §9o.
+
+---
+
 # 10. Backlog ưu tiên MoSCoW (WebCom)
 
 ## Must (trước GA Platform)

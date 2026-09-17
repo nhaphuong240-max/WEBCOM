@@ -1,0 +1,47 @@
+openapi: 3.0.3
+info:
+  title: WebCom C4 — Loyalty ledger
+  version: 1.0.0
+paths:
+  /api/health:
+    get:
+      summary: wave C4
+  /api/v1/admin/loyalty/status:
+    get:
+      summary: Loyalty feature flags + defaults
+  /api/v1/admin/loyalty/tiers:
+    get:
+      summary: List tiers
+  /api/v1/admin/loyalty/tiers/ensure:
+    post:
+      summary: Seed bronze/silver/gold
+  /api/v1/admin/loyalty/accounts/ensure:
+    post:
+      summary: Ensure wallet + referral code
+  /api/v1/admin/loyalty/accounts/{customerId}:
+    get:
+      summary: Get account
+  /api/v1/admin/loyalty/accounts/{customerId}/ledger:
+    get:
+      summary: Immutable ledger
+  /api/v1/admin/loyalty/quote-redeem:
+    post:
+      summary: Quote points → VND discount
+  /api/v1/admin/loyalty/redeem:
+    post:
+      summary: Redeem points (idempotent)
+  /api/v1/admin/loyalty/earn-order/{orderId}:
+    post:
+      summary: Earn on CONFIRMED order (idempotent)
+  /api/v1/admin/loyalty/adjust:
+    post:
+      summary: Manual adjust + reason
+  /api/v1/admin/loyalty/expire:
+    post:
+      summary: Expire points stub
+  /api/v1/admin/loyalty/referral/apply:
+    post:
+      summary: Apply referral code (1-level + soft fraud)
+  /api/v1/checkout:
+    post:
+      summary: Optional loyalty_points redeem + auto earn on CONFIRMED

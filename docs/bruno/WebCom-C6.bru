@@ -1,0 +1,97 @@
+meta {
+  name: WebCom-C6
+  type: folder
+}
+
+meta {
+  name: Health C6
+  type: http
+  seq: 1
+}
+get {
+  url: {{baseUrl}}/api/health
+}
+
+meta {
+  name: CX status
+  type: http
+  seq: 2
+}
+get {
+  url: {{baseUrl}}/api/v1/admin/cx/status
+  headers {
+    x-tenant-id: {{tenantId}}
+    x-brand-id: {{brandId}}
+  }
+}
+
+meta {
+  name: Create ticket
+  type: http
+  seq: 3
+}
+post {
+  url: {{baseUrl}}/api/v1/admin/cx/tickets
+  headers {
+    content-type: application/json
+    x-tenant-id: {{tenantId}}
+    x-brand-id: {{brandId}}
+  }
+  body: json
+  {
+    "customer_id": "{{customerId}}",
+    "subject": "Care follow-up",
+    "playbook_code": "manual",
+    "priority": "normal"
+  }
+}
+
+meta {
+  name: Suggest NBA
+  type: http
+  seq: 4
+}
+post {
+  url: {{baseUrl}}/api/v1/admin/cx/nba/suggest
+  headers {
+    content-type: application/json
+    x-tenant-id: {{tenantId}}
+    x-brand-id: {{brandId}}
+  }
+  body: json
+  {
+    "customer_id": "{{customerId}}",
+    "ticket_id": "{{ticketId}}"
+  }
+}
+
+meta {
+  name: Care reply AI
+  type: http
+  seq: 5
+}
+post {
+  url: {{baseUrl}}/api/v1/admin/cx/tickets/{{ticketId}}/care-reply
+  headers {
+    content-type: application/json
+    x-tenant-id: {{tenantId}}
+    x-brand-id: {{brandId}}
+  }
+  body: json
+  {
+    "tone": "empathetic"
+  }
+}
+
+meta {
+  name: Playbook scan
+  type: http
+  seq: 6
+}
+post {
+  url: {{baseUrl}}/api/v1/admin/cx/playbooks/scan
+  headers {
+    x-tenant-id: {{tenantId}}
+    x-brand-id: {{brandId}}
+  }
+}

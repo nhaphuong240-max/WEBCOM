@@ -9,7 +9,7 @@ H=(-H "content-type: application/json" -H "x-tenant-id: $T" -H "x-brand-id: brd_
 
 echo "== health wave B2 =="
 curl -sS "$BASE/health" | tee /tmp/b2-health.json
-grep -qE '"wave":"B[2-6]"' /tmp/b2-health.json
+grep -qE '"wave":"(B[2-6]|C[1-6])"' /tmp/b2-health.json
 
 echo "== social status B2 =="
 curl -sS "${H[@]}" "$BASE/v1/admin/social/status" | tee /tmp/b2-status.json

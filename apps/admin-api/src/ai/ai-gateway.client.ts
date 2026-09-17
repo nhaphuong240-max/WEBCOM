@@ -1,6 +1,12 @@
 import { Injectable, Logger } from '@nestjs/common';
 
-export type AiKind = 'theme_match_explain' | 'headline_variants' | 'shopping_qa' | 'social_reply';
+export type AiKind =
+  | 'theme_match_explain'
+  | 'headline_variants'
+  | 'shopping_qa'
+  | 'social_reply'
+  | 'care_reply'
+  | 'nba_suggest';
 
 export type GatewayGenerateResult = {
   request_id: string;
@@ -25,7 +31,12 @@ function featureAi() {
 }
 
 function isHighRisk(kind: AiKind) {
-  return kind === 'shopping_qa' || kind === 'social_reply';
+  return (
+    kind === 'shopping_qa' ||
+    kind === 'social_reply' ||
+    kind === 'care_reply' ||
+    kind === 'nba_suggest'
+  );
 }
 
 @Injectable()
@@ -43,7 +54,14 @@ export class AiGatewayClient {
       mode: process.env.AI_GATEWAY_URL?.trim() ? 'fastapi' : 'nest_stub',
       budget_cap_usd: Number(process.env.AI_TENANT_BUDGET_USD || 5),
       model: process.env.AI_MODEL || 'stub-llm-v1',
-      kinds: ['theme_match_explain', 'headline_variants', 'shopping_qa', 'social_reply'],
+      kinds: [
+        'theme_match_explain',
+        'headline_variants',
+        'shopping_qa',
+        'social_reply',
+        'care_reply',
+        'nba_suggest',
+      ],
     };
   }
 
@@ -102,11 +120,13 @@ export class AiGatewayClient {
     const cost =
       input.kind === 'shopping_qa'
         ? 0.004
-        : input.kind === 'social_reply'
+        : input.kind === 'social_reply' || input.kind === 'care_reply'
           ? 0.0035
-          : input.kind === 'headline_variants'
-            ? 0.0015
-            : 0.002;
+          : input.kind === 'nba_suggest'
+            ? 0.003
+            : input.kind === 'headline_variants'
+              ? 0.0015
+              : 0.002;
     let output: Record<string, unknown>;
     let guardrails: string[];
     let rag_hits: GatewayGenerateResult['rag_hits'] = [];
@@ -162,6 +182,108 @@ export class AiGatewayClient {
         'no_price_change',
         'no_refund',
         'human_handoff_available',
+      ];
+    } else if (input.kind === 'care_reply') {
+      const name = String(input.payload.customer_name || 'bạn');
+      const subject = String(input.payload.subject || 'yêu cầu hỗ trợ');
+      rag_hits = [
+        {
+          id: 'kb_care',
+          score: 1,
+          text: 'Care reply cần approval. Không cam kết refund/giá. Draft only trên ticket.',
+        },
+      ];
+      const draft = `Chào ${name}, shop đã nhận «${subject.slice(0, 60)}». Em xin lỗi vì trải nghiệm chưa tốt — team sẽ hỗ trợ sớm. (Nháp care AI — chờ duyệt, không tự gửi)`;
+      output = {
+        reply_draft: draft,
+        answer_draft: draft,
+        tone: String(input.payload.tone || 'empathetic'),
+        guardrail: 'High-risk care_reply: approval rồi lưu draft — không auto-send / refund.',
+        forbidden_tools: ['send_without_approval', 'issue_refund', 'update_price'],
+        policy: {
+          auto_publish: false,
+          price_mutation: false,
+          refund_mutation: false,
+          auto_send: false,
+        },
+      };
+      guardrails = [
+        'high_risk_approval_required',
+        'no_auto_send',
+        'no_refund',
+        'draft_on_ticket_only',
+      ];
+    } else if (input.kind === 'nba_suggest') {
+      const playbook = String(input.payload.playbook || 'manual');
+      rag_hits = [
+        {
+          id: 'kb_nba',
+          score: 1,
+          text: 'NBA suggestions require approval before materialize. No auto-refund.',
+        },
+      ];
+      const suggestions =
+        playbook === 'delay_cod'
+          ? [
+              {
+                action: 'call',
+                reason: 'AI: COD delay — call to confirm',
+                expected_outcome: 'Reduce cancel',
+                estimated_cost: 5000,
+              },
+              {
+                action: 'reminder',
+                reason: 'AI: soft reminder first',
+                expected_outcome: 'Response',
+                estimated_cost: 500,
+              },
+            ]
+          : playbook === 'fail_payment'
+            ? [
+                {
+                  action: 'voucher',
+                  reason: 'AI: recovery voucher stub',
+                  expected_outcome: 'Retry pay',
+                  estimated_cost: 20000,
+                },
+                {
+                  action: 'care',
+                  reason: 'AI: care message',
+                  expected_outcome: 'Recover',
+                  estimated_cost: 0,
+                },
+              ]
+            : [
+                {
+                  action: 'care',
+                  reason: 'AI: generic care',
+                  expected_outcome: 'CSAT',
+                  estimated_cost: 0,
+                },
+                {
+                  action: 'no_contact',
+                  reason: 'AI: avoid over-contact if resolved',
+                  expected_outcome: 'No spam',
+                  estimated_cost: 0,
+                },
+              ];
+      output = {
+        suggestions,
+        playbook,
+        guardrail: 'High-risk nba_suggest: approve rồi mới tạo NBA rows. Không auto-refund/send.',
+        forbidden_tools: ['issue_refund', 'auto_send', 'mass_broadcast'],
+        policy: {
+          auto_publish: false,
+          price_mutation: false,
+          refund_mutation: false,
+          auto_send: false,
+        },
+      };
+      guardrails = [
+        'high_risk_approval_required',
+        'no_auto_send',
+        'no_refund',
+        'materialize_after_approve',
       ];
     } else {
       const question = String(input.payload.question || '');

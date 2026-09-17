@@ -8,11 +8,11 @@ H=(-H "content-type: application/json" -H "x-tenant-id: $T" -H "x-brand-id: brd_
 
 echo "== health wave B1 =="
 curl -sS "$BASE/health" | tee /tmp/b1-health.json
-grep -qE '"wave":"B[1-6]"' /tmp/b1-health.json
+grep -qE '"wave":"(B[1-6]|C[1-6])"' /tmp/b1-health.json
 
 echo "== social status =="
 curl -sS "${H[@]}" "$BASE/v1/admin/social/status" | tee /tmp/b1-status.json
-grep -qE '"wave":"B[1-6]"' /tmp/b1-status.json
+grep -qE '"wave":"(B[1-6]|C[1-6])"' /tmp/b1-status.json
 python3 - <<'PY'
 import json
 d=json.load(open("/tmp/b1-status.json"))

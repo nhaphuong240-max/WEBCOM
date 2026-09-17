@@ -22,6 +22,10 @@ import { SocialModule } from './social/social.module';
 import { PosModule } from './pos/pos.module';
 import { LiveModule } from './live/live.module';
 import { MarketplaceModule } from './marketplace/marketplace.module';
+import { CrmModule } from './crm/crm.module';
+import { LoyaltyModule } from './loyalty/loyalty.module';
+import { JourneyModule } from './journey/journey.module';
+import { CxModule } from './cx/cx.module';
 import { HealthController } from './health/health.controller';
 import { MeController } from './iam/me.controller';
 import { AuthController } from './iam/auth.controller';
@@ -52,6 +56,10 @@ import { TenancyController } from './tenancy/tenancy.controller';
     PosModule,
     LiveModule,
     MarketplaceModule,
+    CrmModule,
+    LoyaltyModule,
+    JourneyModule,
+    CxModule,
   ],
   controllers: [HealthController, MeController, AuthController, TenancyController],
 })

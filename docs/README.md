@@ -7,10 +7,10 @@ Tài liệu được viết lại từ SRS Master v4.0 và Kiến trúc hệ th�
 | 1 | [01_Phan_tich_Nghiep_vu_PTT_Commerce_Intelligence_OS_v5.md](./01_Phan_tich_Nghiep_vu_PTT_Commerce_Intelligence_OS_v5.md) | BA 5.0 | Value chain, persona, journey, quy trình BP, use case, domain model, epic, KPI, rủi ro |
 | 2 | [02_SRS_Master_PTT_Commerce_Intelligence_OS_v5.md](./02_SRS_Master_PTT_Commerce_Intelligence_OS_v5.md) | SRS 5.1 Deep | Bám khung SRS v4 + chuyên sâu FR/AC + chiến lược thắng Haravan |
 | 3 | [03_Kien_truc_He_thong_va_Cong_nghe_PTT_Commerce_Intelligence_OS_v3.md](./03_Kien_truc_He_thong_va_Cong_nghe_PTT_Commerce_Intelligence_OS_v3.md) | Arch 3.0 | Target architecture, stack, data, event/Temporal, Website/AI, DevSecOps, ADR |
-| 4 | [04_Ke_hoach_Trien_khai_WebCom_v1.md](./04_Ke_hoach_Trien_khai_WebCom_v1.md) | Plan 1.0 | Kế hoạch triển khai WebCom: phase W0–W5, mockup→FR, test, rủi ro, milestone |
+| 4 | [04_Ke_hoach_Trien_khai_WebCom_v1.md](./04_Ke_hoach_Trien_khai_WebCom_v1.md) | Plan 1.0 | Kế hoạch triển khai WebCom: phase W0–W5, mockup→FR, test, rủi ro, milestone · nhánh B (§9h–9n) · nhánh C (§9o) |
 
-OpenAPI / Bruno theo phase: `openapi-w1.yaml` … `openapi-w5.yaml` · `openapi-a1.yaml` … `openapi-a6.yaml` · `openapi-b1.yaml` … `openapi-b6.yaml` · Bruno `WebCom-B1` … `WebCom-B6`.
-Runbooks: `docs/runbooks/`.
+OpenAPI / Bruno theo phase: `openapi-w1.yaml` … `openapi-w5.yaml` · `openapi-a1.yaml` … `openapi-a6.yaml` · `openapi-b1.yaml` … `openapi-b6.yaml` · `openapi-c1.yaml` … `openapi-c6.yaml` · Bruno `WebCom-B1` … `WebCom-B6` · `WebCom-C1` … `WebCom-C6`.
+Runbooks: `docs/runbooks/` (gồm `nba-service-recovery.md` cho C6).
 
 ## Thứ tự đọc khuyến nghị
 

@@ -1,0 +1,96 @@
+meta {
+  name: WebCom-C4
+  type: folder
+}
+
+meta {
+  name: Health C4
+  type: http
+  seq: 1
+}
+get {
+  url: {{baseUrl}}/api/health
+}
+
+meta {
+  name: Loyalty status
+  type: http
+  seq: 2
+}
+get {
+  url: {{baseUrl}}/api/v1/admin/loyalty/status
+  headers {
+    x-tenant-id: {{tenantId}}
+    x-brand-id: {{brandId}}
+  }
+}
+
+meta {
+  name: Ensure account
+  type: http
+  seq: 3
+}
+post {
+  url: {{baseUrl}}/api/v1/admin/loyalty/accounts/ensure
+  headers {
+    content-type: application/json
+    x-tenant-id: {{tenantId}}
+    x-brand-id: {{brandId}}
+  }
+  body: json
+  {
+    "customer_id": "{{customerId}}"
+  }
+}
+
+meta {
+  name: Adjust
+  type: http
+  seq: 4
+}
+post {
+  url: {{baseUrl}}/api/v1/admin/loyalty/adjust
+  headers {
+    content-type: application/json
+    x-tenant-id: {{tenantId}}
+    x-brand-id: {{brandId}}
+  }
+  body: json
+  {
+    "customer_id": "{{customerId}}",
+    "points": 100,
+    "reason": "bruno_adjust"
+  }
+}
+
+meta {
+  name: Earn order
+  type: http
+  seq: 5
+}
+post {
+  url: {{baseUrl}}/api/v1/admin/loyalty/earn-order/{{orderId}}
+  headers {
+    x-tenant-id: {{tenantId}}
+    x-brand-id: {{brandId}}
+  }
+}
+
+meta {
+  name: Apply referral
+  type: http
+  seq: 6
+}
+post {
+  url: {{baseUrl}}/api/v1/admin/loyalty/referral/apply
+  headers {
+    content-type: application/json
+    x-tenant-id: {{tenantId}}
+    x-brand-id: {{brandId}}
+  }
+  body: json
+  {
+    "customer_id": "{{refereeId}}",
+    "referral_code": "{{referralCode}}"
+  }
+}

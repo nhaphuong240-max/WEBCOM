@@ -4,11 +4,19 @@ import { AuditModule } from '../audit/audit.module';
 import { ShippingModule } from '../shipping/shipping.module';
 import { PaymentModule } from '../payment/payment.module';
 import { WebsiteModule } from '../website/website.module';
+import { LoyaltyModule } from '../loyalty/loyalty.module';
 import { CheckoutController } from './checkout.controller';
 import { CheckoutService } from './checkout.service';
 
 @Module({
-  imports: [CartModule, AuditModule, ShippingModule, PaymentModule, WebsiteModule],
+  imports: [
+    CartModule,
+    AuditModule,
+    ShippingModule,
+    PaymentModule,
+    WebsiteModule,
+    LoyaltyModule,
+  ],
   controllers: [CheckoutController],
   providers: [CheckoutService],
   exports: [CheckoutService],

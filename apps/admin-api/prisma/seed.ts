@@ -143,6 +143,292 @@ async function main() {
     update: { onHand: 100, reserved: 0 },
   });
 
+  // C1/C2: Customer 360 + identity demo
+  const customerId = 'cus_aura_lan';
+  await prisma.customer.upsert({
+    where: { tenantId_phone: { tenantId, phone: '0901234567' } },
+    create: {
+      id: customerId,
+      tenantId,
+      phone: '0901234567',
+      email: 'lan@aura.local',
+      name: 'Lan Nguyen',
+      consentMarketing: true,
+      consentEmail: true,
+      consentSms: true,
+      consentZns: false,
+      consentMessenger: true,
+      tags: ['vip', 'beauty'],
+      notes: 'AURA demo customer C1–C3',
+      addresses: [
+        {
+          label: 'Home',
+          line1: '1 Nguyen Hue',
+          city: 'HCM',
+          phone: '0901234567',
+          is_default: true,
+        },
+      ],
+      status: 'active',
+      lifetimeOrders: 3,
+      lifetimeSpend: 1_250_000,
+      lastOrderAt: new Date(),
+    },
+    update: {
+      name: 'Lan Nguyen',
+      email: 'lan@aura.local',
+      consentMarketing: true,
+      consentEmail: true,
+      consentSms: true,
+      consentMessenger: true,
+      tags: ['vip', 'beauty'],
+      notes: 'AURA demo customer C1–C3',
+      status: 'active',
+      mergedIntoId: null,
+      mergedAt: null,
+      lifetimeOrders: 3,
+      lifetimeSpend: 1_250_000,
+      lastOrderAt: new Date(),
+    },
+  });
+
+  // C2: second profile sharing phone signal for match demo (different email)
+  const customerDupId = 'cus_aura_lan_dup';
+  await prisma.customer.upsert({
+    where: { tenantId_email: { tenantId, email: 'lan.messenger@aura.local' } },
+    create: {
+      id: customerDupId,
+      tenantId,
+      phone: null,
+      email: 'lan.messenger@aura.local',
+      name: 'Lan (Messenger)',
+      consentMarketing: true,
+      consentEmail: true,
+      consentSms: false,
+      consentMessenger: true,
+      tags: ['inbox'],
+      notes: 'C2 duplicate candidate — share meta PSID with Lan',
+      addresses: [],
+      status: 'active',
+    },
+    update: {
+      name: 'Lan (Messenger)',
+      notes: 'C2 duplicate candidate — share meta PSID with Lan',
+      status: 'active',
+      mergedIntoId: null,
+      mergedAt: null,
+      tags: ['inbox'],
+    },
+  });
+
+  for (const row of [
+    {
+      id: 'cid_lan_phone',
+      customerId,
+      type: 'phone',
+      value: '0901234567',
+      normalizedValue: '0901234567',
+    },
+    {
+      id: 'cid_lan_email',
+      customerId,
+      type: 'email',
+      value: 'lan@aura.local',
+      normalizedValue: 'lan@aura.local',
+    },
+    {
+      id: 'cid_lan_meta',
+      customerId,
+      type: 'meta',
+      value: 'psid_lan_aura',
+      normalizedValue: 'psid_lan_aura',
+    },
+    {
+      id: 'cid_dup_meta',
+      customerId: customerDupId,
+      type: 'meta',
+      value: 'psid_lan_aura',
+      normalizedValue: 'psid_lan_aura',
+    },
+  ] as const) {
+    // meta shared intentionally — unique constraint: only one can exist; seed survivor + match via scan
+    if (row.id === 'cid_dup_meta') continue;
+    await prisma.customerIdentity.upsert({
+      where: {
+        tenantId_type_normalizedValue: {
+          tenantId,
+          type: row.type,
+          normalizedValue: row.normalizedValue,
+        },
+      },
+      create: {
+        id: row.id,
+        tenantId,
+        customerId: row.customerId,
+        type: row.type,
+        value: row.value,
+        normalizedValue: row.normalizedValue,
+        verified: true,
+        metadata: { source: 'seed' },
+      },
+      update: {
+        customerId: row.customerId,
+        value: row.value,
+        verified: true,
+      },
+    });
+  }
+
+  // Dup gets zalo identity that scan won't auto-collide; e2e creates conflict via addIdentity
+  await prisma.customerIdentity.upsert({
+    where: {
+      tenantId_type_normalizedValue: {
+        tenantId,
+        type: 'zalo',
+        normalizedValue: 'zalo_lan_dup',
+      },
+    },
+    create: {
+      id: 'cid_dup_zalo',
+      tenantId,
+      customerId: customerDupId,
+      type: 'zalo',
+      value: 'zalo_lan_dup',
+      normalizedValue: 'zalo_lan_dup',
+      verified: false,
+      metadata: { source: 'seed' },
+    },
+    update: { customerId: customerDupId },
+  });
+
+  // C3: demo segment (VIP tag OR consent email) — materialize via admin/e2e
+  await prisma.segment.upsert({
+    where: { tenantId_name: { tenantId, name: 'VIP beauty' } },
+    create: {
+      id: 'seg_aura_vip',
+      tenantId,
+      name: 'VIP beauty',
+      description: 'Seed C3 — tag vip',
+      logic: 'AND',
+      status: 'draft',
+      rules: {
+        create: [
+          {
+            id: 'sgr_aura_vip_tag',
+            tenantId,
+            field: 'tags',
+            op: 'has_tag',
+            value: 'vip',
+            sortOrder: 0,
+          },
+        ],
+      },
+    },
+    update: {
+      description: 'Seed C3 — tag vip',
+      status: 'draft',
+    },
+  });
+
+  // C4: loyalty tiers + Lan account
+  for (const t of [
+    { id: 'ltr_bronze', code: 'bronze', name: 'Bronze', min: 0, mult: 1, sort: 0 },
+    { id: 'ltr_silver', code: 'silver', name: 'Silver', min: 500, mult: 1.2, sort: 1 },
+    { id: 'ltr_gold', code: 'gold', name: 'Gold', min: 2000, mult: 1.5, sort: 2 },
+  ]) {
+    await prisma.loyaltyTier.upsert({
+      where: { tenantId_code: { tenantId, code: t.code } },
+      create: {
+        id: t.id,
+        tenantId,
+        code: t.code,
+        name: t.name,
+        minPoints: t.min,
+        earnMultiplier: t.mult,
+        sortOrder: t.sort,
+      },
+      update: {
+        name: t.name,
+        minPoints: t.min,
+        earnMultiplier: t.mult,
+        sortOrder: t.sort,
+      },
+    });
+  }
+  await prisma.loyaltyAccount.upsert({
+    where: { tenantId_customerId: { tenantId, customerId } },
+    create: {
+      id: 'lya_aura_lan',
+      tenantId,
+      customerId,
+      pointsBalance: 200,
+      lifetimeEarned: 200,
+      lifetimeRedeemed: 0,
+      tierCode: 'bronze',
+      referralCode: 'REFAURALAN',
+    },
+    update: {
+      pointsBalance: 200,
+      lifetimeEarned: 200,
+      tierCode: 'bronze',
+      referralCode: 'REFAURALAN',
+      status: 'active',
+    },
+  });
+
+  // C5: welcome journey (draft — activate in admin/e2e)
+  await prisma.journey.upsert({
+    where: { tenantId_name: { tenantId, name: 'Welcome AURA' } },
+    create: {
+      id: 'jrn_aura_welcome',
+      tenantId,
+      name: 'Welcome AURA',
+      description: 'Seed C5 onboarding stub',
+      category: 'onboarding',
+      status: 'draft',
+      triggerType: 'manual',
+      requiredConsent: ['email', 'marketing'],
+      frequencyCapDays: 7,
+      frequencyCapCount: 1,
+      steps: {
+        create: [
+          {
+            id: 'jst_welcome_trigger',
+            tenantId,
+            sortOrder: 0,
+            kind: 'trigger',
+            config: { type: 'manual' },
+          },
+          {
+            id: 'jst_welcome_tag',
+            tenantId,
+            sortOrder: 1,
+            kind: 'action',
+            config: { type: 'tag', tag: 'journey_welcome' },
+          },
+          {
+            id: 'jst_welcome_email',
+            tenantId,
+            sortOrder: 2,
+            kind: 'action',
+            config: { type: 'send_email', template: 'Welcome to AURA' },
+          },
+          {
+            id: 'jst_welcome_exit',
+            tenantId,
+            sortOrder: 3,
+            kind: 'exit',
+            config: { reason: 'done' },
+          },
+        ],
+      },
+    },
+    update: {
+      description: 'Seed C5 onboarding stub',
+      status: 'draft',
+    },
+  });
+
   // B3/B6: POS ≥2 stores + location stock (sum = global 100)
   const posLocId = 'ploc_aura_q1';
   const posRegId = 'preg_aura_1';

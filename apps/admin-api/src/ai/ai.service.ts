@@ -4,10 +4,16 @@ import { Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { AuditService } from '../audit/audit.service';
 import { SocialService } from '../social/social.service';
+import { CxService } from '../cx/cx.service';
 import { AiGatewayClient, type AiKind } from './ai-gateway.client';
 import { AiBudgetService } from './ai-budget.service';
 
-const HIGH_RISK_KINDS: AiKind[] = ['shopping_qa', 'social_reply'];
+const HIGH_RISK_KINDS: AiKind[] = [
+  'shopping_qa',
+  'social_reply',
+  'care_reply',
+  'nba_suggest',
+];
 
 @Injectable()
 export class AiService {
@@ -18,6 +24,8 @@ export class AiService {
     private readonly budget: AiBudgetService,
     @Inject(forwardRef(() => SocialService))
     private readonly social: SocialService,
+    @Inject(forwardRef(() => CxService))
+    private readonly cx: CxService,
   ) {}
 
   status() {
@@ -31,6 +39,8 @@ export class AiService {
         auto_send: false,
         high_risk_requires_approval: true,
         social_reply_requires_approval: true,
+        care_reply_requires_approval: true,
+        nba_suggest_requires_approval: true,
       },
     };
   }
@@ -192,6 +202,7 @@ export class AiService {
     }
 
     let messageSent: { id: string; body: string } | null = null;
+    let cxApplied: Record<string, unknown> | null = null;
     if (row.kind === 'social_reply') {
       const input = row.input as Record<string, unknown>;
       const conversationId = String(input.conversation_id || '');
@@ -202,12 +213,31 @@ export class AiService {
       if (!body) throw AppError.validation('social_reply missing reply_draft');
       const msg = await this.social.reply(tenantId, conversationId, body, actorId);
       messageSent = { id: msg.id, body: msg.body };
+    } else if (row.kind === 'care_reply' || row.kind === 'nba_suggest') {
+      cxApplied = await this.cx.onAiApplied(
+        tenantId,
+        {
+          id: row.id,
+          kind: row.kind,
+          input: row.input,
+          output: row.output,
+        },
+        actorId,
+      );
     }
 
     const updated = await this.prisma.db.aiAction.update({
       where: { id },
       data: { status: 'applied' },
     });
+    const appliedAs =
+      row.kind === 'social_reply'
+        ? 'social_outbound'
+        : row.kind === 'care_reply'
+          ? 'care_draft_on_ticket'
+          : row.kind === 'nba_suggest'
+            ? 'nba_materialize'
+            : 'draft_only';
     await this.audit.write({
       tenantId,
       actorId,
@@ -216,22 +246,32 @@ export class AiService {
       entityId: id,
       payload: {
         kind: row.kind,
-        applied_as: row.kind === 'social_reply' ? 'social_outbound' : 'draft_only',
+        applied_as: appliedAs,
         message_id: messageSent?.id ?? null,
+        cx: cxApplied,
         note:
           row.kind === 'social_reply'
             ? 'Sent approved AI reply to channel stub'
-            : 'No theme publish / price / refund side-effects',
-      },
+            : row.kind === 'care_reply'
+              ? 'Saved care draft on ticket — no auto-send/refund'
+              : row.kind === 'nba_suggest'
+                ? 'Materialized NBA suggestions — no auto-refund'
+                : 'No theme publish / price / refund side-effects',
+      } as Prisma.InputJsonValue,
     });
     return {
       ...this.mapAi(updated),
       applied: {
-        side_effects: messageSent ? ['social_outbound'] : [],
+        side_effects: [
+          ...(messageSent ? ['social_outbound'] : []),
+          ...((cxApplied?.side_effects as string[]) || []),
+        ],
         auto_publish: false,
         price_changed: false,
         message_sent: Boolean(messageSent),
         message_id: messageSent?.id ?? null,
+        refund: false,
+        ...(cxApplied || {}),
       },
     };
   }

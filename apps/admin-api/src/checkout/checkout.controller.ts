@@ -18,6 +18,7 @@ const schema = z.object({
   voucher_code: z.string().optional(),
   note: z.string().optional(),
   customer_id: z.string().optional(),
+  loyalty_points: z.number().int().positive().optional(),
   client_total: z.number().optional(),
 });
 
@@ -47,6 +48,7 @@ export class CheckoutController {
       voucherCode: parsed.data.voucher_code,
       note: parsed.data.note,
       customerId: parsed.data.customer_id,
+      loyaltyPoints: parsed.data.loyalty_points,
       clientTotal: parsed.data.client_total,
       idempotencyKey,
     });

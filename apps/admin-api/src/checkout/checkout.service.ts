@@ -9,6 +9,7 @@ import { AuditService } from '../audit/audit.service';
 import { ShippingService } from '../shipping/shipping.service';
 import { PaymentService } from '../payment/payment.service';
 import { WebsiteService } from '../website/website.service';
+import { LoyaltyService } from '../loyalty/loyalty.service';
 import { REDIS, withRedisLock } from '../redis/redis.module';
 
 function money(n: Prisma.Decimal | number | string) {
@@ -31,6 +32,8 @@ export type CheckoutInput = {
   voucherCode?: string;
   note?: string;
   customerId?: string;
+  /** C4 — redeem loyalty points at checkout (stub) */
+  loyaltyPoints?: number;
   clientTotal?: number;
   idempotencyKey: string;
 };
@@ -44,6 +47,7 @@ export class CheckoutService {
     private readonly shipping: ShippingService,
     private readonly payments: PaymentService,
     private readonly website: WebsiteService,
+    private readonly loyalty: LoyaltyService,
     @Inject(REDIS) private readonly redis: Redis,
   ) {}
 
@@ -59,6 +63,7 @@ export class CheckoutService {
       voucherCode: input.voucherCode ?? '',
       note: input.note ?? '',
       customerId: input.customerId ?? null,
+      loyaltyPoints: input.loyaltyPoints ?? 0,
     });
 
     const existing = await this.prisma.db.idempotencyRecord.findUnique({
@@ -104,6 +109,8 @@ export class CheckoutService {
     );
     let discount = 0;
     let voucherCode: string | null = null;
+    let loyaltyPointsUsed = 0;
+    let loyaltyDiscount = 0;
     if (input.voucherCode?.trim()) {
       const v = await this.website.validateVoucher(
         tenantId,
@@ -113,6 +120,26 @@ export class CheckoutService {
       );
       discount = Number(v.discount_amount);
       voucherCode = v.code;
+    }
+
+    if (input.loyaltyPoints && input.loyaltyPoints > 0) {
+      if (!input.customerId) {
+        throw AppError.validation('customer_id required to redeem loyalty points');
+      }
+      const redeemResult = await this.loyalty.redeem(
+        tenantId,
+        {
+          customer_id: input.customerId,
+          points: input.loyaltyPoints,
+          subtotal: Math.max(0, subtotal - discount),
+          idempotency_key: `redeem:checkout:${input.idempotencyKey}`,
+          reason: 'checkout_redeem',
+        },
+        actorId,
+      );
+      loyaltyPointsUsed = redeemResult.points_used;
+      loyaltyDiscount = redeemResult.discount_amount;
+      discount += loyaltyDiscount;
     }
 
     const shippingAmount = ship.amount;
@@ -225,6 +252,8 @@ export class CheckoutService {
         shipping_carrier: created.shippingCarrier,
         shipping_service: created.shippingService,
         voucher_code: created.voucherCode,
+        loyalty_points_redeemed: loyaltyPointsUsed,
+        loyalty_discount: money(loyaltyDiscount),
         total: money(created.totalAmount),
         client_total_ignored: input.clientTotal ?? null,
         lines: created.lines.map((l) => ({
@@ -235,6 +264,7 @@ export class CheckoutService {
           line_total: money(l.lineTotal),
         })),
         payment: null as Record<string, unknown> | null,
+        loyalty_earn: null as Record<string, unknown> | null,
       };
 
       await tx.idempotencyRecord.create({
@@ -250,6 +280,19 @@ export class CheckoutService {
 
       return body;
     });
+
+    if (input.customerId) {
+      try {
+        const earn = await this.loyalty.earnOnOrder(tenantId, orderId, actorId);
+        (response as { loyalty_earn: unknown }).loyalty_earn = earn;
+        await this.prisma.db.idempotencyRecord.update({
+          where: { tenantId_key: { tenantId, key: input.idempotencyKey } },
+          data: { responseBody: response as Prisma.InputJsonValue },
+        });
+      } catch {
+        // non-fatal: order already committed
+      }
+    }
 
     if (input.paymentMethod === 'TRANSFER') {
       const payment = await this.payments.createIntentForOrder(

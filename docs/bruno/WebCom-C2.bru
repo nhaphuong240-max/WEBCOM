@@ -1,0 +1,118 @@
+meta {
+  name: WebCom-C2
+  type: folder
+}
+
+meta {
+  name: Health C2
+  type: http
+  seq: 1
+}
+get {
+  url: {{baseUrl}}/api/health
+}
+
+meta {
+  name: CRM status
+  type: http
+  seq: 2
+}
+get {
+  url: {{baseUrl}}/api/v1/admin/crm/status
+  headers {
+    x-tenant-id: {{tenantId}}
+    x-brand-id: {{brandId}}
+  }
+}
+
+meta {
+  name: List identities
+  type: http
+  seq: 3
+}
+get {
+  url: {{baseUrl}}/api/v1/admin/customers/{{customerId}}/identities
+  headers {
+    x-tenant-id: {{tenantId}}
+    x-brand-id: {{brandId}}
+  }
+}
+
+meta {
+  name: Add identity
+  type: http
+  seq: 4
+}
+post {
+  url: {{baseUrl}}/api/v1/admin/customers/{{customerId}}/identities
+  headers {
+    content-type: application/json
+    x-tenant-id: {{tenantId}}
+    x-brand-id: {{brandId}}
+  }
+  body: json
+  {
+    "type": "meta",
+    "value": "psid_demo",
+    "verified": true
+  }
+}
+
+meta {
+  name: Scan matches
+  type: http
+  seq: 5
+}
+post {
+  url: {{baseUrl}}/api/v1/admin/crm/matches/scan
+  headers {
+    x-tenant-id: {{tenantId}}
+    x-brand-id: {{brandId}}
+  }
+}
+
+meta {
+  name: List matches
+  type: http
+  seq: 6
+}
+get {
+  url: {{baseUrl}}/api/v1/admin/crm/matches?status=pending
+  headers {
+    x-tenant-id: {{tenantId}}
+    x-brand-id: {{brandId}}
+  }
+}
+
+meta {
+  name: Merge
+  type: http
+  seq: 7
+}
+post {
+  url: {{baseUrl}}/api/v1/admin/crm/merge
+  headers {
+    content-type: application/json
+    x-tenant-id: {{tenantId}}
+    x-brand-id: {{brandId}}
+  }
+  body: json
+  {
+    "survivor_id": "{{survivorId}}",
+    "merged_id": "{{mergedId}}",
+    "reason": "bruno_c2"
+  }
+}
+
+meta {
+  name: Unmerge
+  type: http
+  seq: 8
+}
+post {
+  url: {{baseUrl}}/api/v1/admin/crm/merge/{{mergeEventId}}/unmerge
+  headers {
+    x-tenant-id: {{tenantId}}
+    x-brand-id: {{brandId}}
+  }
+}

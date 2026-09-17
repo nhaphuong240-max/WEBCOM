@@ -1,0 +1,42 @@
+meta {
+  name: WebCom C1
+}
+
+get {
+  url: {{BASE}}/api/health
+}
+
+get {
+  url: {{BASE}}/api/v1/admin/crm/status
+  headers: {
+    x-tenant-id: ten_aura
+    x-actor-id: bruno
+  }
+}
+
+post {
+  url: {{BASE}}/api/v1/admin/customers/ensure
+  headers: {
+    x-tenant-id: ten_aura
+    x-actor-id: bruno
+    content-type: application/json
+  }
+  body: json
+  json: {
+    "phone": "0901234567",
+    "email": "lan@aura.local",
+    "name": "Lan Nguyen",
+    "tags": ["vip"],
+    "consent_marketing": true,
+    "consent_email": true,
+    "consent_sms": true
+  }
+}
+
+get {
+  url: {{BASE}}/api/v1/admin/customers?q=Lan
+  headers: {
+    x-tenant-id: ten_aura
+    x-actor-id: bruno
+  }
+}

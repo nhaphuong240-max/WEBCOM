@@ -39,6 +39,8 @@ export class CustomerService {
           passwordHash,
           name: input.name ?? '',
           consentMarketing: true,
+          consentEmail: Boolean(input.email),
+          consentSms: Boolean(input.phone),
         },
       });
       await this.audit.write({
@@ -83,6 +85,7 @@ export class CustomerService {
           tenantId,
           phone,
           consentMarketing: true,
+          consentSms: true,
           name: '',
         },
       });

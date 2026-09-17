@@ -1,0 +1,37 @@
+openapi: 3.0.3
+info:
+  title: WebCom C2 — Identity match / merge
+  version: 1.0.0
+paths:
+  /api/health:
+    get:
+      summary: wave C2
+  /api/v1/admin/crm/status:
+    get:
+      summary: CRM flags incl. identity_resolution / merge_unmerge
+  /api/v1/admin/customers/{id}/identities:
+    get:
+      summary: List customer identities
+    post:
+      summary: Add identity (conflict → match candidate)
+  /api/v1/admin/customers/{id}/identities/{identityId}:
+    delete:
+      summary: Remove non-primary identity
+  /api/v1/admin/crm/matches/scan:
+    post:
+      summary: Scan shared signals → pending match candidates
+  /api/v1/admin/crm/matches:
+    get:
+      summary: List match candidates (status=pending|dismissed|merged)
+  /api/v1/admin/crm/matches/{id}/dismiss:
+    post:
+      summary: Dismiss match candidate
+  /api/v1/admin/crm/merge:
+    post:
+      summary: Merge merged_id into survivor_id (orders/inbox/identities move; BR-006)
+  /api/v1/admin/crm/merge/{eventId}/unmerge:
+    post:
+      summary: Soft unmerge from before_snapshot
+  /api/v1/admin/crm/merge-events:
+    get:
+      summary: Merge/unmerge audit log

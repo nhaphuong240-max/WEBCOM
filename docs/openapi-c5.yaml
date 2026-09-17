@@ -1,0 +1,35 @@
+openapi: 3.0.3
+info:
+  title: WebCom C5 — Journey MVP
+  version: 1.0.0
+paths:
+  /api/health:
+    get:
+      summary: wave C5
+  /api/v1/admin/journeys/status:
+    get:
+      summary: Journey feature flags
+  /api/v1/admin/journeys:
+    get:
+      summary: List journeys + steps
+    post:
+      summary: Create journey (optional default steps)
+  /api/v1/admin/journeys/drain:
+    post:
+      summary: Run-once drain due enrollments
+  /api/v1/admin/journeys/{id}:
+    get:
+      summary: Get journey
+    patch:
+      summary: Update / replace steps / activate
+    delete:
+      summary: Delete journey
+  /api/v1/admin/journeys/{id}/enroll:
+    post:
+      summary: Enroll customer (consent + freq + conflict guards)
+  /api/v1/admin/journeys/{id}/enrollments:
+    get:
+      summary: List enrollments
+  /api/v1/admin/journey-enrollments/{enrollmentId}/logs:
+    get:
+      summary: Step run logs

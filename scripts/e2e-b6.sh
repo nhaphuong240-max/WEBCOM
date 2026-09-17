@@ -10,14 +10,14 @@ H=(-H "content-type: application/json" -H "x-tenant-id: $T" -H "x-brand-id: brd_
 
 echo "== health wave B6 =="
 curl -sS "$BASE/health" | tee /tmp/b6-health.json
-grep -q '"wave":"B6"' /tmp/b6-health.json
+grep -qE '"wave":"(B6|C[1-6])"' /tmp/b6-health.json
 
 echo "== social status B6 =="
 curl -sS "${H[@]}" "$BASE/v1/admin/social/status" | tee /tmp/b6-social.json
 python3 - <<'PY'
 import json
 d=json.load(open("/tmp/b6-social.json"))
-assert d["wave"]=="B6"
+assert d["wave"] in ("B6","C1","C2","C3","C4","C5","C6")
 assert d["features"]["ai_reply_approval"] is True
 print("social ok")
 PY
@@ -81,7 +81,7 @@ curl -sS "${H[@]}" "$BASE/v1/admin/pos/status" | tee /tmp/b6-pos.json
 python3 - <<'PY'
 import json
 d=json.load(open("/tmp/b6-pos.json"))
-assert d["wave"]=="B6"
+assert d["wave"] in ("B6","C1","C2","C3","C4","C5","C6")
 assert d["features"]["multi_location"] is True
 assert d["features"]["stock_transfer"] is True
 print("pos status ok")

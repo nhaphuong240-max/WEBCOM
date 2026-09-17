@@ -21,6 +21,23 @@ model Tenant {
   priceLists  PriceList[]
   carts       Cart[]
   customers   Customer[]
+  customerIdentities CustomerIdentity[]
+  customerMatchCandidates CustomerMatchCandidate[]
+  customerMergeEvents CustomerMergeEvent[]
+  segments    Segment[]
+  segmentRules SegmentRule[]
+  segmentMemberships SegmentMembership[]
+  rfmJobRuns  RfmJobRun[]
+  loyaltyTiers LoyaltyTier[]
+  loyaltyAccounts LoyaltyAccount[]
+  loyaltyLedgers LoyaltyLedger[]
+  loyaltyReferrals LoyaltyReferral[]
+  journeys    Journey[]
+  journeySteps JourneyStep[]
+  journeyEnrollments JourneyEnrollment[]
+  journeyRunLogs JourneyRunLog[]
+  serviceTickets ServiceTicket[]
+  nbaRecommendations NbaRecommendation[]
   orders      Order[]
   auditLogs   AuditLog[]
   idempotency IdempotencyRecord[]
@@ -294,17 +311,456 @@ model Customer {
   phone        String?
   passwordHash String?  @map("password_hash")
   name         String   @default("")
+  /// Legacy marketing master (BR-020) — keep for storefront register
   consentMarketing Boolean @default(false) @map("consent_marketing")
+  /// C1 — channel consents (FR-CRM · BR-011)
+  consentEmail     Boolean @default(false) @map("consent_email")
+  consentSms       Boolean @default(false) @map("consent_sms")
+  consentZns       Boolean @default(false) @map("consent_zns")
+  consentMessenger Boolean @default(false) @map("consent_messenger")
+  tags         String[] @default([])
+  notes        String   @default("")
+  /// [{label,line1,city,phone,is_default}]
+  addresses    Json     @default("[]")
+  lifetimeOrders Int    @default(0) @map("lifetime_orders")
+  lifetimeSpend  Decimal @default(0) @map("lifetime_spend") @db.Decimal(18, 2)
+  lastOrderAt  DateTime? @map("last_order_at")
+  /// active | inactive | merged (C2 — BR-006 no hard-delete)
   status       String   @default("active")
+  /// C2 — when status=merged, points to survivor
+  mergedIntoId String?  @map("merged_into_id")
+  mergedAt     DateTime? @map("merged_at")
+  /// C3 — RFM scores 1–5 + label (FR-SEG)
+  rfmR         Int?     @map("rfm_r")
+  rfmF         Int?     @map("rfm_f")
+  rfmM         Int?     @map("rfm_m")
+  rfmScore     Int?     @map("rfm_score")
+  /// Champions | Loyal | Potential | New | AtRisk | NeedAttention | Hibernating | Other
+  rfmSegment   String?  @map("rfm_segment")
+  rfmComputedAt DateTime? @map("rfm_computed_at")
   createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
   tenant       Tenant   @relation(fields: [tenantId], references: [id])
   carts        Cart[]
   orders       Order[]
+  conversations InboxConversation[]
+  identities   CustomerIdentity[]
+  matchLeft    CustomerMatchCandidate[] @relation("MatchLeft")
+  matchRight   CustomerMatchCandidate[] @relation("MatchRight")
+  mergesAsSurvivor CustomerMergeEvent[] @relation("MergeSurvivor")
+  mergesAsMerged   CustomerMergeEvent[] @relation("MergeMerged")
+  segmentMemberships SegmentMembership[]
+  loyaltyAccount LoyaltyAccount?
+  journeyEnrollments JourneyEnrollment[]
+  serviceTickets ServiceTicket[]
+  nbaRecommendations NbaRecommendation[]
 
   @@unique([tenantId, email])
   @@unique([tenantId, phone])
   @@index([tenantId])
+  @@index([tenantId, status])
+  @@index([tenantId, mergedIntoId])
+  @@index([tenantId, rfmSegment])
   @@map("customers")
+}
+
+/// C2 — External/channel identity signal · FR-CRM identity resolution
+model CustomerIdentity {
+  id               String   @id @default(uuid())
+  tenantId         String   @map("tenant_id")
+  customerId       String   @map("customer_id")
+  /// phone | email | meta | zalo | shopee | tiktok | loyalty | other
+  type             String
+  value            String
+  normalizedValue  String   @map("normalized_value")
+  verified         Boolean  @default(false)
+  metadata         Json     @default("{}")
+  createdAt        DateTime @default(now()) @map("created_at")
+  updatedAt        DateTime @updatedAt @map("updated_at")
+  tenant           Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  customer         Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, type, normalizedValue])
+  @@index([tenantId, customerId])
+  @@index([tenantId, normalizedValue])
+  @@map("customer_identities")
+}
+
+/// C2 — Suggested duplicate pairs from shared identity signals
+model CustomerMatchCandidate {
+  id              String   @id @default(uuid())
+  tenantId        String   @map("tenant_id")
+  leftCustomerId  String   @map("left_customer_id")
+  rightCustomerId String   @map("right_customer_id")
+  score           Int      @default(50)
+  /// [{type,value,source}]
+  signals         Json     @default("[]")
+  /// pending | accepted | dismissed | merged
+  status          String   @default("pending")
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+  tenant          Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  leftCustomer    Customer @relation("MatchLeft", fields: [leftCustomerId], references: [id], onDelete: Cascade)
+  rightCustomer   Customer @relation("MatchRight", fields: [rightCustomerId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, leftCustomerId, rightCustomerId])
+  @@index([tenantId, status, score])
+  @@map("customer_match_candidates")
+}
+
+/// C2 — Merge/unmerge audit (BR-006 soft delete)
+model CustomerMergeEvent {
+  id             String    @id @default(uuid())
+  tenantId       String    @map("tenant_id")
+  survivorId     String    @map("survivor_id")
+  mergedId       String    @map("merged_id")
+  /// merged | unmerged
+  status         String    @default("merged")
+  reason         String    @default("")
+  beforeSnapshot Json      @default("{}") @map("before_snapshot")
+  afterSnapshot  Json      @default("{}") @map("after_snapshot")
+  actorId        String?   @map("actor_id")
+  mergedAt       DateTime  @default(now()) @map("merged_at")
+  unmergedAt     DateTime? @map("unmerged_at")
+  createdAt      DateTime  @default(now()) @map("created_at")
+  tenant         Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  survivor       Customer  @relation("MergeSurvivor", fields: [survivorId], references: [id], onDelete: Cascade)
+  merged         Customer  @relation("MergeMerged", fields: [mergedId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, status, mergedAt])
+  @@index([tenantId, survivorId])
+  @@index([tenantId, mergedId])
+  @@map("customer_merge_events")
+}
+
+/// C3 — RFM refresh job audit (stub schedule)
+model RfmJobRun {
+  id           String   @id @default(uuid())
+  tenantId     String   @map("tenant_id")
+  status       String   @default("completed")
+  customersScored Int   @default(0) @map("customers_scored")
+  summary      Json     @default("{}")
+  startedAt    DateTime @default(now()) @map("started_at")
+  finishedAt   DateTime? @map("finished_at")
+  createdAt    DateTime @default(now()) @map("created_at")
+  tenant       Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, startedAt])
+  @@map("rfm_job_runs")
+}
+
+/// C3 — Audience segment (FR-SEG)
+model Segment {
+  id                 String   @id @default(uuid())
+  tenantId           String   @map("tenant_id")
+  name               String
+  description        String   @default("")
+  /// AND | OR
+  logic              String   @default("AND")
+  /// draft | active | archived
+  status             String   @default("draft")
+  memberCount        Int      @default(0) @map("member_count")
+  lastMaterializedAt DateTime? @map("last_materialized_at")
+  createdAt          DateTime @default(now()) @map("created_at")
+  updatedAt          DateTime @updatedAt @map("updated_at")
+  tenant             Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  rules              SegmentRule[]
+  memberships        SegmentMembership[]
+
+  @@unique([tenantId, name])
+  @@index([tenantId, status])
+  @@map("segments")
+}
+
+/// C3 — Segment rule (field/op/value + optional time window days)
+model SegmentRule {
+  id         String   @id @default(uuid())
+  tenantId   String   @map("tenant_id")
+  segmentId  String   @map("segment_id")
+  /// rfm_r|rfm_f|rfm_m|rfm_score|rfm_segment|lifetime_orders|lifetime_spend|tags|status|consent_*|last_order_days
+  field      String
+  /// eq|neq|gt|gte|lt|lte|in|contains|has_tag
+  op         String
+  value      Json     @default("null")
+  /// Optional recency window for last_order_days style rules
+  windowDays Int?     @map("window_days")
+  sortOrder  Int      @default(0) @map("sort_order")
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+  tenant     Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  segment    Segment  @relation(fields: [segmentId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, segmentId])
+  @@map("segment_rules")
+}
+
+/// C3 — Materialized membership snapshot
+model SegmentMembership {
+  id         String   @id @default(uuid())
+  tenantId   String   @map("tenant_id")
+  segmentId  String   @map("segment_id")
+  customerId String   @map("customer_id")
+  snapshotAt DateTime @default(now()) @map("snapshot_at")
+  createdAt  DateTime @default(now()) @map("created_at")
+  tenant     Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  segment    Segment  @relation(fields: [segmentId], references: [id], onDelete: Cascade)
+  customer   Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+
+  @@unique([segmentId, customerId])
+  @@index([tenantId, segmentId])
+  @@index([tenantId, customerId])
+  @@map("segment_memberships")
+}
+
+/// C4 — Loyalty tier rules (FR-LOY)
+model LoyaltyTier {
+  id             String   @id @default(uuid())
+  tenantId       String   @map("tenant_id")
+  code           String
+  name           String
+  minPoints      Int      @default(0) @map("min_points")
+  earnMultiplier Decimal  @default(1) @map("earn_multiplier") @db.Decimal(6, 2)
+  sortOrder      Int      @default(0) @map("sort_order")
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+  tenant         Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, code])
+  @@index([tenantId, minPoints])
+  @@map("loyalty_tiers")
+}
+
+/// C4 — Per-customer points wallet
+model LoyaltyAccount {
+  id               String   @id @default(uuid())
+  tenantId         String   @map("tenant_id")
+  customerId       String   @unique @map("customer_id")
+  pointsBalance    Int      @default(0) @map("points_balance")
+  lifetimeEarned   Int      @default(0) @map("lifetime_earned")
+  lifetimeRedeemed Int      @default(0) @map("lifetime_redeemed")
+  tierCode         String   @default("bronze") @map("tier_code")
+  referralCode     String   @map("referral_code")
+  referredById     String?  @map("referred_by_id")
+  status           String   @default("active")
+  createdAt        DateTime @default(now()) @map("created_at")
+  updatedAt        DateTime @updatedAt @map("updated_at")
+  tenant           Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  customer         Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  ledgers          LoyaltyLedger[]
+  referralsMade    LoyaltyReferral[] @relation("ReferrerAccount")
+  referredBy       LoyaltyAccount?   @relation("AccountReferral", fields: [referredById], references: [id])
+  referees         LoyaltyAccount[]  @relation("AccountReferral")
+
+  @@unique([tenantId, customerId])
+  @@unique([tenantId, referralCode])
+  @@index([tenantId, tierCode])
+  @@map("loyalty_accounts")
+}
+
+/// C4 — Immutable points ledger
+model LoyaltyLedger {
+  id             String   @id @default(uuid())
+  tenantId       String   @map("tenant_id")
+  accountId      String   @map("account_id")
+  /// earn | redeem | expire | adjust | referral_bonus
+  type           String
+  points         Int
+  balanceAfter   Int      @map("balance_after")
+  reason         String   @default("")
+  orderId        String?  @map("order_id")
+  /// Idempotency for earn-on-order / redeem
+  idempotencyKey String?  @map("idempotency_key")
+  metadata       Json     @default("{}")
+  actorId        String?  @map("actor_id")
+  createdAt      DateTime @default(now()) @map("created_at")
+  tenant         Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  account        LoyaltyAccount @relation(fields: [accountId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, idempotencyKey])
+  @@index([tenantId, accountId, createdAt])
+  @@index([tenantId, orderId])
+  @@index([tenantId, type])
+  @@map("loyalty_ledgers")
+}
+
+/// C4 — One-level referral + soft fraud flags
+model LoyaltyReferral {
+  id               String   @id @default(uuid())
+  tenantId         String   @map("tenant_id")
+  referrerAccountId String  @map("referrer_account_id")
+  refereeCustomerId String  @map("referee_customer_id")
+  codeUsed         String   @map("code_used")
+  /// pending | rewarded | rejected
+  status           String   @default("rewarded")
+  /// soft fraud reasons e.g. ["self_referral","same_phone"]
+  fraudFlags       String[] @default([]) @map("fraud_flags")
+  bonusPoints      Int      @default(0) @map("bonus_points")
+  createdAt        DateTime @default(now()) @map("created_at")
+  tenant           Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  referrerAccount  LoyaltyAccount @relation("ReferrerAccount", fields: [referrerAccountId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, refereeCustomerId])
+  @@index([tenantId, referrerAccountId])
+  @@index([tenantId, status])
+  @@map("loyalty_referrals")
+}
+
+/// C5 — Journey definition (FR-JRN · BP-JOURNEY)
+model Journey {
+  id                 String   @id @default(uuid())
+  tenantId           String   @map("tenant_id")
+  name               String
+  description        String   @default("")
+  /// retention | winback | onboarding | promo | care | other
+  category           String   @default("retention")
+  /// draft | active | paused | archived
+  status             String   @default("draft")
+  /// manual | customer_ensure | order_confirmed | segment_enter
+  triggerType        String   @default("manual") @map("trigger_type")
+  triggerConfig      Json     @default("{}") @map("trigger_config")
+  /// Consent channels required before action: email|sms|zns|messenger|marketing
+  requiredConsent    String[] @default([]) @map("required_consent")
+  /// Frequency cap window (days) · 0 = unlimited
+  frequencyCapDays   Int      @default(7) @map("frequency_cap_days")
+  frequencyCapCount  Int      @default(1) @map("frequency_cap_count")
+  createdAt          DateTime @default(now()) @map("created_at")
+  updatedAt          DateTime @updatedAt @map("updated_at")
+  tenant             Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  steps              JourneyStep[]
+  enrollments        JourneyEnrollment[]
+
+  @@unique([tenantId, name])
+  @@index([tenantId, status, category])
+  @@map("journeys")
+}
+
+/// C5 — Ordered steps: trigger → condition → delay → action → exit
+model JourneyStep {
+  id         String   @id @default(uuid())
+  tenantId   String   @map("tenant_id")
+  journeyId  String   @map("journey_id")
+  sortOrder  Int      @default(0) @map("sort_order")
+  /// trigger | condition | delay | action | exit
+  kind       String
+  /// kind-specific config JSON
+  config     Json     @default("{}")
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+  tenant     Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  journey    Journey  @relation(fields: [journeyId], references: [id], onDelete: Cascade)
+  enrollments JourneyEnrollment[] @relation("EnrollmentCurrentStep")
+  runLogs    JourneyRunLog[]
+
+  @@index([tenantId, journeyId, sortOrder])
+  @@map("journey_steps")
+}
+
+/// C5 — Per-customer journey enrollment
+model JourneyEnrollment {
+  id            String    @id @default(uuid())
+  tenantId      String    @map("tenant_id")
+  journeyId     String    @map("journey_id")
+  customerId    String    @map("customer_id")
+  /// active | waiting | completed | exited | blocked
+  status        String    @default("active")
+  currentStepId String?   @map("current_step_id")
+  waitingUntil  DateTime? @map("waiting_until")
+  blockReason   String?   @map("block_reason")
+  enrolledAt    DateTime  @default(now()) @map("enrolled_at")
+  completedAt   DateTime? @map("completed_at")
+  lastActionAt  DateTime? @map("last_action_at")
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+  tenant        Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  journey       Journey   @relation(fields: [journeyId], references: [id], onDelete: Cascade)
+  customer      Customer  @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  currentStep   JourneyStep? @relation("EnrollmentCurrentStep", fields: [currentStepId], references: [id], onDelete: SetNull)
+  runLogs       JourneyRunLog[]
+
+  @@index([tenantId, journeyId, status])
+  @@index([tenantId, customerId, status])
+  @@index([tenantId, status, waitingUntil])
+  @@map("journey_enrollments")
+}
+
+/// C5 — Step execution audit
+model JourneyRunLog {
+  id           String   @id @default(uuid())
+  tenantId     String   @map("tenant_id")
+  enrollmentId String   @map("enrollment_id")
+  stepId       String?  @map("step_id")
+  /// ok | skipped | failed | blocked
+  status       String
+  message      String   @default("")
+  payload      Json     @default("{}")
+  createdAt    DateTime @default(now()) @map("created_at")
+  tenant       Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  enrollment   JourneyEnrollment @relation(fields: [enrollmentId], references: [id], onDelete: Cascade)
+  step         JourneyStep? @relation(fields: [stepId], references: [id], onDelete: SetNull)
+
+  @@index([tenantId, enrollmentId, createdAt])
+  @@map("journey_run_logs")
+}
+
+/// C6 — Service recovery ticket (FR-CX)
+model ServiceTicket {
+  id             String    @id @default(uuid())
+  tenantId       String    @map("tenant_id")
+  customerId     String    @map("customer_id")
+  orderId        String?   @map("order_id")
+  conversationId String?   @map("conversation_id")
+  subject        String
+  description    String    @default("")
+  /// open | in_progress | resolved | closed
+  status         String    @default("open")
+  /// low | normal | high | urgent
+  priority       String    @default("normal")
+  /// delay_cod | fail_payment | negative_keyword | manual | vip_care
+  playbookCode   String?   @map("playbook_code")
+  triggerType    String?   @map("trigger_type")
+  evidence       Json      @default("{}")
+  ownerId        String?   @map("owner_id")
+  careReplyDraft String?   @map("care_reply_draft")
+  aiActionId     String?   @map("ai_action_id")
+  resolvedAt     DateTime? @map("resolved_at")
+  createdAt      DateTime  @default(now()) @map("created_at")
+  updatedAt      DateTime  @updatedAt @map("updated_at")
+  tenant         Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  customer       Customer  @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  nbaItems       NbaRecommendation[]
+
+  @@index([tenantId, status, priority])
+  @@index([tenantId, customerId])
+  @@index([tenantId, playbookCode])
+  @@map("service_tickets")
+}
+
+/// C6 — Next Best Action recommendation
+model NbaRecommendation {
+  id               String   @id @default(uuid())
+  tenantId         String   @map("tenant_id")
+  customerId       String   @map("customer_id")
+  ticketId         String?  @map("ticket_id")
+  /// call | voucher | live_invite | no_contact | reminder | care | escalation
+  action           String
+  reason           String   @default("")
+  evidence         Json     @default("{}")
+  expectedOutcome  String   @default("") @map("expected_outcome")
+  estimatedCost    Decimal  @default(0) @map("estimated_cost") @db.Decimal(18, 2)
+  ownerId          String?  @map("owner_id")
+  /// suggested | accepted | dismissed | applied
+  status           String   @default("suggested")
+  aiActionId       String?  @map("ai_action_id")
+  createdAt        DateTime @default(now()) @map("created_at")
+  updatedAt        DateTime @updatedAt @map("updated_at")
+  appliedAt        DateTime? @map("applied_at")
+  tenant           Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  customer         Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  ticket           ServiceTicket? @relation(fields: [ticketId], references: [id], onDelete: SetNull)
+
+  @@index([tenantId, customerId, status])
+  @@index([tenantId, status])
+  @@map("nba_recommendations")
 }
 
 model Cart {
@@ -1036,6 +1492,7 @@ model InboxConversation {
   updatedAt        DateTime  @updatedAt @map("updated_at")
   tenant           Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   channelAccount   ChannelAccount @relation(fields: [channelAccountId], references: [id], onDelete: Cascade)
+  customer         Customer? @relation(fields: [customerId], references: [id], onDelete: SetNull)
   messages         InboxMessage[]
   orderDrafts      SocialOrderDraft[]
 
@@ -1043,6 +1500,7 @@ model InboxConversation {
   @@index([tenantId, status, lastMessageAt])
   @@index([tenantId, ownerId])
   @@index([tenantId, slaStatus])
+  @@index([tenantId, customerId])
   @@map("inbox_conversations")
 }
 

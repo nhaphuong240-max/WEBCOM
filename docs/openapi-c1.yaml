@@ -1,0 +1,28 @@
+openapi: 3.0.3
+info:
+  title: WebCom C1 — Customer 360 profile
+  version: 1.0.0
+paths:
+  /api/health:
+    get:
+      summary: wave C1
+  /api/v1/admin/crm/status:
+    get:
+      summary: CRM feature flags
+  /api/v1/admin/customers/ensure:
+    post:
+      summary: Upsert customer by phone/email + consents/addresses
+  /api/v1/admin/customers:
+    get:
+      summary: Search customers (q=phone|email|name|tag)
+  /api/v1/admin/customers/{id}:
+    get:
+      summary: Customer 360 (profile + orders + inbox)
+    patch:
+      summary: Update profile tags/notes/addresses
+  /api/v1/admin/customers/{id}/consent:
+    patch:
+      summary: Update channel consents (BR-011)
+  /api/v1/admin/customers/{id}/link-inbox:
+    post:
+      summary: Link unlinked inbox threads by phone handle

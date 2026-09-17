@@ -1,0 +1,44 @@
+openapi: 3.0.3
+info:
+  title: WebCom C3 — RFM + Segmentation
+  version: 1.0.0
+paths:
+  /api/health:
+    get:
+      summary: wave C3
+  /api/v1/admin/crm/status:
+    get:
+      summary: CRM flags incl. rfm_scoring / segmentation
+  /api/v1/admin/crm/rfm/refresh:
+    post:
+      summary: Score all active customers (R/F/M 1–5 + label) · job audit
+  /api/v1/admin/crm/rfm/summary:
+    get:
+      summary: Counts by RFM label + last job
+  /api/v1/admin/crm/rfm/customers:
+    get:
+      summary: List customers by rfm_segment
+  /api/v1/admin/crm/rfm/jobs:
+    get:
+      summary: RFM job run history
+  /api/v1/admin/segments:
+    get:
+      summary: List segments + rules
+    post:
+      summary: Create segment (logic AND|OR + rules)
+  /api/v1/admin/segments/{id}:
+    get:
+      summary: Get segment
+    patch:
+      summary: Update segment / replace rules
+    delete:
+      summary: Delete segment (+ memberships cascade)
+  /api/v1/admin/segments/{id}/preview:
+    post:
+      summary: Audience count + sample IDs (no persist)
+  /api/v1/admin/segments/{id}/materialize:
+    post:
+      summary: Snapshot memberships · set member_count
+  /api/v1/admin/segments/{id}/members:
+    get:
+      summary: Materialized members
