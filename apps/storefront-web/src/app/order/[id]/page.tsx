@@ -1,23 +1,78 @@
+'use client';
+
+import { useCallback, useEffect, useState, useTransition } from 'react';
 import Link from 'next/link';
+import { useParams } from 'next/navigation';
 import { StoreShell } from '../../../components/StoreShell';
 import { formatVnd, storeApi } from '../../../lib/api';
 
-export const dynamic = 'force-dynamic';
+type Order = {
+  id: string;
+  status: string;
+  total: string;
+  payment_method: string;
+  payment_status: string;
+  discount?: string;
+  shipping_amount?: string;
+  voucher_code?: string | null;
+  shipping?: { carrier?: string | null; service?: string | null };
+  lines: Array<{ title: string; qty: number; line_total: string }>;
+};
 
-export default async function OrderPage({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = await params;
-  let order: {
-    id: string;
-    status: string;
-    total: string;
-    payment_method: string;
-    lines: Array<{ title: string; qty: number; line_total: string }>;
-  } | null = null;
-  let error = '';
-  try {
-    order = await storeApi(`/v1/orders/${id}`, { cache: 'no-store' });
-  } catch (e) {
-    error = e instanceof Error ? e.message : 'Not found';
+type Payment = {
+  intent_id: string;
+  status: string;
+  qr_image_url?: string | null;
+  transfer_content?: string | null;
+  amount?: string;
+} | null;
+
+export default function OrderPage() {
+  const params = useParams<{ id: string }>();
+  const id = params.id;
+  const [order, setOrder] = useState<Order | null>(null);
+  const [payment, setPayment] = useState<Payment>(null);
+  const [error, setError] = useState('');
+  const [pending, start] = useTransition();
+
+  const load = useCallback(async () => {
+    try {
+      const o = await storeApi<Order>(`/v1/orders/${id}`, { cache: 'no-store' });
+      setOrder(o);
+      if (o.payment_method === 'TRANSFER') {
+        const p = await storeApi<Payment>(`/v1/orders/${id}/payment`, { cache: 'no-store' });
+        setPayment(p);
+      }
+      setError('');
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Not found');
+    }
+  }, [id]);
+
+  useEffect(() => {
+    void load();
+  }, [load]);
+
+  useEffect(() => {
+    if (!order || order.payment_method !== 'TRANSFER' || order.payment_status === 'paid') return;
+    const t = setInterval(() => void load(), 4000);
+    return () => clearInterval(t);
+  }, [order, load]);
+
+  function simulatePaid() {
+    if (!payment?.intent_id) return;
+    start(async () => {
+      try {
+        await storeApi(`/v1/payments/intents/${payment.intent_id}/simulate-paid`, {
+          method: 'POST',
+          cache: 'no-store',
+          body: '{}',
+        });
+        await load();
+      } catch (e) {
+        setError(e instanceof Error ? e.message : 'Simulate failed');
+      }
+    });
   }
 
   return (
@@ -32,8 +87,20 @@ export default async function OrderPage({ params }: { params: Promise<{ id: stri
               <code>{order.id}</code>
             </p>
             <p>
-              <strong>{order.status}</strong> · {order.payment_method} · {formatVnd(order.total)}
+              <strong>{order.status}</strong> · {order.payment_method} ·{' '}
+              <strong>{order.payment_status}</strong> · {formatVnd(order.total)}
             </p>
+            {order.shipping?.carrier ? (
+              <p style={{ fontSize: 13 }}>
+                Ship: {order.shipping.carrier} {order.shipping.service} ·{' '}
+                {formatVnd(order.shipping_amount)}
+              </p>
+            ) : null}
+            {order.voucher_code ? (
+              <p style={{ fontSize: 13 }}>
+                Voucher {order.voucher_code}: −{formatVnd(order.discount)}
+              </p>
+            ) : null}
             <ul style={{ paddingLeft: 18 }}>
               {order.lines.map((l, i) => (
                 <li key={i}>
@@ -41,6 +108,7 @@ export default async function OrderPage({ params }: { params: Promise<{ id: stri
                 </li>
               ))}
             </ul>
+
             {order.payment_method === 'TRANSFER' ? (
               <div
                 style={{
@@ -51,7 +119,47 @@ export default async function OrderPage({ params }: { params: Promise<{ id: stri
                   fontSize: 13,
                 }}
               >
-                <strong>QR stub:</strong> quét chuyển khoản nội dung <code>{order.id.slice(-8)}</code>
+                {order.payment_status === 'paid' ? (
+                  <strong>Đã thanh toán VietQR</strong>
+                ) : (
+                  <>
+                    <strong>Quét VietQR để thanh toán</strong>
+                    {payment?.transfer_content ? (
+                      <p style={{ margin: '8px 0' }}>
+                        Nội dung CK: <code>{payment.transfer_content}</code>
+                      </p>
+                    ) : null}
+                    {payment?.qr_image_url ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={payment.qr_image_url}
+                        alt="VietQR"
+                        width={220}
+                        height={220}
+                        style={{ display: 'block', margin: '8px 0', background: '#fff' }}
+                      />
+                    ) : (
+                      <p>Đang tạo QR…</p>
+                    )}
+                    <button
+                      type="button"
+                      disabled={pending || !payment?.intent_id}
+                      onClick={simulatePaid}
+                      style={{
+                        marginTop: 8,
+                        height: 36,
+                        padding: '0 12px',
+                        borderRadius: 8,
+                        border: '1px solid rgba(26,18,20,0.15)',
+                        background: '#fff',
+                        fontWeight: 700,
+                        cursor: 'pointer',
+                      }}
+                    >
+                      {pending ? '…' : 'Simulate paid (dev)'}
+                    </button>
+                  </>
+                )}
               </div>
             ) : null}
           </div>

@@ -6,6 +6,9 @@ import type Redis from 'ioredis';
 import { PrismaService } from '../prisma/prisma.service';
 import { CartService } from '../cart/cart.service';
 import { AuditService } from '../audit/audit.service';
+import { ShippingService } from '../shipping/shipping.service';
+import { PaymentService } from '../payment/payment.service';
+import { WebsiteService } from '../website/website.service';
 import { REDIS, withRedisLock } from '../redis/redis.module';
 
 function money(n: Prisma.Decimal | number | string) {
@@ -16,31 +19,35 @@ function hashBody(body: unknown) {
   return createHash('sha256').update(JSON.stringify(body)).digest('hex');
 }
 
+export type CheckoutInput = {
+  cartId: string;
+  paymentMethod: 'COD' | 'TRANSFER';
+  shippingName: string;
+  shippingPhone: string;
+  shippingAddress: string;
+  shippingCity?: string;
+  shippingCarrier?: string;
+  shippingService?: string;
+  voucherCode?: string;
+  note?: string;
+  customerId?: string;
+  clientTotal?: number;
+  idempotencyKey: string;
+};
+
 @Injectable()
 export class CheckoutService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly carts: CartService,
     private readonly audit: AuditService,
+    private readonly shipping: ShippingService,
+    private readonly payments: PaymentService,
+    private readonly website: WebsiteService,
     @Inject(REDIS) private readonly redis: Redis,
   ) {}
 
-  async checkout(
-    tenantId: string,
-    actorId: string,
-    input: {
-      cartId: string;
-      paymentMethod: 'COD' | 'TRANSFER';
-      shippingName: string;
-      shippingPhone: string;
-      shippingAddress: string;
-      shippingCity?: string;
-      note?: string;
-      customerId?: string;
-      clientTotal?: number;
-      idempotencyKey: string;
-    },
-  ) {
+  async checkout(tenantId: string, actorId: string, input: CheckoutInput) {
     const requestHash = hashBody({
       cartId: input.cartId,
       paymentMethod: input.paymentMethod,
@@ -48,6 +55,8 @@ export class CheckoutService {
       shippingPhone: input.shippingPhone,
       shippingAddress: input.shippingAddress,
       shippingCity: input.shippingCity ?? '',
+      shippingCarrier: input.shippingCarrier ?? '',
+      voucherCode: input.voucherCode ?? '',
       note: input.note ?? '',
       customerId: input.customerId ?? null,
     });
@@ -81,25 +90,33 @@ export class CheckoutService {
   private async executeCheckout(
     tenantId: string,
     actorId: string,
-    input: {
-      cartId: string;
-      paymentMethod: 'COD' | 'TRANSFER';
-      shippingName: string;
-      shippingPhone: string;
-      shippingAddress: string;
-      shippingCity?: string;
-      note?: string;
-      customerId?: string;
-      clientTotal?: number;
-      idempotencyKey: string;
-    },
+    input: CheckoutInput,
     requestHash: string,
   ) {
     const priced = await this.carts.getPriced(tenantId, input.cartId);
     if (priced.status !== 'open') throw AppError.conflict('Cart not open');
     if (priced.lines.length === 0) throw AppError.validation('Cart is empty');
 
-    const serverTotal = new Prisma.Decimal(priced.total);
+    const subtotal = Number(priced.subtotal);
+    const ship = await this.shipping.quoteAmount(
+      input.shippingCity,
+      input.shippingCarrier || 'GHN',
+    );
+    let discount = 0;
+    let voucherCode: string | null = null;
+    if (input.voucherCode?.trim()) {
+      const v = await this.website.validateVoucher(
+        tenantId,
+        priced.storefront_id,
+        input.voucherCode.trim(),
+        subtotal,
+      );
+      discount = Number(v.discount_amount);
+      voucherCode = v.code;
+    }
+
+    const shippingAmount = ship.amount;
+    const total = Math.max(0, subtotal - discount) + shippingAmount;
     const orderId = createId('ord');
 
     const response = await this.prisma.db.$transaction(async (tx) => {
@@ -127,16 +144,19 @@ export class CheckoutService {
           cartId: input.cartId,
           status: 'CONFIRMED',
           currency: priced.currency,
-          subtotalAmount: priced.subtotal,
-          discountAmount: 0,
-          shippingAmount: 0,
-          totalAmount: serverTotal,
+          subtotalAmount: subtotal,
+          discountAmount: discount,
+          shippingAmount,
+          totalAmount: total,
           paymentMethod: input.paymentMethod,
           paymentStatus: 'pending',
           shippingName: input.shippingName,
           shippingPhone: input.shippingPhone,
           shippingAddress: input.shippingAddress,
           shippingCity: input.shippingCity ?? '',
+          shippingCarrier: ship.carrier,
+          shippingService: input.shippingService || ship.service,
+          voucherCode,
           note: input.note ?? '',
           idempotencyKey: input.idempotencyKey,
           lines: {
@@ -200,6 +220,11 @@ export class CheckoutService {
         payment_status: created.paymentStatus,
         currency: created.currency,
         subtotal: money(created.subtotalAmount),
+        discount: money(created.discountAmount),
+        shipping: money(created.shippingAmount),
+        shipping_carrier: created.shippingCarrier,
+        shipping_service: created.shippingService,
+        voucher_code: created.voucherCode,
         total: money(created.totalAmount),
         client_total_ignored: input.clientTotal ?? null,
         lines: created.lines.map((l) => ({
@@ -209,6 +234,7 @@ export class CheckoutService {
           unit_price: money(l.unitPrice),
           line_total: money(l.lineTotal),
         })),
+        payment: null as Record<string, unknown> | null,
       };
 
       await tx.idempotencyRecord.create({
@@ -217,7 +243,7 @@ export class CheckoutService {
           tenantId,
           key: input.idempotencyKey,
           requestHash,
-          responseBody: body,
+          responseBody: body as Prisma.InputJsonValue,
           statusCode: 201,
         },
       });
@@ -225,13 +251,33 @@ export class CheckoutService {
       return body;
     });
 
+    if (input.paymentMethod === 'TRANSFER') {
+      const payment = await this.payments.createIntentForOrder(
+        tenantId,
+        orderId,
+        total,
+        priced.currency,
+        actorId,
+      );
+      response.payment = payment;
+      await this.prisma.db.idempotencyRecord.update({
+        where: { tenantId_key: { tenantId, key: input.idempotencyKey } },
+        data: { responseBody: response as Prisma.InputJsonValue },
+      });
+    }
+
     await this.audit.write({
       tenantId,
       actorId,
       action: 'order.create',
       entity: 'order',
       entityId: orderId,
-      payload: { total: response.total, payment: input.paymentMethod },
+      payload: {
+        total: String(response.total),
+        payment: input.paymentMethod,
+        shipping_carrier: ship.carrier,
+        voucher: voucherCode,
+      },
     });
 
     return response;

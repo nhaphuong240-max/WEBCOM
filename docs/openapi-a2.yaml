@@ -1,0 +1,44 @@
+openapi: 3.0.3
+info:
+  title: WebCom A2 — Payment QR & Shipping
+  version: 1.0.0
+paths:
+  /api/health:
+    get:
+      summary: wave A2
+  /api/v1/shipping/quotes:
+    get:
+      parameters:
+        - in: query
+          name: city
+          schema: { type: string }
+      responses:
+        '200':
+          description: Quotes with source live|stub
+  /api/v1/checkout:
+    post:
+      summary: COD or TRANSFER; server shipping+voucher; TRANSFER returns payment QR
+      parameters:
+        - in: header
+          name: Idempotency-Key
+          required: true
+          schema: { type: string }
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [cart_id, shipping_name, shipping_phone, shipping_address]
+              properties:
+                payment_method: { enum: [COD, TRANSFER] }
+                shipping_carrier: { type: string }
+                voucher_code: { type: string }
+  /api/v1/orders/{id}/payment:
+    get:
+      summary: Latest payment intent for order
+  /api/v1/payments/webhooks/{provider}:
+    post:
+      summary: Idempotent webhook (x-ptt-signature or x-ptt-webhook-secret)
+  /api/v1/payments/intents/{id}/simulate-paid:
+    post:
+      summary: Dev simulate paid (AUTH_DEV_BYPASS / FEATURE_PAYMENT_SIMULATE)

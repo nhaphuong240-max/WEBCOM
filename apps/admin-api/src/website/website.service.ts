@@ -3,6 +3,7 @@ import { AppError, createId } from '@ptt/shared-kernel';
 import { Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { AuditService } from '../audit/audit.service';
+import { ShippingService } from '../shipping/shipping.service';
 
 const AURA_LITE_CONFIG = {
   code: 'aura-commerce-lite',
@@ -30,6 +31,7 @@ export class WebsiteService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly audit: AuditService,
+    private readonly shipping: ShippingService,
   ) {}
 
   async getRuntime(tenantId: string, storefrontIdOrSlug: string) {
@@ -333,12 +335,7 @@ export class WebsiteService {
   }
 
   async shippingQuotes(city?: string) {
-    const base = city?.toLowerCase().includes('hcm') || city?.toLowerCase().includes('hồ chí minh') ? 25000 : 35000;
-    return [
-      { carrier: 'GHN', service: 'Standard', eta_days: 2, amount: String(base) },
-      { carrier: 'GHTK', service: 'Economy', eta_days: 3, amount: String(Math.max(15000, base - 5000)) },
-      { carrier: 'ViettelPost', service: 'Express', eta_days: 1, amount: String(base + 15000) },
-    ];
+    return this.shipping.quotes(city);
   }
 
   async validateVoucher(tenantId: string, storefrontId: string, code: string, subtotal: number) {

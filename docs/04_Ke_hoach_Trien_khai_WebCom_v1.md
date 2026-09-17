@@ -493,6 +493,18 @@ Repo chạy được, design system từ mockup, auth tenant, admin/storefront s
 
 ---
 
+# 9c. Wave A2 — Payment QR & Shipping (Branch A deepen)
+
+## Exit criteria
+- [x] Checkout server-side shipping + voucher vào Order totals (BR-021).
+- [x] TRANSFER → PaymentIntent VietQR (`img.vietqr.io`) + webhook idempotent → `payment_status=paid`.
+- [x] COD giữ nguyên.
+- [x] Shipping quotes: stub mặc định; GHN live khi `FEATURE_LIVE_SHIPPING` + token.
+- [x] Storefront checkout re-quote theo city; order page hiện QR + simulate paid (dev).
+- [x] Health `wave: A2` · `docs/openapi-a2.yaml` · `docs/bruno/WebCom-A2.bru` · `scripts/e2e-a2.sh`.
+
+---
+
 # 10. Backlog ưu tiên MoSCoW (WebCom)
 
 ## Must (trước GA Platform)

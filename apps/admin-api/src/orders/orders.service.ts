@@ -81,10 +81,16 @@ export class OrdersService {
     paymentStatus: string;
     currency: string;
     subtotalAmount: Prisma.Decimal;
+    discountAmount: Prisma.Decimal;
+    shippingAmount: Prisma.Decimal;
     totalAmount: Prisma.Decimal;
     shippingName: string;
     shippingPhone: string;
     shippingAddress: string;
+    shippingCity: string;
+    shippingCarrier: string | null;
+    shippingService: string | null;
+    voucherCode: string | null;
     createdAt: Date;
     lines: Array<{
       skuCode: string;
@@ -101,11 +107,17 @@ export class OrdersService {
       payment_status: order.paymentStatus,
       currency: order.currency,
       subtotal: money(order.subtotalAmount),
+      discount: money(order.discountAmount),
+      shipping_amount: money(order.shippingAmount),
       total: money(order.totalAmount),
+      voucher_code: order.voucherCode,
       shipping: {
         name: order.shippingName,
         phone: order.shippingPhone,
         address: order.shippingAddress,
+        city: order.shippingCity,
+        carrier: order.shippingCarrier,
+        service: order.shippingService,
       },
       lines: order.lines.map((l) => ({
         sku_code: l.skuCode,

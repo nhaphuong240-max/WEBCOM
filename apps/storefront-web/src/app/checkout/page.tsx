@@ -7,7 +7,24 @@ import { StoreShell } from '../../components/StoreShell';
 import { useCart } from '../../lib/cart';
 import { formatVnd, storeApi, STOREFRONT_ID } from '../../lib/api';
 
-type Quote = { carrier: string; service: string; eta_days: number; amount: string };
+type Quote = {
+  carrier: string;
+  service: string;
+  eta_days: number;
+  amount: string;
+  source?: 'live' | 'stub';
+};
+
+type CheckoutResult = {
+  order_id: string;
+  total: string;
+  payment?: {
+    intent_id: string | null;
+    qr_image_url?: string | null;
+    transfer_content?: string | null;
+    status?: string;
+  } | null;
+};
 
 export default function CheckoutPage() {
   const { cart, refresh, clearLocal } = useCart();
@@ -28,12 +45,21 @@ export default function CheckoutPage() {
 
   useEffect(() => {
     void refresh();
-    void storeApi<Quote[]>('/v1/shipping/quotes?city=HCM', { cache: 'no-store' }).then(setQuotes);
   }, [refresh]);
+
+  useEffect(() => {
+    void storeApi<Quote[]>(`/v1/shipping/quotes?city=${encodeURIComponent(ship.city || 'HCM')}`, {
+      cache: 'no-store',
+    }).then((q) => {
+      setQuotes(q);
+      setShipCarrier((prev) => (q.find((x) => x.carrier === prev) ? prev : q[0]?.carrier || prev));
+    });
+  }, [ship.city]);
 
   const shipping = Number(quotes.find((q) => q.carrier === shipCarrier)?.amount ?? 0);
   const subtotal = Number(cart?.subtotal ?? cart?.total ?? 0);
   const total = Math.max(0, subtotal - discount) + shipping;
+  const selected = quotes.find((q) => q.carrier === shipCarrier);
 
   function applyVoucher() {
     if (!cart || !voucher) return;
@@ -62,8 +88,8 @@ export default function CheckoutPage() {
     start(async () => {
       try {
         setError('');
-        const key = `w2-${cart.id}-${Date.now()}`;
-        const order = await storeApi<{ order_id: string }>('/v1/checkout', {
+        const key = `a2-${cart.id}-${Date.now()}`;
+        const order = await storeApi<CheckoutResult>('/v1/checkout', {
           method: 'POST',
           cache: 'no-store',
           idempotencyKey: key,
@@ -74,8 +100,10 @@ export default function CheckoutPage() {
             shipping_phone: ship.phone,
             shipping_address: ship.address,
             shipping_city: ship.city,
-            note: `carrier=${shipCarrier};voucher=${voucher || 'none'};pay=${pay}`,
-            client_total: 1,
+            shipping_carrier: shipCarrier,
+            shipping_service: selected?.service,
+            voucher_code: voucher || undefined,
+            client_total: total,
           }),
         });
         void storeApi('/v1/events', {
@@ -83,26 +111,12 @@ export default function CheckoutPage() {
           cache: 'no-store',
           body: JSON.stringify({
             storefront_id: STOREFRONT_ID,
-            name: 'begin_checkout',
-            session_id: typeof window !== 'undefined' ? localStorage.getItem('ptt_session_v1') : undefined,
-            landing_path: '/checkout',
-            consent_state:
-              typeof window !== 'undefined'
-                ? localStorage.getItem('ptt_consent_v1') || 'unknown'
-                : 'unknown',
-            payload: { cart_id: cart.id },
-          }),
-        }).catch(() => undefined);
-        void storeApi('/v1/events', {
-          method: 'POST',
-          cache: 'no-store',
-          body: JSON.stringify({
-            storefront_id: STOREFRONT_ID,
             name: 'purchase',
-            session_id: typeof window !== 'undefined' ? localStorage.getItem('ptt_session_v1') : undefined,
+            session_id:
+              typeof window !== 'undefined' ? localStorage.getItem('ptt_session_v1') : undefined,
             landing_path: '/',
             consent_state: 'granted',
-            payload: { order_id: order.order_id, total },
+            payload: { order_id: order.order_id, total: order.total, pay },
           }),
         }).catch(() => undefined);
         clearLocal();
@@ -157,7 +171,12 @@ export default function CheckoutPage() {
         />
 
         <div>
-          <div style={{ fontWeight: 700, marginBottom: 6 }}>Vận chuyển</div>
+          <div style={{ fontWeight: 700, marginBottom: 6 }}>
+            Vận chuyển{' '}
+            <span style={{ fontWeight: 500, fontSize: 12, opacity: 0.7 }}>
+              ({selected?.source === 'live' ? 'GHN live' : 'stub'})
+            </span>
+          </div>
           {quotes.map((q) => (
             <label
               key={q.carrier}
@@ -202,8 +221,8 @@ export default function CheckoutPage() {
             <input type="radio" checked={pay === 'COD'} onChange={() => setPay('COD')} /> COD
           </label>
           <label style={{ display: 'block' }}>
-            <input type="radio" checked={pay === 'QR'} onChange={() => setPay('QR')} /> QR / chuyển khoản
-            (stub)
+            <input type="radio" checked={pay === 'QR'} onChange={() => setPay('QR')} /> VietQR /
+            chuyển khoản
           </label>
         </div>
 
@@ -211,10 +230,7 @@ export default function CheckoutPage() {
           <Row label="Tạm tính" value={formatVnd(subtotal)} />
           <Row label="Giảm giá" value={`- ${formatVnd(discount)}`} />
           <Row label="Ship" value={formatVnd(shipping)} />
-          <Row label="Tổng (ước tính UI)" value={formatVnd(total)} bold />
-          <p style={{ fontSize: 11, color: '#6b5559', margin: '8px 0 0' }}>
-            Order total do server tính lại (BR-021).
-          </p>
+          <Row label="Tổng (server sẽ tính lại)" value={formatVnd(total)} bold />
         </div>
 
         <button
@@ -231,7 +247,7 @@ export default function CheckoutPage() {
             cursor: 'pointer',
           }}
         >
-          {pending ? 'Đang xử lý…' : pay === 'COD' ? 'Đặt hàng COD' : 'Đặt hàng + QR'}
+          {pending ? 'Đang xử lý…' : pay === 'COD' ? 'Đặt hàng COD' : 'Đặt hàng + VietQR'}
         </button>
       </div>
     </StoreShell>

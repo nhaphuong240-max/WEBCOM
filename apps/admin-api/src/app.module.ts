@@ -13,6 +13,8 @@ import { WebsiteModule } from './website/website.module';
 import { AnalyticsModule } from './analytics/analytics.module';
 import { HeadlessModule } from './headless/headless.module';
 import { AgencyModule } from './agency/agency.module';
+import { ShippingModule } from './shipping/shipping.module';
+import { PaymentModule } from './payment/payment.module';
 import { HealthController } from './health/health.controller';
 import { MeController } from './iam/me.controller';
 import { AuthController } from './iam/auth.controller';
@@ -34,6 +36,8 @@ import { TenancyController } from './tenancy/tenancy.controller';
     AnalyticsModule,
     HeadlessModule,
     AgencyModule,
+    ShippingModule,
+    PaymentModule,
   ],
   controllers: [HealthController, MeController, AuthController, TenancyController],
 })

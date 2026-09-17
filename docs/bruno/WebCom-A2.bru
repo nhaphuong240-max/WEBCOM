@@ -1,0 +1,25 @@
+meta {
+  name: WebCom A2
+}
+
+get {
+  url: {{BASE}}/api/health
+}
+
+get {
+  url: {{BASE}}/api/v1/shipping/quotes?city=HCM
+  headers: {
+    x-tenant-id: ten_aura
+  }
+}
+
+post {
+  url: {{BASE}}/api/v1/payments/webhooks/vietqr
+  body: json
+  json: {
+    "event_id": "bruno-test-1",
+    "order_id": "ord_example",
+    "status": "paid",
+    "amount": 1000
+  }
+}
