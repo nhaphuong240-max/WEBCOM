@@ -1,0 +1,20 @@
+[Unit]
+Description=WebCom admin-web (Next.js)
+After=network.target webecom-admin-api.service
+
+[Service]
+Type=simple
+User=deploy
+Group=www-data
+WorkingDirectory=/var/www/webecom/apps/admin-web/.next/standalone/apps/admin-web
+Environment=NODE_ENV=production
+EnvironmentFile=/var/www/webecom/.env
+Environment=PORT=3100
+Environment=HOSTNAME=127.0.0.1
+Environment=NEXT_BASE_PATH=/console
+ExecStart=/usr/bin/node server.js
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

@@ -5,6 +5,8 @@ export type ErrorCode =
   | 'NOT_FOUND'
   | 'CONFLICT'
   | 'TENANT_REQUIRED'
+  | 'INSUFFICIENT_STOCK'
+  | 'IDEMPOTENCY_CONFLICT'
   | 'INTERNAL';
 
 export class AppError extends Error {
@@ -34,5 +36,21 @@ export class AppError extends Error {
 
   static notFound(message = 'Not found'): AppError {
     return new AppError('NOT_FOUND', message, 404);
+  }
+
+  static validation(message: string, details?: unknown): AppError {
+    return new AppError('VALIDATION', message, 400, details);
+  }
+
+  static conflict(message: string, details?: unknown): AppError {
+    return new AppError('CONFLICT', message, 409, details);
+  }
+
+  static insufficientStock(message = 'Insufficient stock', details?: unknown): AppError {
+    return new AppError('INSUFFICIENT_STOCK', message, 409, details);
+  }
+
+  static idempotencyConflict(message = 'Idempotency key reuse with different payload'): AppError {
+    return new AppError('IDEMPOTENCY_CONFLICT', message, 409);
   }
 }

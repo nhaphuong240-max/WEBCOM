@@ -7,27 +7,37 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-/// W0 skeleton — expand in W1 Commerce Core
 model Tenant {
-  id        String   @id @default(uuid())
-  name      String
-  slug      String   @unique
-  status    String   @default("active")
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
-  brands    Brand[]
-  users     User[]
+  id          String       @id @default(uuid())
+  name        String
+  slug        String       @unique
+  status      String       @default("active")
+  createdAt   DateTime     @default(now()) @map("created_at")
+  updatedAt   DateTime     @updatedAt @map("updated_at")
+  brands      Brand[]
+  users       User[]
+  storefronts Storefront[]
+  products    Product[]
+  priceLists  PriceList[]
+  carts       Cart[]
+  customers   Customer[]
+  orders      Order[]
+  auditLogs   AuditLog[]
+  idempotency IdempotencyRecord[]
 
   @@map("tenants")
 }
 
 model Brand {
-  id        String   @id @default(uuid())
-  tenantId  String   @map("tenant_id")
-  name      String
-  code      String
-  createdAt DateTime @default(now()) @map("created_at")
-  tenant    Tenant   @relation(fields: [tenantId], references: [id])
+  id          String       @id @default(uuid())
+  tenantId    String       @map("tenant_id")
+  name        String
+  code        String
+  createdAt   DateTime     @default(now()) @map("created_at")
+  tenant      Tenant       @relation(fields: [tenantId], references: [id])
+  storefronts Storefront[]
+  products    Product[]
+  priceLists  PriceList[]
 
   @@unique([tenantId, code])
   @@index([tenantId])
@@ -47,4 +57,301 @@ model User {
   @@unique([tenantId, email])
   @@index([tenantId])
   @@map("users")
+}
+
+model Storefront {
+  id        String   @id @default(uuid())
+  tenantId  String   @map("tenant_id")
+  brandId   String   @map("brand_id")
+  name      String
+  slug      String
+  status    String   @default("draft")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  tenant    Tenant   @relation(fields: [tenantId], references: [id])
+  brand     Brand    @relation(fields: [brandId], references: [id])
+  carts     Cart[]
+  orders    Order[]
+
+  @@unique([tenantId, slug])
+  @@index([tenantId])
+  @@map("storefronts")
+}
+
+model Product {
+  id          String           @id @default(uuid())
+  tenantId    String           @map("tenant_id")
+  brandId     String           @map("brand_id")
+  title       String
+  slug        String
+  description String           @default("")
+  status      String           @default("active")
+  createdAt   DateTime         @default(now()) @map("created_at")
+  updatedAt   DateTime         @updatedAt @map("updated_at")
+  tenant      Tenant           @relation(fields: [tenantId], references: [id])
+  brand       Brand            @relation(fields: [brandId], references: [id])
+  variants    ProductVariant[]
+  media       ProductMedia[]
+
+  @@unique([tenantId, slug])
+  @@index([tenantId, brandId])
+  @@map("products")
+}
+
+model ProductVariant {
+  id        String   @id @default(uuid())
+  tenantId  String   @map("tenant_id")
+  productId String   @map("product_id")
+  title     String
+  options   Json     @default("{}")
+  createdAt DateTime @default(now()) @map("created_at")
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  skus      Sku[]
+
+  @@index([tenantId, productId])
+  @@map("product_variants")
+}
+
+model Sku {
+  id            String             @id @default(uuid())
+  tenantId      String             @map("tenant_id")
+  variantId     String             @map("variant_id")
+  code          String
+  barcode       String?
+  status        String             @default("active")
+  createdAt     DateTime           @default(now()) @map("created_at")
+  variant       ProductVariant     @relation(fields: [variantId], references: [id], onDelete: Cascade)
+  prices        PriceListItem[]
+  inventory     InventoryBalance?
+  reservations  StockReservation[]
+  cartLines     CartLine[]
+  orderLines    OrderLine[]
+  stockLedgers  StockLedger[]
+
+  @@unique([tenantId, code])
+  @@index([tenantId])
+  @@map("skus")
+}
+
+model ProductMedia {
+  id        String   @id @default(uuid())
+  tenantId  String   @map("tenant_id")
+  productId String   @map("product_id")
+  url       String
+  alt       String   @default("")
+  sortOrder Int      @default(0) @map("sort_order")
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, productId])
+  @@map("product_media")
+}
+
+model PriceList {
+  id        String          @id @default(uuid())
+  tenantId  String          @map("tenant_id")
+  brandId   String          @map("brand_id")
+  name      String
+  currency  String          @default("VND")
+  isDefault Boolean         @default(false) @map("is_default")
+  createdAt DateTime        @default(now()) @map("created_at")
+  tenant    Tenant          @relation(fields: [tenantId], references: [id])
+  brand     Brand           @relation(fields: [brandId], references: [id])
+  items     PriceListItem[]
+
+  @@index([tenantId, brandId])
+  @@map("price_lists")
+}
+
+model PriceListItem {
+  id              String    @id @default(uuid())
+  tenantId        String    @map("tenant_id")
+  priceListId     String    @map("price_list_id")
+  skuId           String    @map("sku_id")
+  amount          Decimal   @db.Decimal(18, 2)
+  compareAtAmount Decimal?  @map("compare_at_amount") @db.Decimal(18, 2)
+  discountPercent Decimal?  @map("discount_percent") @db.Decimal(5, 2)
+  priceList       PriceList @relation(fields: [priceListId], references: [id], onDelete: Cascade)
+  sku             Sku       @relation(fields: [skuId], references: [id], onDelete: Cascade)
+
+  @@unique([priceListId, skuId])
+  @@index([tenantId, skuId])
+  @@map("price_list_items")
+}
+
+model InventoryBalance {
+  id        String   @id @default(uuid())
+  tenantId  String   @map("tenant_id")
+  skuId     String   @unique @map("sku_id")
+  onHand    Int      @default(0) @map("on_hand")
+  reserved  Int      @default(0)
+  updatedAt DateTime @updatedAt @map("updated_at")
+  sku       Sku      @relation(fields: [skuId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@map("inventory_balances")
+}
+
+model StockReservation {
+  id        String    @id @default(uuid())
+  tenantId  String    @map("tenant_id")
+  skuId     String    @map("sku_id")
+  orderId   String?   @map("order_id")
+  qty       Int
+  status    String    @default("active")
+  expiresAt DateTime? @map("expires_at")
+  createdAt DateTime  @default(now()) @map("created_at")
+  sku       Sku       @relation(fields: [skuId], references: [id])
+  order     Order?    @relation(fields: [orderId], references: [id])
+
+  @@index([tenantId, skuId, status])
+  @@map("stock_reservations")
+}
+
+model StockLedger {
+  id        String   @id @default(uuid())
+  tenantId  String   @map("tenant_id")
+  skuId     String   @map("sku_id")
+  delta     Int
+  reason    String
+  refType   String?  @map("ref_type")
+  refId     String?  @map("ref_id")
+  actorId   String?  @map("actor_id")
+  createdAt DateTime @default(now()) @map("created_at")
+  sku       Sku      @relation(fields: [skuId], references: [id])
+
+  @@index([tenantId, skuId])
+  @@map("stock_ledgers")
+}
+
+model Customer {
+  id           String   @id @default(uuid())
+  tenantId     String   @map("tenant_id")
+  email        String?
+  phone        String?
+  passwordHash String?  @map("password_hash")
+  name         String   @default("")
+  consentMarketing Boolean @default(false) @map("consent_marketing")
+  status       String   @default("active")
+  createdAt    DateTime @default(now()) @map("created_at")
+  tenant       Tenant   @relation(fields: [tenantId], references: [id])
+  carts        Cart[]
+  orders       Order[]
+
+  @@unique([tenantId, email])
+  @@unique([tenantId, phone])
+  @@index([tenantId])
+  @@map("customers")
+}
+
+model Cart {
+  id            String     @id @default(uuid())
+  tenantId      String     @map("tenant_id")
+  storefrontId  String     @map("storefront_id")
+  customerId    String?    @map("customer_id")
+  currency      String     @default("VND")
+  status        String     @default("open")
+  createdAt     DateTime   @default(now()) @map("created_at")
+  updatedAt     DateTime   @updatedAt @map("updated_at")
+  tenant        Tenant     @relation(fields: [tenantId], references: [id])
+  storefront    Storefront @relation(fields: [storefrontId], references: [id])
+  customer      Customer?  @relation(fields: [customerId], references: [id])
+  lines         CartLine[]
+
+  @@index([tenantId, status])
+  @@map("carts")
+}
+
+model CartLine {
+  id        String   @id @default(uuid())
+  tenantId  String   @map("tenant_id")
+  cartId    String   @map("cart_id")
+  skuId     String   @map("sku_id")
+  qty       Int
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  cart      Cart     @relation(fields: [cartId], references: [id], onDelete: Cascade)
+  sku       Sku      @relation(fields: [skuId], references: [id])
+
+  @@unique([cartId, skuId])
+  @@index([tenantId])
+  @@map("cart_lines")
+}
+
+model Order {
+  id               String             @id @default(uuid())
+  tenantId         String             @map("tenant_id")
+  storefrontId     String             @map("storefront_id")
+  customerId       String?            @map("customer_id")
+  cartId           String?            @map("cart_id")
+  status           String             @default("CONFIRMED")
+  currency         String             @default("VND")
+  subtotalAmount   Decimal            @map("subtotal_amount") @db.Decimal(18, 2)
+  discountAmount   Decimal            @default(0) @map("discount_amount") @db.Decimal(18, 2)
+  shippingAmount   Decimal            @default(0) @map("shipping_amount") @db.Decimal(18, 2)
+  totalAmount      Decimal            @map("total_amount") @db.Decimal(18, 2)
+  paymentMethod    String             @map("payment_method")
+  paymentStatus    String             @default("pending") @map("payment_status")
+  shippingName     String             @map("shipping_name")
+  shippingPhone    String             @map("shipping_phone")
+  shippingAddress  String             @map("shipping_address")
+  shippingCity     String             @default("") @map("shipping_city")
+  note             String             @default("")
+  idempotencyKey   String?            @map("idempotency_key")
+  createdAt        DateTime           @default(now()) @map("created_at")
+  updatedAt        DateTime           @updatedAt @map("updated_at")
+  tenant           Tenant             @relation(fields: [tenantId], references: [id])
+  storefront       Storefront         @relation(fields: [storefrontId], references: [id])
+  customer         Customer?          @relation(fields: [customerId], references: [id])
+  lines            OrderLine[]
+  reservations     StockReservation[]
+
+  @@unique([tenantId, idempotencyKey])
+  @@index([tenantId, status])
+  @@map("orders")
+}
+
+model OrderLine {
+  id          String  @id @default(uuid())
+  tenantId    String  @map("tenant_id")
+  orderId     String  @map("order_id")
+  skuId       String  @map("sku_id")
+  skuCode     String  @map("sku_code")
+  title       String
+  qty         Int
+  unitPrice   Decimal @map("unit_price") @db.Decimal(18, 2)
+  lineTotal   Decimal @map("line_total") @db.Decimal(18, 2)
+  order       Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  sku         Sku     @relation(fields: [skuId], references: [id])
+
+  @@index([tenantId, orderId])
+  @@map("order_lines")
+}
+
+model IdempotencyRecord {
+  id           String   @id @default(uuid())
+  tenantId     String   @map("tenant_id")
+  key          String
+  requestHash  String   @map("request_hash")
+  responseBody Json     @map("response_body")
+  statusCode   Int      @map("status_code")
+  createdAt    DateTime @default(now()) @map("created_at")
+  tenant       Tenant   @relation(fields: [tenantId], references: [id])
+
+  @@unique([tenantId, key])
+  @@map("idempotency_records")
+}
+
+model AuditLog {
+  id        String   @id @default(uuid())
+  tenantId  String   @map("tenant_id")
+  actorId   String?  @map("actor_id")
+  action    String
+  entity    String
+  entityId  String   @map("entity_id")
+  payload   Json     @default("{}")
+  createdAt DateTime @default(now()) @map("created_at")
+  tenant    Tenant   @relation(fields: [tenantId], references: [id])
+
+  @@index([tenantId, entity, entityId])
+  @@map("audit_logs")
 }

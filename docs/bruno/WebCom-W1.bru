@@ -1,0 +1,71 @@
+meta {
+  name: WebCom W1
+  type: collection
+}
+
+vars {
+  baseUrl: http://127.0.0.1:3001/api
+  tenantId: ten_aura
+  brandId: brd_aura
+  storefrontId: sf_aura
+  skuId: sku_aura_glow_30
+  cartId:
+  orderId:
+  idemKey: w1-demo-001
+}
+
+get {
+  url: {{baseUrl}}/health
+}
+
+get {
+  url: {{baseUrl}}/v1/catalog/products
+  headers: {
+    x-tenant-id: {{tenantId}}
+    x-brand-id: {{brandId}}
+  }
+}
+
+post {
+  url: {{baseUrl}}/v1/carts
+  headers: {
+    content-type: application/json
+    x-tenant-id: {{tenantId}}
+  }
+  body: json
+  {
+    "storefront_id": "{{storefrontId}}"
+  }
+}
+
+post {
+  url: {{baseUrl}}/v1/carts/{{cartId}}/items
+  headers: {
+    content-type: application/json
+    x-tenant-id: {{tenantId}}
+  }
+  body: json
+  {
+    "sku_id": "{{skuId}}",
+    "qty": 1
+  }
+}
+
+post {
+  url: {{baseUrl}}/v1/checkout
+  headers: {
+    content-type: application/json
+    x-tenant-id: {{tenantId}}
+    Idempotency-Key: {{idemKey}}
+  }
+  body: json
+  {
+    "cart_id": "{{cartId}}",
+    "payment_method": "COD",
+    "shipping_name": "Nguyen Van A",
+    "shipping_phone": "0901234567",
+    "shipping_address": "12 Nguyen Hue",
+    "shipping_city": "HCM",
+    "client_total": 1
+  }
+}

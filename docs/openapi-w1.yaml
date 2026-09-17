@@ -1,0 +1,273 @@
+openapi: 3.0.3
+info:
+  title: PTT WebCom Admin API
+  version: 1.0.0-w1
+  description: Phase W1 Commerce Core — catalog, cart, checkout, orders, inventory.
+servers:
+  - url: http://127.0.0.1:3001/api
+    description: Local
+  - url: https://webecom.ngoinhahomnay.vn/api
+    description: VPS
+tags:
+  - name: Health
+  - name: Catalog
+  - name: Cart
+  - name: Checkout
+  - name: Orders
+  - name: Inventory
+  - name: Customers
+  - name: Organization
+paths:
+  /health:
+    get:
+      tags: [Health]
+      summary: Liveness
+      responses:
+        '200':
+          description: OK
+  /v1/catalog/products:
+    get:
+      tags: [Catalog]
+      summary: List products (storefront)
+      parameters:
+        - $ref: '#/components/parameters/TenantId'
+        - $ref: '#/components/parameters/BrandId'
+      responses:
+        '200':
+          description: Product list with server prices
+  /v1/catalog/products/{idOrSlug}:
+    get:
+      tags: [Catalog]
+      parameters:
+        - $ref: '#/components/parameters/TenantId'
+        - name: idOrSlug
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200': { description: Product detail }
+  /v1/admin/products:
+    get:
+      tags: [Catalog]
+      summary: Admin list products
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - $ref: '#/components/parameters/TenantId'
+      responses:
+        '200': { description: OK }
+    post:
+      tags: [Catalog]
+      summary: Create simple product+SKU+price+stock
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - $ref: '#/components/parameters/TenantId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [brand_id, title, slug, sku_code, price]
+              properties:
+                brand_id: { type: string }
+                title: { type: string }
+                slug: { type: string }
+                sku_code: { type: string }
+                price: { type: number }
+                discount_percent: { type: number }
+                on_hand: { type: integer }
+      responses:
+        '201': { description: Created }
+  /v1/carts:
+    post:
+      tags: [Cart]
+      parameters:
+        - $ref: '#/components/parameters/TenantId'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [storefront_id]
+              properties:
+                storefront_id: { type: string }
+                customer_id: { type: string }
+      responses:
+        '201': { description: Cart created (priced) }
+  /v1/carts/{cartId}:
+    get:
+      tags: [Cart]
+      parameters:
+        - $ref: '#/components/parameters/TenantId'
+        - name: cartId
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200': { description: Server-priced cart }
+  /v1/carts/{cartId}/items:
+    post:
+      tags: [Cart]
+      parameters:
+        - $ref: '#/components/parameters/TenantId'
+        - name: cartId
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [sku_id]
+              properties:
+                sku_id: { type: string }
+                qty: { type: integer, default: 1 }
+      responses:
+        '200': { description: Updated cart }
+  /v1/checkout:
+    post:
+      tags: [Checkout]
+      summary: Checkout COD/TRANSFER with Idempotency-Key
+      parameters:
+        - $ref: '#/components/parameters/TenantId'
+        - name: Idempotency-Key
+          in: header
+          required: true
+          schema: { type: string }
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [cart_id, shipping_name, shipping_phone, shipping_address]
+              properties:
+                cart_id: { type: string }
+                payment_method: { type: string, enum: [COD, TRANSFER] }
+                shipping_name: { type: string }
+                shipping_phone: { type: string }
+                shipping_address: { type: string }
+                shipping_city: { type: string }
+                client_total: { type: number, description: Ignored (BR-021) }
+      responses:
+        '201': { description: Order created }
+        '409': { description: Insufficient stock or idempotency conflict }
+  /v1/orders/{orderId}:
+    get:
+      tags: [Orders]
+      parameters:
+        - $ref: '#/components/parameters/TenantId'
+        - name: orderId
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200': { description: Order }
+  /v1/admin/orders:
+    get:
+      tags: [Orders]
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - $ref: '#/components/parameters/TenantId'
+      responses:
+        '200': { description: Order list }
+  /v1/admin/orders/{orderId}/transition:
+    post:
+      tags: [Orders]
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - $ref: '#/components/parameters/TenantId'
+        - name: orderId
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [status]
+              properties:
+                status:
+                  type: string
+                  enum: [FULFILLING, SHIPPED, COMPLETED, CANCELLED]
+      responses:
+        '200': { description: Updated }
+  /v1/admin/inventory/{skuId}:
+    get:
+      tags: [Inventory]
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - $ref: '#/components/parameters/TenantId'
+        - name: skuId
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200': { description: Balance }
+  /v1/admin/inventory/{skuId}/adjust:
+    post:
+      tags: [Inventory]
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - $ref: '#/components/parameters/TenantId'
+        - name: skuId
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [delta]
+              properties:
+                delta: { type: integer }
+                reason: { type: string }
+      responses:
+        '200': { description: Updated balance }
+  /v1/customers/register:
+    post:
+      tags: [Customers]
+      parameters:
+        - $ref: '#/components/parameters/TenantId'
+      responses:
+        '201': { description: Registered }
+  /v1/customers/login:
+    post:
+      tags: [Customers]
+      parameters:
+        - $ref: '#/components/parameters/TenantId'
+      responses:
+        '200': { description: JWT }
+  /v1/customers/login-otp:
+    post:
+      tags: [Customers]
+      parameters:
+        - $ref: '#/components/parameters/TenantId'
+      responses:
+        '200': { description: JWT }
+  /v1/storefronts:
+    get:
+      tags: [Organization]
+      parameters:
+        - $ref: '#/components/parameters/TenantId'
+      responses:
+        '200': { description: Storefronts }
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  parameters:
+    TenantId:
+      name: x-tenant-id
+      in: header
+      required: true
+      schema: { type: string }
+    BrandId:
+      name: x-brand-id
+      in: header
+      required: false
+      schema: { type: string }

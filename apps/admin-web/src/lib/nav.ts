@@ -9,6 +9,7 @@ export const websiteNav = [
 
 export const mainNav = [
   { href: '/', label: 'Command Center', section: 'Điều hành' },
+  { href: '/products', label: 'Sản phẩm', section: 'Điều hành' },
   { href: '/orders', label: 'Đơn hàng', section: 'Điều hành' },
   { href: '/inventory', label: 'Tồn kho', section: 'Điều hành' },
   ...websiteNav.map((i) => ({ ...i, section: 'Website' as const })),

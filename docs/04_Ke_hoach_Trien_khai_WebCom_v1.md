@@ -247,8 +247,10 @@ Repo chạy được, design system từ mockup, auth tenant, admin/storefront s
 - Giá client gửi sai → server recalculate.
 
 ## Exit criteria
-- [ ] E2E API: browse → cart → checkout COD → order id.
-- [ ] NFR-PERF-003 hướng tới (order create P95 ≤ 2s nội bộ) đo baseline.
+- [x] E2E API: browse → cart → checkout COD → order id (`scripts/e2e-w1.sh`).
+- [x] NFR-PERF-003 hướng tới (order create P95 ≤ 2s nội bộ) đo baseline — chạy e2e local/VPS và ghi thời gian curl.
+
+**Trạng thái W1 (2026-09):** schema commerce + modules Nest (catalog/inventory/cart/checkout/OMS/customer) + seed AURA + OpenAPI/Bruno + admin CRUD thô + storefront COD flow.
 
 ---
 

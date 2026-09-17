@@ -1,0 +1,18 @@
+[Unit]
+Description=WebCom admin-api (NestJS)
+After=network.target postgresql.service
+
+[Service]
+Type=simple
+User=deploy
+Group=www-data
+WorkingDirectory=/var/www/webecom/apps/admin-api
+Environment=NODE_ENV=production
+EnvironmentFile=/var/www/webecom/.env
+ExecStart=/usr/bin/node dist/main.js
+Restart=always
+RestartSec=5
+LimitNOFILE=65535
+
+[Install]
+WantedBy=multi-user.target
