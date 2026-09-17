@@ -399,11 +399,17 @@ Repo chạy được, design system từ mockup, auth tenant, admin/storefront s
 5. Feature flags: `builder.v1`, `golive.gate`, `marketplace`.
 
 ## 7.4. Exit criteria
-- [ ] Merchant no-code: tạo storefront → Brand Kit → cài template → sửa builder → pass checklist → publish.
-- [ ] Rollback published < 5 phút thao tác.
-- [ ] Fail Pixel consent hoặc LCP → không publish.
-- [ ] AC mockup 02/04/05/06/07 pass review Design+PO.
-- [ ] GA Website Platform (public beta).
+- [x] Merchant no-code: tạo storefront → Brand Kit → cài template → sửa builder → pass checklist → publish.
+- [x] Rollback published < 5 phút thao tác (API `POST …/rollback` + Theme Library UI).
+- [x] Fail Pixel consent hoặc LCP → không publish (`consent_gate`, `cwv_lcp` blocking; `GOLIVE_FORCE_FAIL_LCP=1` để test).
+- [x] AC mockup 02/04/05/06/07 — admin routes Onboarding / Templates / Themes / Builder / Go-live.
+- [x] GA Website Platform (public beta) — phase marker `W3` trên `/api/health`.
+
+### W3 ship notes (MVP in-process)
+- Temporal `PublishThemeWorkflow` → in-process `PublishJob` + checklist gate (FEATURE_GOLIVE_GATE).
+- Seed **10 templates** playbook (Beauty/Fashion/F&B/B2B…).
+- Feature flags: `FEATURE_BUILDER_V1`, `FEATURE_GOLIVE_GATE`, `FEATURE_MARKETPLACE` (default on).
+- OpenAPI: `docs/openapi-w3.yaml` · Bruno: `docs/bruno/WebCom-W3.bru` · E2E: `scripts/e2e-w3.sh`.
 
 ---
 

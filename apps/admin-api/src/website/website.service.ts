@@ -91,6 +91,30 @@ export class WebsiteService {
     };
   }
 
+  async getPublishedPage(tenantId: string, storefrontIdOrSlug: string, slug: string) {
+    const sf = await this.prisma.db.storefront.findFirst({
+      where: {
+        tenantId,
+        OR: [{ id: storefrontIdOrSlug }, { slug: storefrontIdOrSlug }],
+      },
+    });
+    if (!sf) throw AppError.notFound('Storefront not found');
+    const page = await this.prisma.db.page.findFirst({
+      where: { tenantId, storefrontId: sf.id, slug },
+      include: {
+        versions: { where: { status: 'published' }, orderBy: { version: 'desc' }, take: 1 },
+      },
+    });
+    if (!page || !page.versions[0]) throw AppError.notFound('Page not found');
+    return {
+      slug: page.slug,
+      title: page.title,
+      template_key: page.templateKey,
+      content: page.versions[0].content,
+      seo: page.versions[0].seo,
+    };
+  }
+
   async ensureAuraLite(tenantId: string, storefrontId: string, actorId?: string) {
     const sf = await this.prisma.db.storefront.findFirst({ where: { id: storefrontId, tenantId } });
     if (!sf) throw AppError.notFound('Storefront not found');

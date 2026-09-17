@@ -5,8 +5,13 @@ import { AddToCartButton } from '../components/AddToCartButton';
 
 export const dynamic = 'force-dynamic';
 
-export default async function HomePage() {
-  const [runtime, products] = await Promise.all([getRuntime(), getProducts()]);
+export default async function HomePage({
+  searchParams,
+}: {
+  searchParams?: Promise<{ preview?: string }>;
+}) {
+  const sp = searchParams ? await searchParams : {};
+  const [runtime, products] = await Promise.all([getRuntime(sp.preview), getProducts()]);
   const hero = (runtime.home?.content as { hero?: Record<string, string> })?.hero;
   const trust = (runtime.home?.content as { trust?: string[] })?.trust ?? [
     'COD toàn quốc',
@@ -16,11 +21,24 @@ export default async function HomePage() {
   const collections =
     ((runtime.theme.config as { collections?: Array<{ slug: string; title: string }> })
       ?.collections) ?? [];
+  const accent =
+    runtime.brand_kit?.colors?.accent ||
+    runtime.brand_kit?.colors?.rose ||
+    (runtime.theme.config as { tokens?: { accent?: string } })?.tokens?.accent ||
+    '#c45a6a';
+  const cream =
+    runtime.brand_kit?.colors?.cream ||
+    runtime.brand_kit?.colors?.surface ||
+    '#faf6f4';
+  const ink = runtime.brand_kit?.colors?.ink || '#1a1214';
 
   return (
     <StoreShell
       gtm={runtime.storefront.gtm_container_id}
       pixel={runtime.storefront.meta_pixel_id}
+      accent={accent}
+      cream={cream}
+      ink={ink}
     >
       <section
         style={{
@@ -55,7 +73,7 @@ export default async function HomePage() {
             alignItems: 'center',
             height: 44,
             padding: '0 18px',
-            background: '#c45a6a',
+            background: accent,
             color: '#fff',
             borderRadius: 8,
             fontWeight: 700,

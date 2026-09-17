@@ -1,0 +1,71 @@
+meta {
+  name: WebCom-W3
+  type: http
+  seq: 1
+}
+
+vars {
+  baseUrl: http://127.0.0.1:3001/api
+  tenantId: ten_aura
+  storefrontId: sf_aura
+}
+
+get {
+  url: {{baseUrl}}/health
+}
+
+get {
+  url: {{baseUrl}}/v1/admin/storefronts/{{storefrontId}}/brand-kit
+  headers: {
+    x-tenant-id: {{tenantId}}
+    x-actor-id: bruno
+  }
+}
+
+post {
+  url: {{baseUrl}}/v1/admin/templates/match
+  headers: {
+    x-tenant-id: {{tenantId}}
+    content-type: application/json
+  }
+  body: {
+    industry: beauty
+    goal: conversion
+    budget: free
+  }
+}
+
+get {
+  url: {{baseUrl}}/v1/admin/templates
+  headers: {
+    x-tenant-id: {{tenantId}}
+  }
+}
+
+get {
+  url: {{baseUrl}}/v1/admin/storefronts/{{storefrontId}}/themes
+  headers: {
+    x-tenant-id: {{tenantId}}
+  }
+}
+
+get {
+  url: {{baseUrl}}/v1/admin/storefronts/{{storefrontId}}/pages/home
+  headers: {
+    x-tenant-id: {{tenantId}}
+  }
+}
+
+get {
+  url: {{baseUrl}}/v1/admin/storefronts/{{storefrontId}}/golive
+  headers: {
+    x-tenant-id: {{tenantId}}
+  }
+}
+
+get {
+  url: {{baseUrl}}/v1/admin/storefronts/{{storefrontId}}/onboarding
+  headers: {
+    x-tenant-id: {{tenantId}}
+  }
+}

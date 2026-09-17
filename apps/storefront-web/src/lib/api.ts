@@ -42,6 +42,12 @@ export type Runtime = {
   theme: { code: string; name: string; version: number; config: Record<string, unknown> };
   navigation: Record<string, unknown>;
   home: { title: string; content: Record<string, unknown>; seo: Record<string, unknown> } | null;
+  brand_kit?: {
+    colors?: Record<string, string>;
+    fonts?: Record<string, string>;
+    logo?: { url?: string; alt?: string };
+    voice?: { cta_default?: string };
+  } | null;
 };
 
 export async function storeApi<T>(
@@ -68,8 +74,18 @@ export async function storeApi<T>(
   return data as T;
 }
 
-export async function getRuntime() {
-  return storeApi<Runtime>(`/v1/storefronts/${STOREFRONT_ID}/runtime`, { cache: 'no-store' });
+export async function getRuntime(preview?: string) {
+  const q = preview ? `?preview=${encodeURIComponent(preview)}` : '';
+  return storeApi<Runtime>(`/v1/storefronts/${STOREFRONT_ID}/runtime${q}`, { cache: 'no-store' });
+}
+
+export async function getPage(slug: string) {
+  return storeApi<{
+    slug: string;
+    title: string;
+    content: Record<string, unknown>;
+    seo: Record<string, unknown>;
+  }>(`/v1/storefronts/${STOREFRONT_ID}/pages/${slug}`, { cache: 'no-store' });
 }
 
 export async function getProducts(query?: {

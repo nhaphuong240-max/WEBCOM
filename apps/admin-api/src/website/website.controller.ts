@@ -1,19 +1,46 @@
-import { Body, Controller, Get, Param, Post, Query, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Param, Post, Put, Query, UseGuards } from '@nestjs/common';
 import { z } from 'zod';
 import { AppError, type RequestContext } from '@ptt/shared-kernel';
 import { StorefrontContextGuard } from '../common/storefront-context.guard';
 import { TenantAuthGuard } from '../common/tenant-auth.guard';
 import { ReqContext } from '../common/req-context.decorator';
 import { WebsiteService } from './website.service';
+import { PlatformService } from './platform.service';
 
 @Controller()
 export class WebsiteController {
-  constructor(private readonly website: WebsiteService) {}
+  constructor(
+    private readonly website: WebsiteService,
+    private readonly platform: PlatformService,
+  ) {}
 
   @Get('v1/storefronts/:idOrSlug/runtime')
   @UseGuards(StorefrontContextGuard)
-  runtime(@ReqContext() ctx: RequestContext, @Param('idOrSlug') idOrSlug: string) {
-    return this.website.getRuntime(ctx.tenantId, idOrSlug);
+  async runtime(
+    @ReqContext() ctx: RequestContext,
+    @Param('idOrSlug') idOrSlug: string,
+    @Query('preview') preview?: string,
+  ) {
+    const runtime = await this.website.getRuntime(ctx.tenantId, idOrSlug);
+    if (preview) {
+      await this.platform.resolvePreview(ctx.tenantId, preview);
+    }
+    try {
+      const brand = await this.platform.getBrandKitResolved(ctx.tenantId, runtime.storefront.id);
+      return { ...runtime, brand_kit: brand.tokens };
+    } catch {
+      return { ...runtime, brand_kit: null };
+    }
+  }
+
+  @Get('v1/storefronts/:idOrSlug/pages/:slug')
+  @UseGuards(StorefrontContextGuard)
+  publishedPage(
+    @ReqContext() ctx: RequestContext,
+    @Param('idOrSlug') idOrSlug: string,
+    @Param('slug') slug: string,
+  ) {
+    return this.website.getPublishedPage(ctx.tenantId, idOrSlug, slug);
   }
 
   @Post('v1/admin/storefronts/:id/ensure-aura-lite')
@@ -113,5 +140,254 @@ export class WebsiteController {
       .safeParse(body);
     if (!parsed.success) throw AppError.validation('Invalid lead', parsed.error.flatten());
     return this.website.createLead(ctx.tenantId, parsed.data);
+  }
+
+  // ─── W3 Brand Kit ──────────────────────────────────────────
+
+  @Get('v1/admin/storefronts/:id/brand-kit')
+  @UseGuards(TenantAuthGuard)
+  brandKit(@ReqContext() ctx: RequestContext, @Param('id') id: string) {
+    return this.platform.getBrandKitResolved(ctx.tenantId, id);
+  }
+
+  @Put('v1/admin/storefronts/:id/brand-kit')
+  @UseGuards(TenantAuthGuard)
+  putBrandKit(@ReqContext() ctx: RequestContext, @Param('id') id: string, @Body() body: unknown) {
+    const parsed = z
+      .object({
+        scope: z.enum(['tenant', 'brand', 'storefront']).default('storefront'),
+        brand_id: z.string().optional(),
+        tokens: z.record(z.unknown()),
+        publish: z.boolean().optional(),
+      })
+      .safeParse(body);
+    if (!parsed.success) throw AppError.validation('Invalid brand kit', parsed.error.flatten());
+    return this.platform.upsertBrandKit(
+      ctx.tenantId,
+      {
+        storefrontId: id,
+        brandId: parsed.data.brand_id,
+        scope: parsed.data.scope,
+        tokens: parsed.data.tokens as never,
+        publish: parsed.data.publish,
+      },
+      ctx.actorId,
+    );
+  }
+
+  @Post('v1/admin/storefronts/:id/brand-kit/apply')
+  @UseGuards(TenantAuthGuard)
+  applyBrandKit(@ReqContext() ctx: RequestContext, @Param('id') id: string) {
+    return this.platform.applyBrandKitToTheme(ctx.tenantId, id, ctx.actorId);
+  }
+
+  // ─── W3 Marketplace ────────────────────────────────────────
+
+  @Get('v1/admin/templates')
+  @UseGuards(TenantAuthGuard)
+  templates(
+    @Query('industry') industry?: string,
+    @Query('goal') goal?: string,
+    @Query('q') q?: string,
+  ) {
+    return this.platform.listTemplates({ industry, goal, q });
+  }
+
+  @Post('v1/admin/templates/match')
+  @UseGuards(TenantAuthGuard)
+  match(@Body() body: unknown) {
+    const parsed = z
+      .object({
+        industry: z.string().optional(),
+        goal: z.string().optional(),
+        channel: z.string().optional(),
+        catalog_size: z.number().optional(),
+        style: z.string().optional(),
+        budget: z.string().optional(),
+      })
+      .safeParse(body);
+    if (!parsed.success) throw AppError.validation('Invalid match input', parsed.error.flatten());
+    return this.platform.matchTemplates(parsed.data);
+  }
+
+  @Post('v1/admin/storefronts/:id/templates/:templateId/install')
+  @UseGuards(TenantAuthGuard)
+  install(
+    @ReqContext() ctx: RequestContext,
+    @Param('id') id: string,
+    @Param('templateId') templateId: string,
+  ) {
+    return this.platform.installTemplate(ctx.tenantId, id, templateId, ctx.actorId);
+  }
+
+  // ─── W3 Theme Library ──────────────────────────────────────
+
+  @Get('v1/admin/storefronts/:id/themes')
+  @UseGuards(TenantAuthGuard)
+  themes(@ReqContext() ctx: RequestContext, @Param('id') id: string) {
+    return this.platform.listThemes(ctx.tenantId, id);
+  }
+
+  @Post('v1/admin/storefronts/:id/theme-versions/:vid/promote')
+  @UseGuards(TenantAuthGuard)
+  promote(
+    @ReqContext() ctx: RequestContext,
+    @Param('id') id: string,
+    @Param('vid') vid: string,
+    @Body() body: unknown,
+  ) {
+    const parsed = z.object({ target: z.enum(['staging', 'draft']) }).safeParse(body);
+    if (!parsed.success) throw AppError.validation('Invalid promote', parsed.error.flatten());
+    return this.platform.promoteThemeVersion(ctx.tenantId, id, vid, parsed.data.target, ctx.actorId);
+  }
+
+  @Post('v1/admin/storefronts/:id/theme-versions/:vid/clone')
+  @UseGuards(TenantAuthGuard)
+  clone(
+    @ReqContext() ctx: RequestContext,
+    @Param('id') id: string,
+    @Param('vid') vid: string,
+  ) {
+    return this.platform.cloneThemeVersion(ctx.tenantId, id, vid, ctx.actorId);
+  }
+
+  @Post('v1/admin/storefronts/:id/preview-token')
+  @UseGuards(TenantAuthGuard)
+  previewToken(@ReqContext() ctx: RequestContext, @Param('id') id: string, @Body() body: unknown) {
+    const parsed = z.object({ hours: z.number().min(1).max(168).optional() }).safeParse(body ?? {});
+    if (!parsed.success) throw AppError.validation('Invalid preview', parsed.error.flatten());
+    return this.platform.createPreviewToken(ctx.tenantId, id, parsed.data.hours ?? 24);
+  }
+
+  // ─── W3 Builder / CMS ──────────────────────────────────────
+
+  @Get('v1/admin/builder/sections')
+  @UseGuards(TenantAuthGuard)
+  sections() {
+    return this.platform.sectionLibrary();
+  }
+
+  @Get('v1/admin/storefronts/:id/pages')
+  @UseGuards(TenantAuthGuard)
+  pages(@ReqContext() ctx: RequestContext, @Param('id') id: string) {
+    return this.platform.listPages(ctx.tenantId, id);
+  }
+
+  @Get('v1/admin/storefronts/:id/pages/:slug')
+  @UseGuards(TenantAuthGuard)
+  pageDraft(
+    @ReqContext() ctx: RequestContext,
+    @Param('id') id: string,
+    @Param('slug') slug: string,
+  ) {
+    return this.platform.getPageDraft(ctx.tenantId, id, slug);
+  }
+
+  @Put('v1/admin/storefronts/:id/pages/:slug')
+  @UseGuards(TenantAuthGuard)
+  savePage(
+    @ReqContext() ctx: RequestContext,
+    @Param('id') id: string,
+    @Param('slug') slug: string,
+    @Body() body: unknown,
+  ) {
+    const parsed = z
+      .object({
+        title: z.string().optional(),
+        content: z.record(z.unknown()),
+        seo: z.record(z.unknown()).optional(),
+        expected_version: z.number().optional(),
+        create_if_missing: z.boolean().optional(),
+        template_key: z.string().optional(),
+      })
+      .safeParse(body);
+    if (!parsed.success) throw AppError.validation('Invalid page draft', parsed.error.flatten());
+    return this.platform.savePageDraft(
+      ctx.tenantId,
+      id,
+      slug,
+      {
+        title: parsed.data.title,
+        content: parsed.data.content,
+        seo: parsed.data.seo,
+        expected_version: parsed.data.expected_version,
+        create_if_missing: parsed.data.create_if_missing,
+        template_key: parsed.data.template_key,
+      },
+      ctx.actorId,
+    );
+  }
+
+  // ─── W3 Go-live / Publish ──────────────────────────────────
+
+  @Get('v1/admin/storefronts/:id/golive')
+  @UseGuards(TenantAuthGuard)
+  golive(@ReqContext() ctx: RequestContext, @Param('id') id: string) {
+    return this.platform.evaluateChecklist(ctx.tenantId, id);
+  }
+
+  @Post('v1/admin/storefronts/:id/golive/evaluate')
+  @UseGuards(TenantAuthGuard)
+  goliveEval(@ReqContext() ctx: RequestContext, @Param('id') id: string) {
+    return this.platform.ensureChecklist(ctx.tenantId, id);
+  }
+
+  @Post('v1/admin/storefronts/:id/golive/waive')
+  @UseGuards(TenantAuthGuard)
+  waive(@ReqContext() ctx: RequestContext, @Param('id') id: string, @Body() body: unknown) {
+    const parsed = z
+      .object({ code: z.string().min(1), reason: z.string().min(5) })
+      .safeParse(body);
+    if (!parsed.success) throw AppError.validation('Invalid waiver', parsed.error.flatten());
+    return this.platform.waiveChecklistItem(
+      ctx.tenantId,
+      id,
+      parsed.data.code,
+      parsed.data.reason,
+      ctx.actorId || 'admin',
+    );
+  }
+
+  @Post('v1/admin/storefronts/:id/publish')
+  @UseGuards(TenantAuthGuard)
+  publish(@ReqContext() ctx: RequestContext, @Param('id') id: string) {
+    return this.platform.publishStorefront(ctx.tenantId, id, ctx.actorId || 'admin');
+  }
+
+  @Post('v1/admin/storefronts/:id/rollback')
+  @UseGuards(TenantAuthGuard)
+  rollback(@ReqContext() ctx: RequestContext, @Param('id') id: string) {
+    return this.platform.rollbackPublish(ctx.tenantId, id, ctx.actorId || 'admin');
+  }
+
+  // ─── W3 Onboarding ─────────────────────────────────────────
+
+  @Get('v1/admin/storefronts/:id/onboarding')
+  @UseGuards(TenantAuthGuard)
+  onboarding(@ReqContext() ctx: RequestContext, @Param('id') id: string) {
+    return this.platform.getOnboarding(ctx.tenantId, id);
+  }
+
+  @Post('v1/admin/storefronts/:id/onboarding/advance')
+  @UseGuards(TenantAuthGuard)
+  advanceOnboarding(
+    @ReqContext() ctx: RequestContext,
+    @Param('id') id: string,
+    @Body() body: unknown,
+  ) {
+    const parsed = z
+      .object({
+        step: z.enum(['brand_kit', 'catalog', 'theme_match', 'payment', 'golive', 'done']),
+        done: z.boolean().default(true),
+      })
+      .safeParse(body);
+    if (!parsed.success) throw AppError.validation('Invalid onboarding', parsed.error.flatten());
+    return this.platform.advanceOnboarding(
+      ctx.tenantId,
+      id,
+      parsed.data.step,
+      parsed.data.done,
+      ctx.actorId,
+    );
   }
 }

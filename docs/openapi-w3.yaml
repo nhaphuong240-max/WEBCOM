@@ -1,0 +1,154 @@
+openapi: 3.0.3
+info:
+  title: PTT WebCom API — W3 Website Platform
+  version: 3.0.0-w3
+servers:
+  - url: http://127.0.0.1:3001/api
+  - url: https://webecom.ngoinhahomnay.vn/api
+tags:
+  - name: BrandKit
+  - name: Marketplace
+  - name: ThemeLibrary
+  - name: Builder
+  - name: GoLive
+  - name: Onboarding
+paths:
+  /v1/admin/storefronts/{id}/brand-kit:
+    get:
+      tags: [BrandKit]
+      summary: Resolved Brand Kit (tenant→brand→storefront)
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+        - { name: x-tenant-id, in: header, required: true, schema: { type: string } }
+      responses:
+        '200': { description: tokens + layers }
+    put:
+      tags: [BrandKit]
+      summary: Upsert Brand Kit version
+      responses:
+        '200': { description: Brand kit row }
+  /v1/admin/storefronts/{id}/brand-kit/apply:
+    post:
+      tags: [BrandKit]
+      summary: Apply Brand Kit tokens into new theme draft version
+      responses:
+        '200': { description: Theme version }
+  /v1/admin/templates:
+    get:
+      tags: [Marketplace]
+      summary: List template catalog
+      parameters:
+        - { name: industry, in: query, schema: { type: string } }
+        - { name: goal, in: query, schema: { type: string } }
+        - { name: q, in: query, schema: { type: string } }
+      responses:
+        '200': { description: Templates }
+  /v1/admin/templates/match:
+    post:
+      tags: [Marketplace]
+      summary: Rules-based theme matchmaker
+      responses:
+        '200': { description: Ranked matches + playbook }
+  /v1/admin/storefronts/{id}/templates/{templateId}/install:
+    post:
+      tags: [Marketplace]
+      summary: Install template → Theme Library draft
+      responses:
+        '200': { description: Install result }
+  /v1/admin/storefronts/{id}/themes:
+    get:
+      tags: [ThemeLibrary]
+      summary: List themes + versions
+      responses:
+        '200': { description: Themes }
+  /v1/admin/storefronts/{id}/theme-versions/{vid}/promote:
+    post:
+      tags: [ThemeLibrary]
+      summary: Promote version to staging|draft
+      responses:
+        '200': { description: Version }
+  /v1/admin/storefronts/{id}/theme-versions/{vid}/clone:
+    post:
+      tags: [ThemeLibrary]
+      summary: Clone theme version
+      responses:
+        '200': { description: New draft }
+  /v1/admin/storefronts/{id}/preview-token:
+    post:
+      tags: [ThemeLibrary]
+      summary: Create expiring staging preview token
+      responses:
+        '200': { description: token + path }
+  /v1/admin/builder/sections:
+    get:
+      tags: [Builder]
+      summary: Section/block allowlist
+      responses:
+        '200': { description: Sections }
+  /v1/admin/storefronts/{id}/pages:
+    get:
+      tags: [Builder]
+      summary: List CMS pages
+      responses:
+        '200': { description: Pages }
+  /v1/admin/storefronts/{id}/pages/{slug}:
+    get:
+      tags: [Builder]
+      summary: Get page draft
+      responses:
+        '200': { description: Draft }
+    put:
+      tags: [Builder]
+      summary: Autosave page draft (optimistic concurrency)
+      responses:
+        '200': { description: Saved }
+        '409': { description: Version conflict }
+  /v1/storefronts/{idOrSlug}/pages/{slug}:
+    get:
+      tags: [Builder]
+      summary: Public published CMS page
+      responses:
+        '200': { description: Page }
+  /v1/admin/storefronts/{id}/golive:
+    get:
+      tags: [GoLive]
+      summary: Evaluate go-live checklist
+      responses:
+        '200': { description: Checklist + can_publish }
+  /v1/admin/storefronts/{id}/golive/evaluate:
+    post:
+      tags: [GoLive]
+      summary: Ensure + re-evaluate checklist
+      responses:
+        '200': { description: Checklist }
+  /v1/admin/storefronts/{id}/golive/waive:
+    post:
+      tags: [GoLive]
+      summary: Waiver blocking item (audited)
+      responses:
+        '200': { description: Item }
+  /v1/admin/storefronts/{id}/publish:
+    post:
+      tags: [GoLive]
+      summary: PublishTheme workflow (in-process; gated by checklist)
+      responses:
+        '200': { description: Publish job }
+        '409': { description: Checklist blocked }
+  /v1/admin/storefronts/{id}/rollback:
+    post:
+      tags: [GoLive]
+      summary: Rollback to previous published theme version
+      responses:
+        '200': { description: Rollback job }
+  /v1/admin/storefronts/{id}/onboarding:
+    get:
+      tags: [Onboarding]
+      summary: Wizard progress
+      responses:
+        '200': { description: Steps }
+  /v1/admin/storefronts/{id}/onboarding/advance:
+    post:
+      tags: [Onboarding]
+      summary: Mark step done / advance
+      responses:
+        '200': { description: Progress }

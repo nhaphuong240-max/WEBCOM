@@ -27,6 +27,12 @@ model Tenant {
   themes      Theme[]
   mediaAssets MediaAsset[]
   leads       Lead[]
+  brandKits   BrandKit[]
+  templateInstalls TemplateInstall[]
+  goLiveItems GoLiveChecklistItem[]
+  publishJobs PublishJob[]
+  onboarding  OnboardingProgress[]
+  previewTokens StagingPreviewToken[]
 
   @@map("tenants")
 }
@@ -86,6 +92,12 @@ model Storefront {
   navigationMenus  NavigationMenu[]
   events           StorefrontEvent[]
   vouchers         Voucher[]
+  brandKits        BrandKit[]
+  templateInstalls TemplateInstall[]
+  goLiveItems      GoLiveChecklistItem[]
+  publishJobs      PublishJob[]
+  onboarding       OnboardingProgress?
+  previewTokens    StagingPreviewToken[]
 
   @@unique([tenantId, slug])
   @@index([tenantId])
@@ -390,15 +402,17 @@ model Theme {
 }
 
 model ThemeVersion {
-  id        String   @id @default(uuid())
-  tenantId  String   @map("tenant_id")
-  themeId   String   @map("theme_id")
-  version   Int
-  status    String   @default("draft") // draft|staging|published
+  id                 String   @id @default(uuid())
+  tenantId           String   @map("tenant_id")
+  themeId            String   @map("theme_id")
+  version            Int
+  status             String   @default("draft") // draft|staging|published|archived
   /// JSON: tokens, sections layout for Aura Commerce Lite
-  config    Json     @default("{}")
-  createdAt DateTime @default(now()) @map("created_at")
-  theme     Theme    @relation(fields: [themeId], references: [id], onDelete: Cascade)
+  config             Json     @default("{}")
+  note               String   @default("")
+  previousVersionId  String?  @map("previous_version_id")
+  createdAt          DateTime @default(now()) @map("created_at")
+  theme              Theme    @relation(fields: [themeId], references: [id], onDelete: Cascade)
 
   @@unique([themeId, version])
   @@index([tenantId])
@@ -518,4 +532,142 @@ model Lead {
 
   @@index([tenantId, status])
   @@map("leads")
+}
+
+/// W3 — Brand Kit tokens (tenant → brand → storefront inheritance)
+model BrandKit {
+  id           String      @id @default(uuid())
+  tenantId     String      @map("tenant_id")
+  brandId      String?     @map("brand_id")
+  storefrontId String?     @map("storefront_id")
+  /// tenant | brand | storefront
+  scope        String      @default("storefront")
+  version      Int         @default(1)
+  status       String      @default("draft") // draft|published
+  /// colors, fonts, spacing, logo, seo, legal, voice
+  tokens       Json        @default("{}")
+  createdAt    DateTime    @default(now()) @map("created_at")
+  updatedAt    DateTime    @updatedAt @map("updated_at")
+  tenant       Tenant      @relation(fields: [tenantId], references: [id])
+  storefront   Storefront? @relation(fields: [storefrontId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, scope])
+  @@index([storefrontId])
+  @@map("brand_kits")
+}
+
+/// W3 — Global template marketplace catalog (system-seeded)
+model TemplateCatalog {
+  id          String   @id @default(uuid())
+  code        String   @unique
+  name        String
+  industry    String
+  goal        String   @default("conversion")
+  license     String   @default("free") // free|one_time
+  /// { cvr, mobile, seo } 0–100
+  scores      Json     @default("{}")
+  features    Json     @default("[]")
+  previewUrl  String?  @map("preview_url")
+  demoUrl     String?  @map("demo_url")
+  themeConfig Json     @default("{}") @map("theme_config")
+  pageContent Json     @default("{}") @map("page_content")
+  playbook    Json     @default("[]")
+  active      Boolean  @default(true)
+  createdAt   DateTime @default(now()) @map("created_at")
+  installs    TemplateInstall[]
+
+  @@index([industry, goal])
+  @@map("template_catalog")
+}
+
+model TemplateInstall {
+  id           String          @id @default(uuid())
+  tenantId     String          @map("tenant_id")
+  storefrontId String          @map("storefront_id")
+  templateId   String          @map("template_id")
+  themeId      String?         @map("theme_id")
+  status       String          @default("installed") // installed|archived
+  createdAt    DateTime        @default(now()) @map("created_at")
+  tenant       Tenant          @relation(fields: [tenantId], references: [id])
+  storefront   Storefront      @relation(fields: [storefrontId], references: [id], onDelete: Cascade)
+  template     TemplateCatalog @relation(fields: [templateId], references: [id])
+
+  @@unique([storefrontId, templateId])
+  @@index([tenantId])
+  @@map("template_installs")
+}
+
+/// W3 — Go-live governance checklist (BR-025)
+model GoLiveChecklistItem {
+  id           String     @id @default(uuid())
+  tenantId     String     @map("tenant_id")
+  storefrontId String     @map("storefront_id")
+  groupKey     String     @map("group_key")
+  code         String
+  title        String
+  /// blocking | warning
+  severity     String     @default("blocking")
+  /// pending | pass | fail | waived
+  status       String     @default("pending")
+  evidence     Json       @default("{}")
+  waivedBy     String?    @map("waived_by")
+  waivedReason String?    @map("waived_reason")
+  updatedAt    DateTime   @updatedAt @map("updated_at")
+  createdAt    DateTime   @default(now()) @map("created_at")
+  tenant       Tenant     @relation(fields: [tenantId], references: [id])
+  storefront   Storefront @relation(fields: [storefrontId], references: [id], onDelete: Cascade)
+
+  @@unique([storefrontId, code])
+  @@index([tenantId, storefrontId])
+  @@map("golive_checklist_items")
+}
+
+/// W3 — Publish workflow job (Temporal stub → in-process)
+model PublishJob {
+  id                  String     @id @default(uuid())
+  tenantId            String     @map("tenant_id")
+  storefrontId        String     @map("storefront_id")
+  themeVersionId      String?    @map("theme_version_id")
+  previousThemeVersionId String? @map("previous_theme_version_id")
+  /// pending|running|blocked|published|failed|rolled_back
+  status              String     @default("pending")
+  checklistSnapshot   Json       @default("{}") @map("checklist_snapshot")
+  error               Json?
+  createdAt           DateTime   @default(now()) @map("created_at")
+  finishedAt          DateTime?  @map("finished_at")
+  tenant              Tenant     @relation(fields: [tenantId], references: [id])
+  storefront          Storefront @relation(fields: [storefrontId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, storefrontId, status])
+  @@map("publish_jobs")
+}
+
+model OnboardingProgress {
+  id           String     @id @default(uuid())
+  tenantId     String     @map("tenant_id")
+  storefrontId String     @unique @map("storefront_id")
+  /// brand_kit | catalog | theme_match | payment | golive | done
+  currentStep  String     @default("brand_kit") @map("current_step")
+  completed    Json       @default("{}")
+  updatedAt    DateTime   @updatedAt @map("updated_at")
+  createdAt    DateTime   @default(now()) @map("created_at")
+  tenant       Tenant     @relation(fields: [tenantId], references: [id])
+  storefront   Storefront @relation(fields: [storefrontId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@map("onboarding_progress")
+}
+
+model StagingPreviewToken {
+  id           String     @id @default(uuid())
+  tenantId     String     @map("tenant_id")
+  storefrontId String     @map("storefront_id")
+  token        String     @unique
+  expiresAt    DateTime   @map("expires_at")
+  createdAt    DateTime   @default(now()) @map("created_at")
+  tenant       Tenant     @relation(fields: [tenantId], references: [id])
+  storefront   Storefront @relation(fields: [storefrontId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, storefrontId])
+  @@map("staging_preview_tokens")
 }
