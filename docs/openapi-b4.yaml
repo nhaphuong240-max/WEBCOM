@@ -1,0 +1,45 @@
+openapi: 3.0.3
+info:
+  title: WebCom B4 — Live Commerce MVP
+  version: 1.0.0
+paths:
+  /api/health:
+    get:
+      summary: wave B4
+  /api/v1/admin/live/status:
+    get:
+      summary: Live feature flags
+  /api/v1/admin/live/sessions:
+    get:
+      summary: List live sessions
+    post:
+      summary: Create session plan (host/script/GMV) + bind channel stub
+  /api/v1/admin/live/sessions/{id}:
+    get:
+      summary: Session detail + items + comments + alerts
+  /api/v1/admin/live/sessions/{id}/items:
+    post:
+      summary: Add SKU + keyword/deal
+  /api/v1/admin/live/sessions/{id}/start:
+    post:
+      summary: Go live
+  /api/v1/admin/live/sessions/{id}/end:
+    post:
+      summary: End live + recovery snapshot
+  /api/v1/admin/live/sessions/{id}/viewers:
+    post:
+      summary: Update viewers stub
+  /api/v1/admin/live/sessions/{id}/comments:
+    get:
+      summary: Comment feed
+    post:
+      summary: Ingest comment → keyword match → draft → OMS order
+  /api/v1/admin/live/sessions/{id}/alerts:
+    get:
+      summary: Stock / conversion alerts
+  /api/v1/admin/live/alerts/{id}/resolve:
+    post:
+      summary: Resolve alert
+  /api/v1/admin/live/sessions/{id}/recovery:
+    get:
+      summary: Post-live unpaid / TRANSFER recovery list

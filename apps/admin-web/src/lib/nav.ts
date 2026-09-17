@@ -16,6 +16,9 @@ export const mainNav = [
   { href: '/inventory', label: 'Tồn kho', section: 'Điều hành' },
   ...websiteNav.map((i) => ({ ...i, section: 'Website' as const })),
   { href: '/design-system', label: 'Design system', section: 'Website' },
-  { href: '/social', label: 'Social / Live', section: 'Tăng trưởng' },
+  { href: '/social', label: 'Social Inbox', section: 'Tăng trưởng' },
+  { href: '/live', label: 'Live Commerce', section: 'Tăng trưởng' },
+  { href: '/marketplace', label: 'Marketplace', section: 'Tăng trưởng' },
+  { href: '/pos', label: 'POS', section: 'Tăng trưởng' },
   { href: '/revenue', label: 'Revenue', section: 'Trí tuệ' },
 ] as const;

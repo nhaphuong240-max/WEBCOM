@@ -557,9 +557,9 @@ Repo chạy được, design system từ mockup, auth tenant, admin/storefront s
 |---|---|---|
 | B1 | Channel binding + Unified Inbox | ≥2 kênh stub; thread + SLA/tag · **shipped** `wave: B1` |
 | B2 | Comment/chat → Order draft | Draft → OMS/checkout E2E · **shipped** `wave: B2` |
-| B3 | POS 1 cửa hàng | Barcode sell + shift + tồn realtime |
-| B4 | Live Commerce MVP | Keyword→order + alert tồn |
-| B5 | Marketplace connector #1 | Listing/order/stock; lag ≤60s mục tiêu |
+| B3 | POS 1 cửa hàng | Barcode sell + shift + tồn realtime · **shipped** `wave: B3` |
+| B4 | Live Commerce MVP | Keyword→order + alert tồn · **shipped** `wave: B4` |
+| B5 | Marketplace connector #1 | Listing/order/stock; lag ≤60s · **shipped** `wave: B5` |
 | B6 | AI social + đa cửa hàng | AI reply approval; POS ≥2 location |
 
 **Phạm vi:** FR-POS · FR-SOCIAL · FR-LIVE · FR-MKTPLACE. **Không** full CRM Journey/Loyalty (nhánh C).
@@ -604,6 +604,72 @@ Repo chạy được, design system từ mockup, auth tenant, admin/storefront s
 | POST | `/api/v1/admin/social/comments/:messageId/order-draft` | Comment→draft |
 | POST | `/api/v1/admin/social/drafts/:id/send-cart` | Stub giỏ Messenger |
 | POST | `/api/v1/admin/social/drafts/:id/convert` | → OMS CONFIRMED |
+
+---
+
+# 9k. Wave B3 — POS Core (1 cửa hàng)
+
+## Exit criteria
+- [x] `PosLocation` / `PosRegister` / `PosShift` / `PosSale` / `PosReturn` / `LocationInventory`.
+- [x] Barcode/SKU lookup ≤500ms target · bán cash/COD/TRANSFER (split) · receipt.
+- [x] Tồn location ↔ global đồng bộ khi sell/return · đóng ca có báo cáo variance.
+- [x] Admin `/pos` · Health `wave: B3` · `openapi-b3.yaml` · `scripts/e2e-b3.sh` · runbook.
+
+## API (tóm tắt)
+| Method | Path | Mô tả |
+|---|---|---|
+| POST | `/api/v1/admin/pos/locations/ensure` | Bootstrap 1 store |
+| POST | `/api/v1/admin/pos/shifts/open` | Mở ca |
+| GET | `/api/v1/admin/pos/lookup` | Barcode search |
+| POST | `/api/v1/admin/pos/sales` | Bán + receipt |
+| POST | `/api/v1/admin/pos/returns` | Đổi trả |
+| POST | `/api/v1/admin/pos/shifts/:id/close` | Đóng ca + report |
+
+**SRS:** FR-POS · NFR-PERF-002.
+
+---
+
+# 9l. Wave B4 — Live Commerce MVP
+
+## Exit criteria
+- [x] `LiveSession` / `LiveSessionItem` / `LiveComment` / `LiveAlert`.
+- [x] Keyword comment → Social draft → OMS `CONFIRMED` (≥1 order staging).
+- [x] Stock alert khi available ≤ threshold hoặc reserved ≥80% on_hand.
+- [x] Post-live recovery list (TRANSFER/pending).
+- [x] Admin `/live` · Health `wave: B4` · `openapi-b4.yaml` · `scripts/e2e-b4.sh`.
+
+## API (tóm tắt)
+| Method | Path | Mô tả |
+|---|---|---|
+| POST | `/api/v1/admin/live/sessions` | Tạo phiên |
+| POST | `/api/v1/admin/live/sessions/:id/items` | SKU + keyword |
+| POST | `/api/v1/admin/live/sessions/:id/start` | Go live |
+| POST | `/api/v1/admin/live/sessions/:id/comments` | Keyword→order |
+| GET | `/api/v1/admin/live/sessions/:id/alerts` | Alert tồn |
+| GET | `/api/v1/admin/live/sessions/:id/recovery` | Post-live recovery |
+
+**SRS:** FR-LIVE.
+
+---
+
+# 9m. Wave B5 — Marketplace connector #1 (Shopee)
+
+## Exit criteria
+- [x] `MarketplaceAccount` / `MarketplaceListing` / `MarketplaceOrder` / `MarketplaceOutbox` (migration `b5_marketplace_shopee`).
+- [x] Nest `MarketplaceModule`: Shopee stub connect · listing↔SKU · stock outbox drain · lag ≤60s · order ingest (BR-004) · unmatched → exception.
+- [x] Matched order → OMS `CONFIRMED` + stock reserve + channel attribution.
+- [x] Admin `/marketplace` · Health `wave: B5` · `openapi-b5.yaml` · Bruno · `scripts/e2e-b5.sh` · runbook.
+
+## API (tóm tắt)
+| Method | Path | Mô tả |
+|---|---|---|
+| POST | `/api/v1/admin/marketplace/accounts/connect` | Bind Shopee stub |
+| POST | `/api/v1/admin/marketplace/listings` | Map SKU → listing + enqueue stock |
+| POST | `/api/v1/admin/marketplace/stock/sync` | Drain outbox; assert lag SLO |
+| POST | `/api/v1/admin/marketplace/orders/ingest` | Matched→OMS / exception |
+| GET | `/api/v1/admin/marketplace/outbox` | Jobs + `lag_ms` |
+
+**SRS:** FR-MKTPLACE · BR-004. Live partner: `FEATURE_SHOPEE_LIVE` + `SHOPEE_PARTNER_ID` (chưa gọi API đối tác — vẫn stub push).
 
 ---
 

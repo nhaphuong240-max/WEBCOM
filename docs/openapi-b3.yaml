@@ -1,0 +1,42 @@
+openapi: 3.0.3
+info:
+  title: WebCom B3 — POS Core (1 store)
+  version: 1.0.0
+paths:
+  /api/health:
+    get:
+      summary: wave B3
+  /api/v1/admin/pos/status:
+    get:
+      summary: POS feature flags + barcode SLO target
+  /api/v1/admin/pos/locations/ensure:
+    post:
+      summary: Idempotent create 1 store + register + sync location stock
+  /api/v1/admin/pos/locations:
+    get:
+      summary: List locations + registers
+  /api/v1/admin/pos/locations/{id}/stock:
+    get:
+      summary: Location vs global inventory consistency
+  /api/v1/admin/pos/shifts/open:
+    post:
+      summary: Open cashier shift with opening cash
+    get:
+      summary: Get open shift for register_id
+  /api/v1/admin/pos/shifts/{id}/close:
+    post:
+      summary: Close shift + cash variance report
+  /api/v1/admin/pos/lookup:
+    get:
+      summary: Barcode/SKU search (NFR-PERF-002 P95 ≤500ms)
+  /api/v1/admin/pos/sales:
+    get:
+      summary: List sales
+    post:
+      summary: Sell at counter (split cash/COD/TRANSFER) + receipt + stock sync
+  /api/v1/admin/pos/sales/{id}:
+    get:
+      summary: Sale / receipt detail
+  /api/v1/admin/pos/returns:
+    post:
+      summary: Basic return — restock location + global

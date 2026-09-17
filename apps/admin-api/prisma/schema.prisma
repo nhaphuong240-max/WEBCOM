@@ -48,6 +48,18 @@ model Tenant {
   inboxConversations InboxConversation[]
   inboxMessages InboxMessage[]
   socialOrderDrafts SocialOrderDraft[]
+  posLocations PosLocation[]
+  posRegisters PosRegister[]
+  posShifts PosShift[]
+  posSales PosSale[]
+  locationInventories LocationInventory[]
+  liveSessions LiveSession[]
+  liveComments LiveComment[]
+  liveAlerts LiveAlert[]
+  marketplaceAccounts MarketplaceAccount[]
+  marketplaceListings MarketplaceListing[]
+  marketplaceOrders MarketplaceOrder[]
+  marketplaceOutbox MarketplaceOutbox[]
 
   @@map("tenants")
 }
@@ -180,6 +192,7 @@ model Sku {
 
   @@unique([tenantId, code])
   @@index([tenantId])
+  @@index([tenantId, barcode])
   @@map("skus")
 }
 
@@ -1100,4 +1113,376 @@ model SocialOrderDraft {
   @@index([tenantId, conversationId])
   @@index([tenantId, externalThreadId])
   @@map("social_order_drafts")
+}
+
+/// B3 — POS store location (1 store MVP) · FR-POS
+model PosLocation {
+  id          String   @id @default(uuid())
+  tenantId    String   @map("tenant_id")
+  code        String
+  name        String
+  address     String   @default("")
+  city        String   @default("")
+  /// active | inactive
+  status      String   @default("active")
+  timezone    String   @default("Asia/Ho_Chi_Minh")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+  tenant      Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  registers   PosRegister[]
+  shifts      PosShift[]
+  sales       PosSale[]
+  inventories LocationInventory[]
+
+  @@unique([tenantId, code])
+  @@index([tenantId, status])
+  @@map("pos_locations")
+}
+
+/// B3 — Cash register / terminal
+model PosRegister {
+  id         String   @id @default(uuid())
+  tenantId   String   @map("tenant_id")
+  locationId String   @map("location_id")
+  code       String
+  name       String
+  /// active | inactive
+  status     String   @default("active")
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+  tenant     Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  location   PosLocation @relation(fields: [locationId], references: [id], onDelete: Cascade)
+  shifts     PosShift[]
+  sales      PosSale[]
+
+  @@unique([locationId, code])
+  @@index([tenantId, locationId])
+  @@map("pos_registers")
+}
+
+/// B3 — Cashier shift open/close
+model PosShift {
+  id              String    @id @default(uuid())
+  tenantId        String    @map("tenant_id")
+  locationId      String    @map("location_id")
+  registerId      String    @map("register_id")
+  cashierId       String    @map("cashier_id")
+  /// open | closed
+  status          String    @default("open")
+  openingCash     Decimal   @default(0) @map("opening_cash") @db.Decimal(18, 2)
+  closingCash     Decimal?  @map("closing_cash") @db.Decimal(18, 2)
+  expectedCash    Decimal?  @map("expected_cash") @db.Decimal(18, 2)
+  cashVariance    Decimal?  @map("cash_variance") @db.Decimal(18, 2)
+  salesCount      Int       @default(0) @map("sales_count")
+  salesTotal      Decimal   @default(0) @map("sales_total") @db.Decimal(18, 2)
+  returnsCount    Int       @default(0) @map("returns_count")
+  returnsTotal    Decimal   @default(0) @map("returns_total") @db.Decimal(18, 2)
+  tenderSummary   Json      @default("{}") @map("tender_summary")
+  openedAt        DateTime  @default(now()) @map("opened_at")
+  closedAt        DateTime? @map("closed_at")
+  note            String    @default("")
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+  tenant          Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  location        PosLocation @relation(fields: [locationId], references: [id], onDelete: Cascade)
+  register        PosRegister @relation(fields: [registerId], references: [id], onDelete: Cascade)
+  sales           PosSale[]
+
+  @@index([tenantId, status, openedAt])
+  @@index([tenantId, registerId, status])
+  @@map("pos_shifts")
+}
+
+/// B3 — Per-location stock (synced with global InventoryBalance on sell/return)
+model LocationInventory {
+  id         String   @id @default(uuid())
+  tenantId   String   @map("tenant_id")
+  locationId String   @map("location_id")
+  skuId      String   @map("sku_id")
+  onHand     Int      @default(0) @map("on_hand")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+  createdAt  DateTime @default(now()) @map("created_at")
+  tenant     Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  location   PosLocation @relation(fields: [locationId], references: [id], onDelete: Cascade)
+
+  @@unique([locationId, skuId])
+  @@index([tenantId, skuId])
+  @@map("location_inventories")
+}
+
+/// B3 — POS sale / receipt
+model PosSale {
+  id              String   @id @default(uuid())
+  tenantId        String   @map("tenant_id")
+  locationId      String   @map("location_id")
+  registerId      String   @map("register_id")
+  shiftId         String   @map("shift_id")
+  receiptNo       String   @map("receipt_no")
+  /// completed | returned | partial_return | voided
+  status          String   @default("completed")
+  currency        String   @default("VND")
+  subtotalAmount  Decimal  @map("subtotal_amount") @db.Decimal(18, 2)
+  discountAmount  Decimal  @default(0) @map("discount_amount") @db.Decimal(18, 2)
+  totalAmount     Decimal  @map("total_amount") @db.Decimal(18, 2)
+  /// cash | COD | TRANSFER | split
+  paymentSummary  String   @map("payment_summary")
+  payments        Json     @default("[]")
+  customerName    String   @default("") @map("customer_name")
+  customerPhone   String   @default("") @map("customer_phone")
+  note            String   @default("")
+  cashierId       String   @map("cashier_id")
+  orderId         String?  @map("order_id")
+  qrPayload       String?  @map("qr_payload")
+  qrImageUrl      String?  @map("qr_image_url")
+  linesSnapshot   Json     @default("[]") @map("lines_snapshot")
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+  tenant          Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  location        PosLocation @relation(fields: [locationId], references: [id], onDelete: Cascade)
+  register        PosRegister @relation(fields: [registerId], references: [id], onDelete: Cascade)
+  shift           PosShift @relation(fields: [shiftId], references: [id], onDelete: Cascade)
+  returns         PosReturn[]
+
+  @@unique([tenantId, receiptNo])
+  @@index([tenantId, locationId, createdAt])
+  @@index([tenantId, shiftId])
+  @@map("pos_sales")
+}
+
+/// B3 — Basic return/exchange against a POS sale
+model PosReturn {
+  id            String   @id @default(uuid())
+  tenantId      String   @map("tenant_id")
+  saleId        String   @map("sale_id")
+  locationId    String   @map("location_id")
+  shiftId       String?  @map("shift_id")
+  reason        String   @default("")
+  totalAmount   Decimal  @map("total_amount") @db.Decimal(18, 2)
+  linesSnapshot Json     @default("[]") @map("lines_snapshot")
+  refundTender  String   @default("cash") @map("refund_tender")
+  cashierId     String   @map("cashier_id")
+  createdAt     DateTime @default(now()) @map("created_at")
+  sale          PosSale  @relation(fields: [saleId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, saleId])
+  @@index([tenantId, locationId, createdAt])
+  @@map("pos_returns")
+}
+
+/// B4 — Live Commerce session · FR-LIVE
+model LiveSession {
+  id              String   @id @default(uuid())
+  tenantId        String   @map("tenant_id")
+  storefrontId    String   @map("storefront_id")
+  channelAccountId String? @map("channel_account_id")
+  title           String
+  hostName        String   @default("") @map("host_name")
+  platform        String   @default("meta") // meta | tiktok | shopee
+  /// draft | scheduled | live | ended
+  status          String   @default("draft")
+  scriptNotes     String   @default("") @map("script_notes")
+  gmvTarget       Decimal  @default(0) @map("gmv_target") @db.Decimal(18, 2)
+  gmvActual       Decimal  @default(0) @map("gmv_actual") @db.Decimal(18, 2)
+  viewersPeak     Int      @default(0) @map("viewers_peak")
+  viewersCurrent  Int      @default(0) @map("viewers_current")
+  ordersCount     Int      @default(0) @map("orders_count")
+  commentsCount   Int      @default(0) @map("comments_count")
+  stockAlertThreshold Int  @default(5) @map("stock_alert_threshold")
+  scheduledAt     DateTime? @map("scheduled_at")
+  startedAt       DateTime? @map("started_at")
+  endedAt         DateTime? @map("ended_at")
+  createdBy       String?  @map("created_by")
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+  tenant          Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  items           LiveSessionItem[]
+  comments        LiveComment[]
+  alerts          LiveAlert[]
+
+  @@index([tenantId, status, createdAt])
+  @@map("live_sessions")
+}
+
+/// B4 — Products/deals + keyword mapping on a live session
+model LiveSessionItem {
+  id           String   @id @default(uuid())
+  tenantId     String   @map("tenant_id")
+  sessionId    String   @map("session_id")
+  skuId        String   @map("sku_id")
+  productTitle String   @map("product_title")
+  /// keyword commenters type to order (e.g. SERUM1)
+  keyword      String
+  dealPrice    Decimal? @map("deal_price") @db.Decimal(18, 2)
+  sortOrder    Int      @default(0) @map("sort_order")
+  ordersCount  Int      @default(0) @map("orders_count")
+  createdAt    DateTime @default(now()) @map("created_at")
+  session      LiveSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@unique([sessionId, keyword])
+  @@index([tenantId, sessionId])
+  @@index([sessionId, skuId])
+  @@map("live_session_items")
+}
+
+/// B4 — Live comment feed (stub realtime)
+model LiveComment {
+  id               String   @id @default(uuid())
+  tenantId         String   @map("tenant_id")
+  sessionId        String   @map("session_id")
+  externalId       String?  @map("external_id")
+  authorName       String   @default("") @map("author_name")
+  authorHandle     String   @default("") @map("author_handle")
+  body             String
+  matchedKeyword   String?  @map("matched_keyword")
+  matchedItemId    String?  @map("matched_item_id")
+  conversationId   String?  @map("conversation_id")
+  draftId          String?  @map("draft_id")
+  orderId          String?  @map("order_id")
+  /// pending | matched | ordered | ignored | failed
+  status           String   @default("pending")
+  createdAt        DateTime @default(now()) @map("created_at")
+  tenant           Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  session          LiveSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@unique([sessionId, externalId])
+  @@index([tenantId, sessionId, createdAt])
+  @@map("live_comments")
+}
+
+/// B4 — Live alerts (stock / conversion / backlog)
+model LiveAlert {
+  id         String   @id @default(uuid())
+  tenantId   String   @map("tenant_id")
+  sessionId  String   @map("session_id")
+  /// stock | conversion | backlog | claim_risk
+  type       String
+  /// info | warning | critical
+  severity   String   @default("warning")
+  message    String
+  skuId      String?  @map("sku_id")
+  payload    Json     @default("{}")
+  resolved   Boolean  @default(false)
+  createdAt  DateTime @default(now()) @map("created_at")
+  resolvedAt DateTime? @map("resolved_at")
+  tenant     Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  session    LiveSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, sessionId, resolved])
+  @@index([tenantId, type, createdAt])
+  @@map("live_alerts")
+}
+
+/// B5 — Marketplace connector account (Shopee #1) · FR-MKTPLACE · BR-004
+model MarketplaceAccount {
+  id            String   @id @default(uuid())
+  tenantId      String   @map("tenant_id")
+  storefrontId  String?  @map("storefront_id")
+  /// shopee | tiktok | lazada | tiki
+  platform      String   @default("shopee")
+  shopId        String   @map("shop_id")
+  shopName      String   @map("shop_name")
+  /// pending | connected | disconnected | error
+  status        String   @default("pending")
+  credentials   Json     @default("{}")
+  metadata      Json     @default("{}")
+  connectedAt   DateTime? @map("connected_at")
+  lastSyncAt    DateTime? @map("last_sync_at")
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+  tenant        Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  listings      MarketplaceListing[]
+  orders        MarketplaceOrder[]
+  outbox        MarketplaceOutbox[]
+
+  @@unique([tenantId, platform, shopId])
+  @@index([tenantId, status])
+  @@map("marketplace_accounts")
+}
+
+/// B5 — Listing ↔ SKU mapping
+model MarketplaceListing {
+  id              String   @id @default(uuid())
+  tenantId        String   @map("tenant_id")
+  accountId       String   @map("account_id")
+  skuId           String   @map("sku_id")
+  externalItemId  String   @map("external_item_id")
+  externalSku     String   @default("") @map("external_sku")
+  title           String   @default("")
+  /// active | inactive | error
+  status          String   @default("active")
+  priceRemote     Decimal? @map("price_remote") @db.Decimal(18, 2)
+  stockRemote     Int      @default(0) @map("stock_remote")
+  stockLocal      Int      @default(0) @map("stock_local")
+  lastSyncedAt    DateTime? @map("last_synced_at")
+  lastLagMs       Int?     @map("last_lag_ms")
+  metadata        Json     @default("{}")
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+  tenant          Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  account         MarketplaceAccount @relation(fields: [accountId], references: [id], onDelete: Cascade)
+
+  @@unique([accountId, externalItemId])
+  @@unique([accountId, skuId])
+  @@index([tenantId, accountId])
+  @@index([tenantId, skuId])
+  @@map("marketplace_listings")
+}
+
+/// B5 — Inbound marketplace order (BR-004 unique external id per account)
+model MarketplaceOrder {
+  id                String   @id @default(uuid())
+  tenantId          String   @map("tenant_id")
+  accountId         String   @map("account_id")
+  externalOrderId   String   @map("external_order_id")
+  /// matched | unmatched | exception | cancelled
+  matchStatus       String   @default("unmatched") @map("match_status")
+  /// pending | imported | failed
+  importStatus      String   @default("pending") @map("import_status")
+  orderId           String?  @map("order_id")
+  currency          String   @default("VND")
+  totalAmount       Decimal  @default(0) @map("total_amount") @db.Decimal(18, 2)
+  buyerName         String   @default("") @map("buyer_name")
+  buyerPhone        String   @default("") @map("buyer_phone")
+  shippingAddress   String   @default("") @map("shipping_address")
+  linesSnapshot     Json     @default("[]") @map("lines_snapshot")
+  exceptionReason   String?  @map("exception_reason")
+  rawPayload        Json     @default("{}") @map("raw_payload")
+  placedAt          DateTime? @map("placed_at")
+  importedAt        DateTime? @map("imported_at")
+  createdAt         DateTime @default(now()) @map("created_at")
+  updatedAt         DateTime @updatedAt @map("updated_at")
+  tenant            Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  account           MarketplaceAccount @relation(fields: [accountId], references: [id], onDelete: Cascade)
+
+  @@unique([accountId, externalOrderId])
+  @@index([tenantId, matchStatus, createdAt])
+  @@index([tenantId, accountId])
+  @@map("marketplace_orders")
+}
+
+/// B5 — Sync outbox (stock/listing/order) with lag tracking · target ≤60s
+model MarketplaceOutbox {
+  id            String    @id @default(uuid())
+  tenantId      String    @map("tenant_id")
+  accountId     String    @map("account_id")
+  /// stock | listing | order_pull | order_push
+  jobType       String    @map("job_type")
+  aggregateType String    @map("aggregate_type")
+  aggregateId   String    @map("aggregate_id")
+  /// upsert | delete | pull
+  op            String    @default("upsert")
+  payload       Json      @default("{}")
+  /// pending | processed | failed
+  status        String    @default("pending")
+  attempts      Int       @default(0)
+  lastError     String?   @map("last_error")
+  lagMs         Int?      @map("lag_ms")
+  processedAt   DateTime? @map("processed_at")
+  createdAt     DateTime  @default(now()) @map("created_at")
+  tenant        Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  account       MarketplaceAccount @relation(fields: [accountId], references: [id], onDelete: Cascade)
+
+  @@index([status, createdAt])
+  @@index([tenantId, accountId, jobType])
+  @@map("marketplace_outbox")
 }

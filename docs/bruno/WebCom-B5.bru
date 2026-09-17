@@ -1,0 +1,78 @@
+meta {
+  name: WebCom B5
+}
+
+get {
+  url: {{BASE}}/api/health
+}
+
+get {
+  url: {{BASE}}/api/v1/admin/marketplace/status
+  headers: {
+    x-tenant-id: ten_aura
+    x-actor-id: bruno
+  }
+}
+
+post {
+  url: {{BASE}}/api/v1/admin/marketplace/accounts/connect
+  headers: {
+    x-tenant-id: ten_aura
+    x-actor-id: bruno
+    content-type: application/json
+  }
+  body: json
+  json: {
+    "platform": "shopee",
+    "shop_name": "Bruno Shopee",
+    "storefront_id": "sf_aura"
+  }
+}
+
+post {
+  url: {{BASE}}/api/v1/admin/marketplace/listings
+  headers: {
+    x-tenant-id: ten_aura
+    x-actor-id: bruno
+    content-type: application/json
+  }
+  body: json
+  json: {
+    "account_id": "{{account_id}}",
+    "sku_id": "sku_aura_glow_30",
+    "title": "AURA Glow Serum"
+  }
+}
+
+post {
+  url: {{BASE}}/api/v1/admin/marketplace/stock/sync
+  headers: {
+    x-tenant-id: ten_aura
+    x-actor-id: bruno
+    content-type: application/json
+  }
+  body: json
+  json: {
+    "account_id": "{{account_id}}"
+  }
+}
+
+post {
+  url: {{BASE}}/api/v1/admin/marketplace/orders/ingest
+  headers: {
+    x-tenant-id: ten_aura
+    x-actor-id: bruno
+    content-type: application/json
+  }
+  body: json
+  json: {
+    "account_id": "{{account_id}}",
+    "auto_import": true,
+    "lines": [
+      {
+        "sku_id": "sku_aura_glow_30",
+        "qty": 1
+      }
+    ]
+  }
+}

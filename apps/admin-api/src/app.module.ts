@@ -19,6 +19,9 @@ import { TemporalModule } from './temporal/temporal.module';
 import { SearchModule } from './search/search.module';
 import { AiModule } from './ai/ai.module';
 import { SocialModule } from './social/social.module';
+import { PosModule } from './pos/pos.module';
+import { LiveModule } from './live/live.module';
+import { MarketplaceModule } from './marketplace/marketplace.module';
 import { HealthController } from './health/health.controller';
 import { MeController } from './iam/me.controller';
 import { AuthController } from './iam/auth.controller';
@@ -46,6 +49,9 @@ import { TenancyController } from './tenancy/tenancy.controller';
     SearchModule,
     AiModule,
     SocialModule,
+    PosModule,
+    LiveModule,
+    MarketplaceModule,
   ],
   controllers: [HealthController, MeController, AuthController, TenancyController],
 })

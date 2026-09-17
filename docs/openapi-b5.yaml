@@ -1,0 +1,46 @@
+openapi: 3.0.3
+info:
+  title: WebCom B5 — Marketplace connector #1 (Shopee)
+  version: 1.0.0
+paths:
+  /api/health:
+    get:
+      summary: wave B5
+  /api/v1/admin/marketplace/status:
+    get:
+      summary: Connector mode + lag SLO + outbox counters
+  /api/v1/admin/marketplace/accounts:
+    get:
+      summary: List marketplace accounts
+  /api/v1/admin/marketplace/accounts/connect:
+    post:
+      summary: Connect Shopee shop (stub OAuth)
+  /api/v1/admin/marketplace/accounts/{id}/disconnect:
+    post:
+      summary: Disconnect account
+  /api/v1/admin/marketplace/listings:
+    get:
+      summary: List SKU↔listing maps
+    post:
+      summary: Upsert listing + enqueue stock sync
+  /api/v1/admin/marketplace/stock/sync:
+    post:
+      summary: Enqueue stock push; drain outbox; assert lag ≤ SLO
+  /api/v1/admin/marketplace/orders:
+    get:
+      summary: List marketplace orders (filter match_status)
+  /api/v1/admin/marketplace/orders/ingest:
+    post:
+      summary: Pull/ingest order stub — matched→OMS or exception
+  /api/v1/admin/marketplace/orders/{id}/import:
+    post:
+      summary: Import matched order → OMS CONFIRMED + reserve
+  /api/v1/admin/marketplace/outbox:
+    get:
+      summary: Outbox jobs + lag_ms
+  /api/v1/admin/marketplace/outbox/drain:
+    post:
+      summary: Process pending outbox
+  /api/v1/admin/marketplace/outbox/retry:
+    post:
+      summary: Retry failed jobs for account
