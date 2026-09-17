@@ -1,0 +1,31 @@
+openapi: 3.0.3
+info:
+  title: WebCom A6 — AI Gateway
+  version: 1.0.0
+paths:
+  /api/health:
+    get:
+      summary: wave A6
+  /api/v1/admin/ai/status:
+    get:
+      summary: Gateway mode, budget, high-risk approval coverage
+  /api/v1/admin/ai/budget:
+    get:
+      summary: Tenant monthly AI spend vs cap
+  /api/v1/admin/ai/actions:
+    post:
+      summary: Create AI action via gateway (high-risk → pending_approval)
+    get:
+      summary: List AI actions
+  /api/v1/admin/ai/actions/{id}/review:
+    post:
+      summary: Approve/reject high-risk
+  /api/v1/admin/ai/actions/{id}/apply:
+    post:
+      summary: Apply draft only — never publish/price/refund
+  /health:
+    get:
+      summary: FastAPI ai-gateway health (port 3104)
+  /v1/generate:
+    post:
+      summary: FastAPI generate endpoint

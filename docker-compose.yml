@@ -32,6 +32,94 @@ services:
     volumes:
       - ptt_minio:/data
 
+  # A3 optional — docker compose --profile analytics up -d
+  clickhouse:
+    profiles: ["analytics"]
+    image: clickhouse/clickhouse-server:24.8-alpine
+    ports:
+      - "8123:8123"
+      - "9009:9000"
+    environment:
+      CLICKHOUSE_DB: webcom
+      CLICKHOUSE_USER: default
+      CLICKHOUSE_DEFAULT_ACCESS_MANAGEMENT: 1
+    volumes:
+      - ptt_ch:/var/lib/clickhouse
+    ulimits:
+      nofile:
+        soft: 262144
+        hard: 262144
+
+  redpanda:
+    profiles: ["analytics"]
+    image: docker.redpanda.com/redpandadata/redpanda:v24.2.4
+    command:
+      - redpanda
+      - start
+      - --overprovisioned
+      - --smp
+      - "1"
+      - --memory
+      - 512M
+      - --reserve-memory
+      - 0M
+      - --node-id
+      - "0"
+      - --check=false
+      - --kafka-addr
+      - INTERNAL://0.0.0.0:9092,EXTERNAL://0.0.0.0:19092
+      - --advertise-kafka-addr
+      - INTERNAL://redpanda:9092,EXTERNAL://127.0.0.1:19092
+      - --pandaproxy-addr
+      - 0.0.0.0:8082
+      - --advertise-pandaproxy-addr
+      - 127.0.0.1:8082
+    ports:
+      - "19092:19092"
+      - "8082:8082"
+
+  # A4 optional — docker compose --profile temporal up -d
+  temporal:
+    profiles: ["temporal"]
+    image: temporalio/auto-setup:1.25.2
+    ports:
+      - "7233:7233"
+    environment:
+      - DB=postgresql
+      - DB_PORT=5432
+      - POSTGRES_USER=ptt
+      - POSTGRES_PWD=ptt
+      - POSTGRES_SEEDS=postgres
+      - DYNAMIC_CONFIG_FILE_PATH=config/dynamicconfig/development-sql.yaml
+    depends_on:
+      - postgres
+
+  # A5 optional — docker compose --profile search up -d
+  opensearch:
+    profiles: ["search"]
+    image: opensearchproject/opensearch:2.17.0
+    environment:
+      - discovery.type=single-node
+      - plugins.security.disabled=true
+      - OPENSEARCH_JAVA_OPTS=-Xms512m -Xmx512m
+      - DISABLE_INSTALL_DEMO_CONFIG=true
+    ports:
+      - "9200:9200"
+    volumes:
+      - ptt_os:/usr/share/opensearch/data
+
+  # A6 optional — docker compose --profile ai up -d
+  qdrant:
+    profiles: ["ai"]
+    image: qdrant/qdrant:v1.12.1
+    ports:
+      - "6333:6333"
+    volumes:
+      - ptt_qdrant:/qdrant/storage
+
 volumes:
   ptt_pg:
   ptt_minio:
+  ptt_ch:
+  ptt_os:
+  ptt_qdrant:

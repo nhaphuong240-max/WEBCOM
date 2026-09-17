@@ -1,0 +1,27 @@
+openapi: 3.0.3
+info:
+  title: WebCom A3 — Analytics pipeline (Redpanda → ClickHouse)
+  version: 1.0.0
+paths:
+  /api/health:
+    get:
+      summary: wave A3
+  /api/v1/events:
+    post:
+      summary: Collect storefront event; dual-write PG + Redpanda → ClickHouse
+      responses:
+        '201':
+          description: sinks array e.g. postgres+redpanda
+  /api/v1/admin/analytics/pipeline:
+    get:
+      summary: Redpanda + ClickHouse sink health / retention
+  /api/v1/admin/storefronts/{id}/analytics:
+    get:
+      summary: Dashboard; funnel prefers ClickHouse when coverage ok
+      parameters:
+        - in: query
+          name: days
+          schema: { type: integer }
+  /api/v1/admin/storefronts/{id}/analytics/landings:
+    get:
+      summary: Page contribution from CH (+ order revenue join)

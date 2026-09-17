@@ -1,0 +1,30 @@
+meta {
+  name: WebCom A6
+}
+
+get {
+  url: {{BASE}}/api/health
+}
+
+get {
+  url: {{BASE}}/api/v1/admin/ai/status
+  headers: {
+    x-tenant-id: ten_aura
+    x-actor-id: bruno
+  }
+}
+
+post {
+  url: {{BASE}}/api/v1/admin/ai/actions
+  headers: {
+    x-tenant-id: ten_aura
+    x-actor-id: bruno
+    content-type: application/json
+  }
+  body: json
+  json: {
+    "storefront_id": "sf_aura",
+    "kind": "shopping_qa",
+    "payload": { "question": "Có đổi trả không?" }
+  }
+}

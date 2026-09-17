@@ -1,0 +1,26 @@
+openapi: 3.0.3
+info:
+  title: WebCom A4 — Temporal Publish / GoLive
+  version: 1.0.0
+paths:
+  /api/health:
+    get:
+      summary: wave A4
+  /api/v1/admin/temporal/status:
+    get:
+      summary: Engine (temporal_stub|temporal) + workflow catalog
+  /api/v1/admin/temporal/runs/{workflowId}:
+    get:
+      summary: In-memory stub run history
+  /api/v1/admin/storefronts/{id}/golive/evaluate:
+    post:
+      summary: GoLiveValidationWorkflow
+  /api/v1/admin/storefronts/{id}/publish:
+    post:
+      summary: PublishThemeWorkflow (checklist gate, retry, compensate)
+  /api/v1/admin/storefronts/{id}/rollback:
+    post:
+      summary: Rollback previous theme; duration_ms / within_slo (<5m)
+  /api/v1/admin/publish-jobs/{id}:
+    get:
+      summary: Publish job + workflow metadata

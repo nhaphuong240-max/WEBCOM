@@ -127,6 +127,29 @@ export async function getProducts(query?: {
   return storeApi<Product[]>(`/v1/catalog/products${qs ? `?${qs}` : ''}`, { cache: 'no-store' });
 }
 
+export async function searchProducts(query?: {
+  q?: string;
+  collection?: string;
+  sort?: string;
+}) {
+  const params = new URLSearchParams();
+  if (query?.q) params.set('q', query.q);
+  if (query?.collection) params.set('collection', query.collection);
+  if (query?.sort) params.set('sort', query.sort);
+  const qs = params.toString();
+  return storeApi<{
+    items: Product[];
+    meta: {
+      source: string;
+      latency_ms: number;
+      engine: string;
+      count: number;
+      within_slo?: boolean;
+    };
+    total_ms?: number;
+  }>(`/v1/catalog/search${qs ? `?${qs}` : ''}`, { cache: 'no-store' });
+}
+
 export async function getProduct(slug: string) {
   return storeApi<Product>(`/v1/catalog/products/${slug}`, { cache: 'no-store' });
 }

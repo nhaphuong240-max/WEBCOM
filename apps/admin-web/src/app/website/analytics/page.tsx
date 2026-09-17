@@ -77,7 +77,15 @@ export default async function AnalyticsPage() {
       baseline: { lcp_ms: number } | null;
     };
     incidents: Array<{ id: string; kind: string; severity: string; status: string }>;
-    coverage: { published_tracked: boolean; contribution_rate_assumed: number };
+    coverage: {
+      published_tracked: boolean;
+      contribution_rate_assumed: number;
+      funnel_source?: string;
+      ch_coverage_pct?: number;
+      funnel_from_ch_ok?: boolean;
+      dual_write_ok?: boolean;
+      sink?: string;
+    };
   } | null = null;
   let experiments: Array<{ code: string; name: string; status: string }> = [];
   let aiActions: Array<{
@@ -103,7 +111,7 @@ export default async function AnalyticsPage() {
       <PageHeader
         title="Web Analytics"
         description="Conversion gắn doanh thu & contribution margin"
-        actions={<Badge tone="accent">W4 · mockup 09</Badge>}
+        actions={<Badge tone="accent">A6 · AI Gateway</Badge>}
       />
       {error ? (
         <Panel title="API">
@@ -139,7 +147,13 @@ export default async function AnalyticsPage() {
         </div>
         <p style={{ fontSize: 12, opacity: 0.7 }}>
           Contribution ≈ revenue × {((dash?.coverage.contribution_rate_assumed || 0.42) * 100).toFixed(0)}%
-          (cost allocation cơ bản)
+          (cost allocation cơ bản) · sink{' '}
+          <strong>{dash?.coverage.funnel_source || dash?.coverage.sink || '—'}</strong>
+          {dash?.coverage.ch_coverage_pct != null
+            ? ` · CH coverage ${dash.coverage.ch_coverage_pct}%`
+            : ''}
+          {dash?.coverage.funnel_from_ch_ok ? ' · funnel≥95% CH' : ''}
+          {dash?.coverage.dual_write_ok === false ? ' · dual-write lag' : ''}
         </p>
       </Panel>
 

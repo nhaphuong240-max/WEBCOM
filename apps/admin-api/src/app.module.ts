@@ -15,6 +15,9 @@ import { HeadlessModule } from './headless/headless.module';
 import { AgencyModule } from './agency/agency.module';
 import { ShippingModule } from './shipping/shipping.module';
 import { PaymentModule } from './payment/payment.module';
+import { TemporalModule } from './temporal/temporal.module';
+import { SearchModule } from './search/search.module';
+import { AiModule } from './ai/ai.module';
 import { HealthController } from './health/health.controller';
 import { MeController } from './iam/me.controller';
 import { AuthController } from './iam/auth.controller';
@@ -38,6 +41,9 @@ import { TenancyController } from './tenancy/tenancy.controller';
     AgencyModule,
     ShippingModule,
     PaymentModule,
+    TemporalModule,
+    SearchModule,
+    AiModule,
   ],
   controllers: [HealthController, MeController, AuthController, TenancyController],
 })

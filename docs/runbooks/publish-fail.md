@@ -12,8 +12,9 @@
 4. `POST …/health-window` — canary + checkout
 
 ## Khôi phục
-- `POST …/rollback` về theme version trước (&lt; 5 phút thao tác)
+- `POST …/rollback` về theme version trước — A4 trả `duration_ms` + `within_slo` (target &lt; 5 phút)
 - Hoặc `FEATURE_AUTO_ROLLBACK=true` để auto khi regress &gt;20%
+- Publish chạy `PublishThemeWorkflow` (`FEATURE_TEMPORAL`, engine `temporal_stub`|`temporal`) — xem `docs/runbooks/temporal-publish.md`
 
 ## Liên hệ
 On-call WebCom / platform

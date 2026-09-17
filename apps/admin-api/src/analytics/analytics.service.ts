@@ -5,6 +5,8 @@ import { createHash } from 'crypto';
 import { PrismaService } from '../prisma/prisma.service';
 import { AuditService } from '../audit/audit.service';
 import { PlatformService } from '../website/platform.service';
+import { ClickHouseClient } from './clickhouse.client';
+import { EventSinkService } from './event-sink.service';
 
 /** Assumed contribution margin rate when COGS not on order lines (W4 basic allocation). */
 const DEFAULT_CONTRIBUTION_RATE = 0.42;
@@ -25,6 +27,8 @@ export class AnalyticsService {
     private readonly prisma: PrismaService,
     private readonly audit: AuditService,
     private readonly platform: PlatformService,
+    private readonly sink: EventSinkService,
+    private readonly ch: ClickHouseClient,
   ) {}
 
   private feature(name: string, fallback = true) {
@@ -39,7 +43,7 @@ export class AnalyticsService {
     return row;
   }
 
-  // ─── Event collector (Postgres; Redpanda/CH deferred) ──────
+  // ─── Event collector (Postgres + Redpanda → ClickHouse) ────
 
   async collectEvent(
     tenantId: string,
@@ -78,13 +82,20 @@ export class AnalyticsService {
         payload: input.payload ?? {},
       },
     });
+
+    const dual = await this.sink.afterPostgresWrite(row);
     return {
       id: row.id,
       name: row.name,
       skipped: false,
       created_at: row.createdAt.toISOString(),
-      sink: 'postgres', // ClickHouse/Redpanda planned — collector interface ready
+      sink: dual.sinks.join('+'),
+      clickhouse_via: dual.clickhouse_via,
     };
+  }
+
+  pipelineStatus() {
+    return this.sink.pipelineStatus();
   }
 
   // ─── Dashboard aggregates ──────────────────────────────────
@@ -92,8 +103,9 @@ export class AnalyticsService {
   async getDashboard(tenantId: string, storefrontId: string, days = 7) {
     await this.sf(tenantId, storefrontId);
     const since = new Date(Date.now() - days * 86400000);
+    const sinceIso = since.toISOString();
 
-    const events = await this.prisma.db.storefrontEvent.findMany({
+    const pgEvents = await this.prisma.db.storefrontEvent.findMany({
       where: { tenantId, storefrontId, createdAt: { gte: since } },
       select: {
         name: true,
@@ -104,15 +116,37 @@ export class AnalyticsService {
       },
     });
 
-    const sessions = new Set(events.map((e) => e.sessionId).filter(Boolean) as string[]);
-    const funnel = FUNNEL_STEPS.map((step) => {
-      const count = events.filter((e) => e.name === step).length;
-      const uniqueSessions = new Set(
-        events.filter((e) => e.name === step && e.sessionId).map((e) => e.sessionId as string),
-      ).size;
-      return { step, count, unique_sessions: uniqueSessions || count };
-    });
+    const chFunnel = await this.ch.funnel(tenantId, storefrontId, sinceIso, FUNNEL_STEPS);
+    const chCount = await this.ch.countSince(tenantId, storefrontId, sinceIso);
+    const pgCount = pgEvents.length;
+    const chCoveragePct =
+      pgCount === 0
+        ? 100
+        : Math.min(100, Math.round((((chCount ?? 0) / pgCount) * 1000) / 10));
+    // Prefer CH when warehouse has rows for this window (dual-write path).
+    const useCh = !!chFunnel && this.ch.status().ready && (chCount ?? 0) > 0;
 
+    const funnel =
+      useCh && chFunnel
+        ? chFunnel
+        : FUNNEL_STEPS.map((step) => {
+            const count = pgEvents.filter((e) => e.name === step).length;
+            const uniqueSessions = new Set(
+              pgEvents.filter((e) => e.name === step && e.sessionId).map((e) => e.sessionId as string),
+            ).size;
+            return { step, count, unique_sessions: uniqueSessions || count };
+          });
+
+    const eventsForSessions = useCh
+      ? (await this.ch.eventsForLanding(tenantId, storefrontId, sinceIso)) || []
+      : pgEvents.map((e) => ({
+          name: e.name,
+          session_id: e.sessionId || '',
+          landing_path: e.landingPath || '/',
+          payload_json: JSON.stringify(e.payload ?? {}),
+        }));
+
+    const sessions = new Set(eventsForSessions.map((e) => e.session_id).filter(Boolean));
     const viewSessions = funnel.find((f) => f.step === 'view_item')?.unique_sessions || 0;
     const purchaseSessions = funnel.find((f) => f.step === 'purchase')?.unique_sessions || 0;
     const purchaseCvr = viewSessions > 0 ? purchaseSessions / viewSessions : 0;
@@ -133,16 +167,24 @@ export class AnalyticsService {
       take: 5,
     });
 
-    const trackedPublished =
-      (await this.prisma.db.storefront.count({
-        where: { tenantId, status: 'published' },
-      })) > 0;
-    const hasFunnel = events.some((e) => e.name === 'page_view' || e.name === 'view_item');
+    const publishedCount = await this.prisma.db.storefront.count({
+      where: { tenantId, status: 'published' },
+    });
+    const hasFunnel = funnel.some(
+      (f) => (f.step === 'page_view' || f.step === 'view_item') && f.count > 0,
+    );
+
+    const funnelFromChOk = useCh && (chCoveragePct >= 95 || (chCount ?? 0) >= pgCount);
+    const pipe = this.sink.pipelineStatus();
+    const dualWriteOk =
+      !pipe.redpanda.enabled ||
+      pipe.redpanda.produced === 0 ||
+      (pipe.redpanda.consumed / Math.max(pipe.redpanda.produced, 1)) * 100 >= 95;
 
     return {
       window_days: days,
       kpis: {
-        sessions: sessions.size || events.filter((e) => e.name === 'page_view').length,
+        sessions: sessions.size || eventsForSessions.filter((e) => e.name === 'page_view').length,
         purchase_cvr: Number((purchaseCvr * 100).toFixed(2)),
         web_contribution: Math.round(contribution),
         aov: Math.round(aov),
@@ -162,9 +204,17 @@ export class AnalyticsService {
         created_at: i.createdAt.toISOString(),
       })),
       coverage: {
-        published_tracked: trackedPublished && hasFunnel,
+        published_tracked: publishedCount > 0 && hasFunnel,
+        published_count: publishedCount,
         contribution_rate_assumed: DEFAULT_CONTRIBUTION_RATE,
-        sink: 'postgres',
+        sink: useCh ? `clickhouse:${this.ch.status().mode}` : 'postgres',
+        funnel_source: useCh ? 'clickhouse' : 'postgres',
+        ch_event_count: chCount,
+        pg_event_count: pgCount,
+        ch_coverage_pct: chCoveragePct,
+        funnel_from_ch_ok: funnelFromChOk,
+        dual_write_ok: dualWriteOk,
+        pipeline: pipe,
       },
     };
   }
@@ -182,10 +232,34 @@ export class AnalyticsService {
 
   async contributionByLanding(tenantId: string, storefrontId: string, days = 7) {
     const since = new Date(Date.now() - days * 86400000);
-    const events = await this.prisma.db.storefrontEvent.findMany({
-      where: { tenantId, storefrontId, createdAt: { gte: since } },
-      select: { name: true, sessionId: true, landingPath: true, payload: true },
-    });
+    const sinceIso = since.toISOString();
+
+    const chRows = await this.ch.eventsForLanding(tenantId, storefrontId, sinceIso);
+    const useCh = !!chRows && chRows.length > 0;
+    const events = useCh
+      ? chRows!.map((e) => ({
+          name: e.name,
+          sessionId: e.session_id || null,
+          landingPath: e.landing_path || '/',
+          payload: (() => {
+            try {
+              return JSON.parse(e.payload_json || '{}') as { total?: number; amount?: number };
+            } catch {
+              return {};
+            }
+          })(),
+        }))
+      : (
+          await this.prisma.db.storefrontEvent.findMany({
+            where: { tenantId, storefrontId, createdAt: { gte: since } },
+            select: { name: true, sessionId: true, landingPath: true, payload: true },
+          })
+        ).map((e) => ({
+          name: e.name,
+          sessionId: e.sessionId,
+          landingPath: e.landingPath,
+          payload: e.payload as { total?: number; amount?: number },
+        }));
 
     const byPath = new Map<
       string,
@@ -204,7 +278,7 @@ export class AnalyticsService {
       }
     }
 
-    // If purchase events lack amount, allocate order revenue proportionally by purchase count
+    // Join order revenue when purchase events lack amount (page contribution)
     const orders = await this.prisma.db.order.findMany({
       where: { tenantId, storefrontId, createdAt: { gte: since } },
       select: { totalAmount: true },
@@ -228,6 +302,7 @@ export class AnalyticsService {
           cvr: Number((cvr * 100).toFixed(2)),
           revenue: Math.round(revenue),
           contribution: Math.round(contribution),
+          source: useCh ? 'clickhouse' : 'postgres',
         };
       })
       .sort((a, b) => b.contribution - a.contribution)
@@ -531,120 +606,6 @@ export class AnalyticsService {
     };
   }
 
-  // ─── AI assist (guardrailed) ───────────────────────────────
-
-  async createAiAction(
-    tenantId: string,
-    input: {
-      storefrontId?: string;
-      kind: 'theme_match_explain' | 'headline_variants' | 'shopping_qa';
-      payload: Record<string, unknown>;
-    },
-    actorId?: string,
-  ) {
-    const risk = input.kind === 'shopping_qa' ? 'high' : 'low';
-    let output: Record<string, unknown> = {};
-
-    if (input.kind === 'theme_match_explain') {
-      const match = await this.platform.matchTemplates({
-        industry: String(input.payload.industry || 'beauty'),
-        goal: String(input.payload.goal || 'conversion'),
-        budget: String(input.payload.budget || 'free'),
-      });
-      const top = match.matches[0];
-      output = {
-        explanation: top
-          ? `Gợi ý ${top.template.name} (score ${top.score}) vì: ${(top.reasons || []).join('; ') || 'khớp ngành/mục tiêu'}. Playbook: ${(match.playbook || []).slice(0, 3).join(' → ')}.`
-          : 'Chưa có template phù hợp.',
-        top_code: top?.template.code,
-        guardrail: 'Không auto-install — merchant xác nhận trong Marketplace.',
-      };
-    } else if (input.kind === 'headline_variants') {
-      const base = String(input.payload.headline || 'Serum tái tạo da đêm');
-      output = {
-        variants: [
-          base,
-          `${base} — kết quả sau 7 đêm`,
-          `Khám phá ${base.toLowerCase()}`,
-          `Ưu đãi: ${base}`,
-        ],
-        guardrail: 'Draft only — không auto-publish vào Builder.',
-      };
-    } else {
-      output = {
-        answer_draft: `Câu trả lời nháp cho: "${input.payload.question || ''}". Kiểm tra policy/FAQ trước khi gửi khách.`,
-        guardrail: 'High-risk: cần approval trước khi apply. Không commit giá/refund.',
-      };
-    }
-
-    const status = risk === 'high' ? 'pending_approval' : 'draft';
-    const row = await this.prisma.db.aiAction.create({
-      data: {
-        id: createId('aia'),
-        tenantId,
-        storefrontId: input.storefrontId,
-        kind: input.kind,
-        risk,
-        status,
-        input: input.payload as Prisma.InputJsonValue,
-        output: output as Prisma.InputJsonValue,
-        requestedBy: actorId,
-      },
-    });
-    await this.audit.write({
-      tenantId,
-      actorId,
-      action: 'ai.create',
-      entity: 'ai_action',
-      entityId: row.id,
-      payload: { kind: input.kind, risk, status },
-    });
-    return this.mapAi(row);
-  }
-
-  async reviewAiAction(
-    tenantId: string,
-    id: string,
-    decision: 'approved' | 'rejected',
-    note: string,
-    actorId: string,
-  ) {
-    const row = await this.prisma.db.aiAction.findFirst({ where: { id, tenantId } });
-    if (!row) throw AppError.notFound('AI action not found');
-    if (row.risk === 'high' && row.status !== 'pending_approval' && row.status !== 'draft') {
-      throw AppError.conflict('AI action not awaiting review');
-    }
-    const updated = await this.prisma.db.aiAction.update({
-      where: { id },
-      data: {
-        status: decision,
-        reviewedBy: actorId,
-        reviewNote: note,
-      },
-    });
-    await this.audit.write({
-      tenantId,
-      actorId,
-      action: 'ai.review',
-      entity: 'ai_action',
-      entityId: id,
-      payload: { decision, note },
-    });
-    return this.mapAi(updated);
-  }
-
-  async listAiActions(tenantId: string, storefrontId?: string) {
-    const rows = await this.prisma.db.aiAction.findMany({
-      where: {
-        tenantId,
-        ...(storefrontId ? { storefrontId } : {}),
-      },
-      orderBy: { createdAt: 'desc' },
-      take: 50,
-    });
-    return rows.map((r) => this.mapAi(r));
-  }
-
   // ─── mappers ───────────────────────────────────────────────
 
   private mapCwv(row: {
@@ -688,32 +649,6 @@ export class AnalyticsService {
       variants: row.variants,
       started_at: row.startedAt?.toISOString() ?? null,
       ended_at: row.endedAt?.toISOString() ?? null,
-    };
-  }
-
-  private mapAi(row: {
-    id: string;
-    kind: string;
-    risk: string;
-    status: string;
-    input: unknown;
-    output: unknown;
-    requestedBy: string | null;
-    reviewedBy: string | null;
-    reviewNote: string | null;
-    createdAt: Date;
-  }) {
-    return {
-      id: row.id,
-      kind: row.kind,
-      risk: row.risk,
-      status: row.status,
-      input: row.input,
-      output: row.output,
-      requested_by: row.requestedBy,
-      reviewed_by: row.reviewedBy,
-      review_note: row.reviewNote,
-      created_at: row.createdAt.toISOString(),
     };
   }
 }

@@ -42,6 +42,8 @@ model Tenant {
   domains     StorefrontDomain[]
   paymentIntents PaymentIntent[]
   webhookEvents  WebhookEvent[]
+  searchOutbox   SearchOutbox[]
+  aiBudgets      AiBudgetLedger[]
 
   @@map("tenants")
 }
@@ -647,7 +649,7 @@ model GoLiveChecklistItem {
   @@map("golive_checklist_items")
 }
 
-/// W3 — Publish workflow job (Temporal stub → in-process)
+/// W3/A4 — Publish workflow job (Temporal stub → durable engine)
 model PublishJob {
   id                  String     @id @default(uuid())
   tenantId            String     @map("tenant_id")
@@ -658,12 +660,19 @@ model PublishJob {
   status              String     @default("pending")
   checklistSnapshot   Json       @default("{}") @map("checklist_snapshot")
   error               Json?
+  /// Temporal workflow id (or stub id)
+  workflowId          String?    @map("workflow_id")
+  workflowRunId       String?    @map("workflow_run_id")
+  /// in_process | temporal_stub | temporal
+  engine              String     @default("in_process")
+  attemptCount        Int        @default(1) @map("attempt_count")
   createdAt           DateTime   @default(now()) @map("created_at")
   finishedAt          DateTime?  @map("finished_at")
   tenant              Tenant     @relation(fields: [tenantId], references: [id])
   storefront          Storefront @relation(fields: [storefrontId], references: [id], onDelete: Cascade)
 
   @@index([tenantId, storefrontId, status])
+  @@index([workflowId])
   @@map("publish_jobs")
 }
 
@@ -743,29 +752,50 @@ model CwvSnapshot {
   @@map("cwv_snapshots")
 }
 
-/// W4 — Guardrailed AI assist actions
+/// W4/A6 — Guardrailed AI assist actions
 model AiAction {
-  id           String     @id @default(uuid())
-  tenantId     String     @map("tenant_id")
-  storefrontId String?    @map("storefront_id")
+  id                 String     @id @default(uuid())
+  tenantId           String     @map("tenant_id")
+  storefrontId       String?    @map("storefront_id")
   /// theme_match_explain | headline_variants | shopping_qa
-  kind         String
+  kind               String
   /// low | high
-  risk         String     @default("low")
+  risk               String     @default("low")
   /// draft | pending_approval | approved | rejected | applied
-  status       String     @default("draft")
-  input        Json       @default("{}")
-  output       Json       @default("{}")
-  requestedBy  String?    @map("requested_by")
-  reviewedBy   String?    @map("reviewed_by")
-  reviewNote   String?    @map("review_note")
-  createdAt    DateTime   @default(now()) @map("created_at")
-  updatedAt    DateTime   @updatedAt @map("updated_at")
-  tenant       Tenant     @relation(fields: [tenantId], references: [id])
-  storefront   Storefront? @relation(fields: [storefrontId], references: [id], onDelete: Cascade)
+  status             String     @default("draft")
+  input              Json       @default("{}")
+  output             Json       @default("{}")
+  costUsd            Decimal?   @map("cost_usd") @db.Decimal(12, 6)
+  model              String?
+  promptTokens       Int?       @map("prompt_tokens")
+  completionTokens   Int?       @map("completion_tokens")
+  gatewayRequestId   String?    @map("gateway_request_id")
+  requestedBy        String?    @map("requested_by")
+  reviewedBy         String?    @map("reviewed_by")
+  reviewNote         String?    @map("review_note")
+  createdAt          DateTime   @default(now()) @map("created_at")
+  updatedAt          DateTime   @updatedAt @map("updated_at")
+  tenant             Tenant     @relation(fields: [tenantId], references: [id])
+  storefront         Storefront? @relation(fields: [storefrontId], references: [id], onDelete: Cascade)
 
   @@index([tenantId, status, risk])
   @@map("ai_actions")
+}
+
+/// A6 — Monthly AI cost cap per tenant
+model AiBudgetLedger {
+  id        String   @id @default(uuid())
+  tenantId  String   @map("tenant_id")
+  periodYm  String   @map("period_ym") // YYYY-MM
+  spentUsd  Decimal  @default(0) @map("spent_usd") @db.Decimal(12, 6)
+  capUsd    Decimal  @default(5) @map("cap_usd") @db.Decimal(12, 6)
+  updatedAt DateTime @updatedAt @map("updated_at")
+  createdAt DateTime @default(now()) @map("created_at")
+  tenant    Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, periodYm])
+  @@index([tenantId])
+  @@map("ai_budget_ledgers")
 }
 
 /// W4 — Publish health / CWV regression incidents
@@ -902,4 +932,26 @@ model WebhookEvent {
   @@unique([provider, providerEventId])
   @@index([tenantId, provider])
   @@map("webhook_events")
+}
+
+/// A5 — Outbox for OpenSearch product/collection index (async, non-blocking)
+model SearchOutbox {
+  id            String    @id @default(uuid())
+  tenantId      String    @map("tenant_id")
+  aggregateType String    @map("aggregate_type") // product | collection
+  aggregateId   String    @map("aggregate_id")
+  /// upsert | delete
+  op            String    @default("upsert")
+  payload       Json      @default("{}")
+  /// pending | processed | failed
+  status        String    @default("pending")
+  attempts      Int       @default(0)
+  lastError     String?   @map("last_error")
+  processedAt   DateTime? @map("processed_at")
+  createdAt     DateTime  @default(now()) @map("created_at")
+  tenant        Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([status, createdAt])
+  @@index([tenantId, aggregateId])
+  @@map("search_outbox")
 }

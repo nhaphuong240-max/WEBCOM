@@ -3,17 +3,23 @@
 import Link from 'next/link';
 import { useState, useTransition } from 'react';
 import { StoreShell } from '../../components/StoreShell';
-import { formatVnd, getProducts, type Product } from '../../lib/api';
+import { formatVnd, searchProducts, type Product } from '../../lib/api';
 
 export default function SearchPage() {
   const [q, setQ] = useState('');
   const [items, setItems] = useState<Product[]>([]);
+  const [meta, setMeta] = useState<{
+    source: string;
+    latency_ms: number;
+    within_slo?: boolean;
+  } | null>(null);
   const [pending, start] = useTransition();
 
   function search() {
     start(async () => {
-      const list = await getProducts({ q, sort: 'newest' });
-      setItems(list);
+      const res = await searchProducts({ q, sort: 'newest' });
+      setItems(res.items);
+      setMeta(res.meta);
     });
   }
 
@@ -26,6 +32,9 @@ export default function SearchPage() {
             value={q}
             onChange={(e) => setQ(e.target.value)}
             placeholder="Serum, dưỡng ẩm…"
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') search();
+            }}
             style={{
               flex: 1,
               height: 44,
@@ -51,6 +60,12 @@ export default function SearchPage() {
             {pending ? '…' : 'Tìm'}
           </button>
         </div>
+        {meta ? (
+          <p style={{ fontSize: 12, opacity: 0.65, marginBottom: 8 }}>
+            {meta.source} · {meta.latency_ms}ms
+            {meta.within_slo === false ? ' · chậm vs SLO' : ''}
+          </p>
+        ) : null}
         <div style={{ display: 'grid', gap: 8 }}>
           {items.map((p) => (
             <Link

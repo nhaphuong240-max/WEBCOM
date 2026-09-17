@@ -505,6 +505,50 @@ Repo chạy được, design system từ mockup, auth tenant, admin/storefront s
 
 ---
 
+# 9d. Wave A3 — Analytics pipeline (Branch A deepen)
+
+## Exit criteria
+- [x] Dual-write: Postgres → Redpanda (stub/live) → ClickHouse (stub/live HTTP).
+- [x] Dashboard funnel ưu tiên ClickHouse; `coverage.ch_coverage_pct` / `funnel_from_ch_ok`.
+- [x] Page contribution join order revenue từ CH (+ fallback PG).
+- [x] Pipeline health `GET /v1/admin/analytics/pipeline`; retention `ANALYTICS_RETENTION_DAYS`.
+- [x] Optional compose profile `analytics` (ClickHouse + Redpanda).
+- [x] Health `wave: A3` · `docs/openapi-a3.yaml` · `docs/bruno/WebCom-A3.bru` · `scripts/e2e-a3.sh`.
+
+---
+
+# 9e. Wave A4 — Temporal Publish / GoLive (Branch A deepen)
+
+## Exit criteria
+- [x] `PublishThemeWorkflow` + `GoLiveValidationWorkflow` (FEATURE_TEMPORAL stub; live khi `TEMPORAL_ADDRESS`).
+- [x] Checklist fail block publish (409) với `workflow_id` / job metadata.
+- [x] Retry + compensate rollback; `apps/worker` companion.
+- [x] Rollback `within_slo` &lt; 5 phút.
+- [x] Health `wave: A4` · `docs/openapi-a4.yaml` · `docs/bruno/WebCom-A4.bru` · `scripts/e2e-a4.sh` · runbook Temporal.
+
+---
+
+# 9f. Wave A5 — OpenSearch catalog (Branch A deepen)
+
+## Exit criteria
+- [x] Product index qua outbox (`search_outbox`) → OpenSearch stub/live.
+- [x] `GET /v1/catalog/search` ưu tiên OS; hydrate PG; fallback Postgres.
+- [x] Storefront `/search` dùng search API + hiện source/latency.
+- [x] Status P95 vs `SEARCH_P95_SLO_MS` (200ms).
+- [x] Health `wave: A5` · OpenAPI/Bruno/`scripts/e2e-a5.sh` · runbook.
+
+---
+
+# 9g. Wave A6 — AI Gateway (Branch A deepen)
+
+## Exit criteria
+- [x] `apps/ai-gateway` FastAPI (Theme Match / headlines / shopping Q&A + Qdrant stub).
+- [x] Nest `AiModule` + budget ledger; `AI_GATEWAY_URL` hoặc nest stub.
+- [x] High-risk `shopping_qa` 100% `pending_approval` + audit; apply cần approve; không auto-publish/đổi giá.
+- [x] Health `wave: A6` · `docs/openapi-a6.yaml` · Bruno · `scripts/e2e-a6.sh` · runbook.
+
+---
+
 # 10. Backlog ưu tiên MoSCoW (WebCom)
 
 ## Must (trước GA Platform)

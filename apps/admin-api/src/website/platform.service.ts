@@ -1,9 +1,11 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Inject, forwardRef } from '@nestjs/common';
 import { AppError, createId } from '@ptt/shared-kernel';
 import { Prisma } from '@prisma/client';
 import { randomBytes } from 'crypto';
 import { PrismaService } from '../prisma/prisma.service';
 import { AuditService } from '../audit/audit.service';
+import { TemporalService } from '../temporal/temporal.service';
+import { TemporalWorkflowsService } from '../temporal/temporal-workflows.service';
 
 export const SECTION_LIBRARY = [
   { key: 'hero', label: 'Hero', fields: ['eyebrow', 'headline', 'cta', 'cta_href'] },
@@ -63,12 +65,27 @@ export class PlatformService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly audit: AuditService,
+    @Inject(forwardRef(() => TemporalService))
+    private readonly temporal: TemporalService,
+    @Inject(forwardRef(() => TemporalWorkflowsService))
+    private readonly workflows: TemporalWorkflowsService,
   ) {}
 
   private feature(name: string, fallback = true) {
     const raw = process.env[`FEATURE_${name.toUpperCase().replace(/\./g, '_')}`];
     if (raw === undefined) return fallback;
     return raw === '1' || raw === 'true';
+  }
+
+  isGoliveGateEnabled() {
+    return this.feature('golive.gate');
+  }
+
+  async runGoLiveValidationWorkflow(tenantId: string, storefrontId: string, actorId?: string) {
+    if (this.temporal.enabled()) {
+      return this.workflows.runGoLiveValidation(tenantId, storefrontId, actorId);
+    }
+    return this.evaluateChecklist(tenantId, storefrontId);
   }
 
   private async sf(tenantId: string, storefrontId: string) {
@@ -903,6 +920,14 @@ export class PlatformService {
   }
 
   async publishStorefront(tenantId: string, storefrontId: string, actorId: string) {
+    if (this.temporal.enabled()) {
+      return this.workflows.runPublishTheme(tenantId, storefrontId, actorId);
+    }
+    return this.publishStorefrontLegacy(tenantId, storefrontId, actorId);
+  }
+
+  /** Legacy in-process publish (FEATURE_TEMPORAL=false). */
+  async publishStorefrontLegacy(tenantId: string, storefrontId: string, actorId: string) {
     const gate = this.feature('golive.gate');
     const checklist = await this.evaluateChecklist(tenantId, storefrontId);
     const job = await this.prisma.db.publishJob.create({
@@ -912,6 +937,7 @@ export class PlatformService {
         storefrontId,
         status: 'running',
         checklistSnapshot: checklist as unknown as Prisma.InputJsonValue,
+        engine: 'in_process',
       },
     });
 
@@ -930,6 +956,19 @@ export class PlatformService {
       });
     }
 
+    return this.executePublishMutation(tenantId, storefrontId, actorId, job.id);
+  }
+
+  /**
+   * Activity: atomic theme/page pointer publish for an existing PublishJob.
+   * Used by PublishThemeWorkflow (Temporal stub/live) and legacy path.
+   */
+  async executePublishMutation(
+    tenantId: string,
+    storefrontId: string,
+    actorId: string,
+    jobId: string,
+  ) {
     const sf = await this.sf(tenantId, storefrontId);
     const staging =
       (await this.prisma.db.themeVersion.findFirst({
@@ -951,7 +990,7 @@ export class PlatformService {
 
     if (!staging) {
       await this.prisma.db.publishJob.update({
-        where: { id: job.id },
+        where: { id: jobId },
         data: { status: 'failed', error: { message: 'No theme version' }, finishedAt: new Date() },
       });
       throw AppError.validation('No theme version to publish');
@@ -973,7 +1012,6 @@ export class PlatformService {
       data: { status: 'published', previousVersionId: previousId ?? staging.previousVersionId },
     });
 
-    // Promote latest draft/staging page versions for all pages
     const pages = await this.prisma.db.page.findMany({ where: { tenantId, storefrontId } });
     for (const page of pages) {
       const draft = await this.prisma.db.pageVersion.findFirst({
@@ -1002,7 +1040,7 @@ export class PlatformService {
     });
 
     const finished = await this.prisma.db.publishJob.update({
-      where: { id: job.id },
+      where: { id: jobId },
       data: {
         status: 'published',
         themeVersionId: staging.id,
@@ -1017,7 +1055,12 @@ export class PlatformService {
       action: 'storefront.publish',
       entity: 'publish_job',
       entityId: finished.id,
-      payload: { theme_version_id: staging.id, previous: previousId },
+      payload: {
+        theme_version_id: staging.id,
+        previous: previousId,
+        engine: finished.engine,
+        workflow_id: finished.workflowId,
+      },
     });
 
     return {
@@ -1026,10 +1069,14 @@ export class PlatformService {
       theme_version_id: staging.id,
       previous_theme_version_id: previousId,
       published_at: finished.finishedAt?.toISOString(),
+      engine: finished.engine,
+      workflow_id: finished.workflowId,
+      workflow_run_id: finished.workflowRunId,
     };
   }
 
   async rollbackPublish(tenantId: string, storefrontId: string, actorId: string) {
+    const started = Date.now();
     const sf = await this.sf(tenantId, storefrontId);
     const currentId = sf.publishedThemeVersionId;
     if (!currentId) throw AppError.validation('Nothing published to rollback');
@@ -1056,6 +1103,11 @@ export class PlatformService {
       data: { publishedThemeVersionId: target.id, status: 'published' },
     });
 
+    const engine = this.temporal.enabled()
+      ? this.temporal.engineName() === 'temporal'
+        ? 'temporal'
+        : 'temporal_stub'
+      : 'in_process';
     const job = await this.prisma.db.publishJob.create({
       data: {
         id: createId('pub'),
@@ -1065,6 +1117,9 @@ export class PlatformService {
         themeVersionId: target.id,
         previousThemeVersionId: current.id,
         checklistSnapshot: {},
+        engine,
+        workflowId: `rollback-${storefrontId}-${Date.now()}`,
+        workflowRunId: createId('wfr'),
         finishedAt: new Date(),
       },
     });
@@ -1074,13 +1129,18 @@ export class PlatformService {
       action: 'storefront.rollback',
       entity: 'publish_job',
       entityId: job.id,
-      payload: { from: current.id, to: target.id },
+      payload: { from: current.id, to: target.id, engine },
     });
+    const durationMs = Date.now() - started;
     return {
       job_id: job.id,
       status: 'rolled_back',
       theme_version_id: target.id,
       from_theme_version_id: current.id,
+      engine,
+      workflow_id: job.workflowId,
+      duration_ms: durationMs,
+      within_slo: durationMs < 5 * 60 * 1000,
     };
   }
 

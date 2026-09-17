@@ -50,6 +50,12 @@ export class AnalyticsController {
     return this.analytics.getDashboard(ctx.tenantId, id, days ? Number(days) : 7);
   }
 
+  @Get('v1/admin/analytics/pipeline')
+  @UseGuards(TenantAuthGuard)
+  pipeline() {
+    return this.analytics.pipelineStatus();
+  }
+
   @Get('v1/admin/storefronts/:id/analytics/landings')
   @UseGuards(TenantAuthGuard)
   landings(
@@ -149,56 +155,5 @@ export class AnalyticsController {
   ) {
     if (!sessionId) throw AppError.validation('session_id required');
     return this.analytics.assignVariant(ctx.tenantId, id, code, sessionId);
-  }
-
-  @Post('v1/admin/ai/actions')
-  @UseGuards(TenantAuthGuard)
-  aiCreate(@ReqContext() ctx: RequestContext, @Body() body: unknown) {
-    const parsed = z
-      .object({
-        storefront_id: z.string().optional(),
-        kind: z.enum(['theme_match_explain', 'headline_variants', 'shopping_qa']),
-        payload: z.record(z.unknown()).default({}),
-      })
-      .safeParse(body);
-    if (!parsed.success) throw AppError.validation('Invalid AI action', parsed.error.flatten());
-    return this.analytics.createAiAction(
-      ctx.tenantId,
-      {
-        storefrontId: parsed.data.storefront_id,
-        kind: parsed.data.kind,
-        payload: parsed.data.payload,
-      },
-      ctx.actorId,
-    );
-  }
-
-  @Get('v1/admin/ai/actions')
-  @UseGuards(TenantAuthGuard)
-  aiList(@ReqContext() ctx: RequestContext, @Query('storefront_id') storefrontId?: string) {
-    return this.analytics.listAiActions(ctx.tenantId, storefrontId);
-  }
-
-  @Post('v1/admin/ai/actions/:id/review')
-  @UseGuards(TenantAuthGuard)
-  aiReview(
-    @ReqContext() ctx: RequestContext,
-    @Param('id') id: string,
-    @Body() body: unknown,
-  ) {
-    const parsed = z
-      .object({
-        decision: z.enum(['approved', 'rejected']),
-        note: z.string().min(3),
-      })
-      .safeParse(body);
-    if (!parsed.success) throw AppError.validation('Invalid review', parsed.error.flatten());
-    return this.analytics.reviewAiAction(
-      ctx.tenantId,
-      id,
-      parsed.data.decision,
-      parsed.data.note,
-      ctx.actorId || 'admin',
-    );
   }
 }

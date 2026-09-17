@@ -1,0 +1,27 @@
+openapi: 3.0.3
+info:
+  title: WebCom A5 — OpenSearch catalog
+  version: 1.0.0
+paths:
+  /api/health:
+    get:
+      summary: wave A5
+  /api/v1/catalog/search:
+    get:
+      summary: Product search via OpenSearch (stub/live) with Postgres hydrate + fallback
+      parameters:
+        - in: query
+          name: q
+          schema: { type: string }
+        - in: query
+          name: collection
+          schema: { type: string }
+        - in: query
+          name: sort
+          schema: { enum: [price_asc, price_desc, newest] }
+  /api/v1/admin/search/status:
+    get:
+      summary: Indexer + latency P95 vs SEARCH_P95_SLO_MS
+  /api/v1/admin/search/reindex:
+    post:
+      summary: Rebuild tenant product index via outbox

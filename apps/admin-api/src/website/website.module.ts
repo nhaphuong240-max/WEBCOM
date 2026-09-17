@@ -1,12 +1,13 @@
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { AuditModule } from '../audit/audit.module';
 import { ShippingModule } from '../shipping/shipping.module';
+import { TemporalModule } from '../temporal/temporal.module';
 import { WebsiteController } from './website.controller';
 import { WebsiteService } from './website.service';
 import { PlatformService } from './platform.service';
 
 @Module({
-  imports: [AuditModule, ShippingModule],
+  imports: [AuditModule, ShippingModule, forwardRef(() => TemporalModule)],
   controllers: [WebsiteController],
   providers: [WebsiteService, PlatformService],
   exports: [WebsiteService, PlatformService],

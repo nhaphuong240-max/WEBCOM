@@ -1,0 +1,39 @@
+meta {
+  name: WebCom A3
+}
+
+get {
+  url: {{BASE}}/api/health
+}
+
+get {
+  url: {{BASE}}/api/v1/admin/analytics/pipeline
+  headers: {
+    x-tenant-id: ten_aura
+    x-actor-id: bruno
+  }
+}
+
+post {
+  url: {{BASE}}/api/v1/events
+  headers: {
+    x-tenant-id: ten_aura
+    content-type: application/json
+  }
+  body: json
+  json: {
+    "storefront_id": "sf_aura",
+    "name": "page_view",
+    "session_id": "bruno-a3",
+    "landing_path": "/",
+    "consent_state": "granted"
+  }
+}
+
+get {
+  url: {{BASE}}/api/v1/admin/storefronts/sf_aura/analytics?days=7
+  headers: {
+    x-tenant-id: ten_aura
+    x-actor-id: bruno
+  }
+}

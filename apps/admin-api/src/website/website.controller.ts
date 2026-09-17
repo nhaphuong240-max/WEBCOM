@@ -308,7 +308,9 @@ export class WebsiteController {
   @Post('v1/admin/storefronts/:id/golive/evaluate')
   @UseGuards(TenantAuthGuard)
   goliveEval(@ReqContext() ctx: RequestContext, @Param('id') id: string) {
-    return this.platform.ensureChecklist(ctx.tenantId, id);
+    return this.platform.ensureChecklist(ctx.tenantId, id).then(() =>
+      this.platform.runGoLiveValidationWorkflow(ctx.tenantId, id, ctx.actorId),
+    );
   }
 
   @Post('v1/admin/storefronts/:id/golive/waive')
