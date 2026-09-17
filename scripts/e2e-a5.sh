@@ -5,9 +5,9 @@ BASE="${BASE_URL:-http://127.0.0.1:3001/api}"
 T="${TENANT_ID:-ten_aura}"
 H=(-H "content-type: application/json" -H "x-tenant-id: $T" -H "x-brand-id: brd_aura" -H "x-actor-id: e2e-a5")
 
-echo "== health wave A5 =="
+echo "== health wave A5+ =="
 curl -sS "$BASE/health" | tee /tmp/a5-health.json
-grep -q '"wave":"A5"' /tmp/a5-health.json
+grep -qE '"wave":"A[5-6]"' /tmp/a5-health.json
 
 echo "== search status / reindex =="
 curl -sS "${H[@]}" "$BASE/v1/admin/search/status" | tee /tmp/a5-status.json

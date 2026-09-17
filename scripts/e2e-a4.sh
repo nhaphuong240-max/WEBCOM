@@ -6,9 +6,9 @@ T="${TENANT_ID:-ten_aura}"
 SF="${STOREFRONT_ID:-sf_aura}"
 H=(-H "content-type: application/json" -H "x-tenant-id: $T" -H "x-brand-id: brd_aura" -H "x-actor-id: e2e-a4")
 
-echo "== health wave A4 =="
+echo "== health wave A4+ =="
 curl -sS "$BASE/health" | tee /tmp/a4-health.json
-grep -q '"wave":"A4"' /tmp/a4-health.json
+grep -qE '"wave":"A[4-6]"' /tmp/a4-health.json
 
 echo "== temporal status =="
 curl -sS "${H[@]}" "$BASE/v1/admin/temporal/status" | tee /tmp/a4-temporal.json

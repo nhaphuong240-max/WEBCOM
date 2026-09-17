@@ -7,9 +7,9 @@ SF="${STOREFRONT_ID:-sf_aura}"
 H=(-H "content-type: application/json" -H "x-tenant-id: $T" -H "x-brand-id: brd_aura" -H "x-actor-id: e2e-a3")
 SID="a3-sess-$(date +%s)"
 
-echo "== health wave A3 =="
+echo "== health wave A3+ =="
 curl -sS "$BASE/health" | tee /tmp/a3-health.json
-grep -q '"wave":"A3"' /tmp/a3-health.json
+grep -qE '"wave":"A[3-6]"' /tmp/a3-health.json
 
 echo "== pipeline =="
 curl -sS "${H[@]}" "$BASE/v1/admin/analytics/pipeline" | tee /tmp/a3-pipe.json
