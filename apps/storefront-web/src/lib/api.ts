@@ -1,5 +1,9 @@
 const API_BASE =
-  process.env.NEXT_PUBLIC_ADMIN_API_URL?.replace(/\/$/, '') || 'http://127.0.0.1:3001';
+  (typeof window === 'undefined'
+    ? process.env.INTERNAL_API_URL || process.env.ADMIN_API_URL
+    : undefined)?.replace(/\/$/, '') ||
+  process.env.NEXT_PUBLIC_ADMIN_API_URL?.replace(/\/$/, '') ||
+  'http://127.0.0.1:3001';
 
 export const TENANT_ID = process.env.NEXT_PUBLIC_TENANT_ID || 'ten_aura';
 export const BRAND_ID = process.env.NEXT_PUBLIC_BRAND_ID || 'brd_aura';

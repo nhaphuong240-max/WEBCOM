@@ -11,6 +11,7 @@ Environment=NODE_ENV=production
 EnvironmentFile=/var/www/webecom/.env
 Environment=PORT=3102
 Environment=HOSTNAME=127.0.0.1
+Environment=INTERNAL_API_URL=http://127.0.0.1:3101
 ExecStart=/usr/bin/node server.js
 Restart=always
 RestartSec=5
