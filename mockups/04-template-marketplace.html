@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>PTT — Template Marketplace</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&family=Syne:wght@600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="ptt-design.css" />
+  <style>
+    .layout { display: grid; grid-template-columns: 1fr 320px; gap: 18px; }
+    .filters { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 18px; }
+    .filters button {
+      height: 34px; padding: 0 12px; border-radius: 6px; border: 1px solid var(--line);
+      background: #fff; font-size: 13px; font-weight: 500;
+    }
+    .filters button.on { background: var(--ink); color: #fff; border-color: var(--ink); }
+    .tgrid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+    .tcard { background: #fff; border: 1px solid var(--line); border-radius: 12px; overflow: hidden; transition: transform .2s var(--ease), border-color .2s; }
+    .tcard:hover { transform: translateY(-3px); border-color: var(--accent); }
+    .thumb {
+      height: 150px;
+      background: linear-gradient(145deg, #1a2433, #3d4a5c 40%, #ff5c1a33);
+      position: relative;
+    }
+    .thumb.b { background: linear-gradient(145deg, #2a1f1c, #8b6b5e 50%, #e8d5cc); }
+    .thumb.c { background: linear-gradient(145deg, #0f2a24, #1d5c4c 45%, #a8e0d0); }
+    .scores { display: flex; gap: 6px; padding: 10px 12px 0; flex-wrap: wrap; }
+    .scores span { font-size: 11px; font-weight: 600; background: var(--paper); padding: 4px 8px; border-radius: 4px; }
+    .tmeta { padding: 10px 12px 14px; }
+    .tmeta h3 { font-size: 15px; font-family: var(--font-body); font-weight: 700; margin-bottom: 4px; }
+    .tmeta p { font-size: 12px; color: var(--ink-3); margin-bottom: 12px; }
+    .match {
+      background: var(--ink); color: #fff; border-radius: 12px; padding: 18px;
+      position: sticky; top: 80px;
+    }
+    .match h2 { font-size: 18px; margin-bottom: 8px; }
+    .match p { font-size: 13px; opacity: .65; margin-bottom: 14px; }
+    .rec { background: rgba(255,255,255,.06); border-radius: 8px; padding: 12px; margin-bottom: 8px; font-size: 13px; }
+    .rec strong { display: block; margin-bottom: 4px; }
+    @media (max-width: 1000px) { .layout, .tgrid { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar">
+      <a class="brand ptt-mark" href="index.html"><span class="dot"></span> PTT</a>
+      <div class="nav-section">Website</div>
+      <a class="nav-item" href="02-onboarding.html"><span class="ico">◇</span> Onboarding</a>
+      <a class="nav-item active" href="04-template-marketplace.html"><span class="ico">◆</span> Template Store</a>
+      <a class="nav-item" href="05-theme-library.html"><span class="ico">◇</span> Theme Library</a>
+      <a class="nav-item" href="06-visual-site-builder.html"><span class="ico">◇</span> Builder</a>
+      <a class="nav-item" href="07-golive-checklist.html"><span class="ico">◇</span> Go-live</a>
+      <a class="nav-item" href="index.html"><span class="ico">←</span> Hub</a>
+    </aside>
+    <div class="main">
+      <header class="topbar">
+        <div class="crumb">Website Commerce · <strong>Template Marketplace</strong></div>
+        <a class="btn btn-primary btn-sm" href="02-onboarding.html">AI Theme Match</a>
+      </header>
+      <div class="content">
+        <div class="page-head">
+          <div>
+            <h1>Template có điểm chuyển đổi</h1>
+            <p>Không đua số theme — chọn playbook ngành với conversion / mobile / SEO score đo được.</p>
+          </div>
+        </div>
+        <div class="layout">
+          <div>
+            <div class="filters">
+              <button class="on">Beauty</button>
+              <button>Fashion</button>
+              <button>F&B</button>
+              <button>B2B</button>
+              <button>Goal: Conversion</button>
+              <button>Social / Live</button>
+              <button>Sort: Conversion ↓</button>
+            </div>
+            <div class="tgrid">
+              <article class="tcard">
+                <div class="thumb b"></div>
+                <div class="scores"><span>CVR 92</span><span>Mobile 95</span><span>SEO 88</span></div>
+                <div class="tmeta">
+                  <h3>Aura Commerce</h3>
+                  <p>Beauty · mobile-first · sticky ATC · live block</p>
+                  <a class="btn btn-primary btn-sm" href="05-theme-library.html">Cài đặt</a>
+                  <button class="btn btn-ghost btn-sm">Demo</button>
+                </div>
+              </article>
+              <article class="tcard">
+                <div class="thumb"></div>
+                <div class="scores"><span>CVR 87</span><span>Mobile 90</span><span>SEO 91</span></div>
+                <div class="tmeta">
+                  <h3>Editorial Shelf</h3>
+                  <p>Story-led · UGC · routine quiz</p>
+                  <button class="btn btn-primary btn-sm">Cài đặt</button>
+                  <button class="btn btn-ghost btn-sm">Demo</button>
+                </div>
+              </article>
+              <article class="tcard">
+                <div class="thumb c"></div>
+                <div class="scores"><span>CVR 84</span><span>Mobile 89</span><span>SEO 86</span></div>
+                <div class="tmeta">
+                  <h3>Live Drop</h3>
+                  <p>Countdown · keyword deal · deep link</p>
+                  <button class="btn btn-primary btn-sm">Cài đặt</button>
+                  <button class="btn btn-ghost btn-sm">Demo</button>
+                </div>
+              </article>
+              <article class="tcard">
+                <div class="thumb"></div>
+                <div class="scores"><span>CVR 81</span><span>Mobile 86</span><span>SEO 93</span></div>
+                <div class="tmeta">
+                  <h3>Catalog Pro</h3>
+                  <p>Filter nặng · search · bundle</p>
+                  <button class="btn btn-primary btn-sm">Cài đặt</button>
+                </div>
+              </article>
+              <article class="tcard">
+                <div class="thumb b"></div>
+                <div class="scores"><span>CVR 79</span><span>Mobile 92</span><span>SEO 80</span></div>
+                <div class="tmeta">
+                  <h3>One-page Offer</h3>
+                  <p>Landing campaign · lead form</p>
+                  <button class="btn btn-primary btn-sm">Cài đặt</button>
+                </div>
+              </article>
+              <article class="tcard">
+                <div class="thumb c"></div>
+                <div class="scores"><span>CVR 76</span><span>Mobile 84</span><span>SEO 89</span></div>
+                <div class="tmeta">
+                  <h3>Spa Booking</h3>
+                  <p>Appointment · package · consent</p>
+                  <button class="btn btn-primary btn-sm">Cài đặt</button>
+                </div>
+              </article>
+            </div>
+          </div>
+          <aside class="match">
+            <h2>AI Theme Matchmaker</h2>
+            <p>Beauty D2C · goal mobile CVR · acquisition TikTok/Live · catalog 180 SKU</p>
+            <div class="rec"><strong>1. Aura Commerce · 96 match</strong>Playbook: sticky ATC, social proof, COD trust, live embed.</div>
+            <div class="rec"><strong>2. Live Drop · 91 match</strong>Phù hợp flash + keyword; cần Brand Kit ấm.</div>
+            <div class="rec"><strong>3. Editorial Shelf · 88 match</strong>Tốt cho content/KOL landing.</div>
+            <a class="btn btn-primary" style="width:100%;margin-top:12px" href="02-onboarding.html">Áp dụng & onboarding</a>
+          </aside>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

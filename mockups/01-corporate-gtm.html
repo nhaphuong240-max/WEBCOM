@@ -1,0 +1,683 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>PTT — Giải pháp bán hàng đa kênh có lãi | Commerce Intelligence OS</title>
+  <meta name="description" content="Omnichannel + Website + Social/Live + POS + Sàn + CRM + AI — điều hành theo contribution margin, không chỉ GMV." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&family=Syne:wght@600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="ptt-design.css" />
+  <style>
+    body { background: #fff; }
+
+    /* ——— Nav ——— */
+    .site-nav {
+      position: fixed; inset: 0 0 auto; z-index: 80; height: 72px;
+      display: flex; align-items: center; justify-content: space-between; gap: 20px;
+      padding: 0 clamp(16px, 3.5vw, 48px);
+      background: rgba(243, 245, 247, 0.88); backdrop-filter: blur(14px);
+      border-bottom: 1px solid transparent; transition: border-color .2s;
+    }
+    .site-nav.scrolled { border-bottom-color: var(--line); }
+    .nav-links { display: flex; gap: 22px; font-size: 13.5px; font-weight: 500; color: var(--ink-3); }
+    .nav-links a:hover { color: var(--ink); }
+    .nav-cta { display: flex; gap: 8px; flex-shrink: 0; }
+
+    /* ——— Hero: one composition, brand first, full-bleed plane ——— */
+    .hero {
+      min-height: 100vh; min-height: 100dvh;
+      display: grid; place-items: end start;
+      position: relative; overflow: hidden;
+      background:
+        linear-gradient(105deg, rgba(11, 20, 32, 0.92) 0%, rgba(11, 20, 32, 0.55) 42%, rgba(11, 20, 32, 0.2) 70%, transparent 100%),
+        radial-gradient(ellipse 70% 80% at 78% 40%, rgba(255, 92, 26, 0.35), transparent 55%),
+        radial-gradient(ellipse 50% 50% at 90% 80%, rgba(13, 143, 107, 0.25), transparent 50%),
+        linear-gradient(160deg, #1a2838 0%, #0b1420 45%, #243548 100%);
+      color: #fff;
+      padding: 110px clamp(16px, 3.5vw, 48px) 72px;
+    }
+    .hero::after {
+      content: ""; position: absolute; inset: 0; pointer-events: none;
+      background:
+        repeating-linear-gradient(
+          -12deg,
+          transparent,
+          transparent 48px,
+          rgba(255, 255, 255, 0.015) 48px,
+          rgba(255, 255, 255, 0.015) 49px
+        );
+    }
+    .hero-inner { position: relative; z-index: 2; max-width: 640px; }
+    .brand-hero {
+      font-family: var(--font-display); font-weight: 800;
+      font-size: clamp(64px, 12vw, 120px); letter-spacing: -0.055em; line-height: 0.88;
+      margin-bottom: 22px;
+    }
+    .brand-hero em { font-style: normal; color: var(--accent); }
+    .hero h1 {
+      font-size: clamp(24px, 3.4vw, 38px); letter-spacing: -0.03em;
+      max-width: 18ch; margin-bottom: 14px; font-weight: 700;
+    }
+    .hero .sub {
+      font-size: 16px; line-height: 1.55; color: rgba(255, 255, 255, 0.68);
+      max-width: 40ch; margin-bottom: 28px; font-weight: 400;
+    }
+    .hero-actions { display: flex; flex-wrap: wrap; gap: 10px; }
+    .hero-actions .btn-ghost {
+      border-color: rgba(255, 255, 255, 0.35); color: #fff;
+    }
+    .hero-actions .btn-ghost:hover { border-color: #fff; background: rgba(255, 255, 255, 0.06); }
+
+    /* Product UI as edge-bleed visual layer (not inset card collage) */
+    .hero-plane {
+      position: absolute; right: -4%; top: 12%; bottom: 0; width: min(54vw, 620px);
+      z-index: 1; pointer-events: none;
+      background:
+        linear-gradient(180deg, rgba(21, 32, 48, 0.95), rgba(11, 20, 32, 0.98));
+      border-left: 1px solid rgba(255, 255, 255, 0.08);
+      padding: 28px 28px 0; transform: skewX(-2deg);
+      animation: fade .8s var(--ease) .1s both;
+    }
+    .hero-plane-inner { transform: skewX(2deg); opacity: 0.92; }
+    .hp-kpi {
+      background: linear-gradient(135deg, rgba(255, 92, 26, 0.28), rgba(13, 143, 107, 0.12));
+      border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 12px; padding: 18px; margin-bottom: 12px;
+    }
+    .hp-kpi .l { font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; opacity: 0.55; }
+    .hp-kpi .v { font-family: var(--font-display); font-size: 42px; letter-spacing: -0.03em; margin-top: 4px; }
+    .hp-kpi .d { font-size: 12px; color: #5ddeb8; margin-top: 6px; }
+    .hp-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 14px; }
+    .hp-mini { background: rgba(255, 255, 255, 0.05); border-radius: 8px; padding: 12px; font-size: 12px; }
+    .hp-mini b { display: block; font-family: var(--font-display); font-size: 20px; margin-top: 4px; }
+    .hp-chan { font-size: 11px; }
+    .hp-chan .ln { display: flex; align-items: center; gap: 8px; margin: 8px 0; opacity: 0.85; }
+    .hp-chan .trk { flex: 1; height: 5px; background: rgba(255, 255, 255, 0.1); border-radius: 2px; overflow: hidden; }
+    .hp-chan .fill { height: 100%; background: var(--accent); }
+    .hp-chan .fill.g { background: var(--signal); }
+
+    /* ——— Shared section ——— */
+    .sec { padding: 88px clamp(16px, 3.5vw, 48px); }
+    .sec-narrow { max-width: 1120px; margin: 0 auto; }
+    .sec-h { max-width: 640px; margin-bottom: 40px; }
+    .sec-h h2 { font-size: clamp(28px, 4vw, 40px); letter-spacing: -0.03em; margin-bottom: 12px; }
+    .sec-h p { color: var(--ink-3); font-size: 16px; line-height: 1.55; }
+    .eyebrow {
+      font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em;
+      color: var(--accent); margin-bottom: 10px;
+    }
+
+    /* Social proof strip — one job */
+    .proof {
+      background: var(--ink); color: #fff; padding: 36px clamp(16px, 3.5vw, 48px);
+      border-top: 1px solid rgba(255, 255, 255, 0.06);
+    }
+    .proof-grid {
+      max-width: 1120px; margin: 0 auto;
+      display: grid; grid-template-columns: repeat(4, 1fr); gap: 24px; text-align: left;
+    }
+    .proof-grid .n { font-family: var(--font-display); font-size: 36px; letter-spacing: -0.03em; }
+    .proof-grid .t { font-size: 13px; color: rgba(255, 255, 255, 0.5); margin-top: 4px; }
+
+    /* Channel tabs — parity Haravan IA */
+    .channels { background: var(--paper); }
+    .tabs {
+      display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 28px;
+    }
+    .tabs button {
+      height: 40px; padding: 0 16px; border-radius: var(--radius-sm);
+      border: 1px solid var(--line); background: #fff; font-size: 13px; font-weight: 600;
+      color: var(--ink-3); transition: background .15s, color .15s, border-color .15s;
+    }
+    .tabs button:hover { border-color: var(--ink); color: var(--ink); }
+    .tabs button.on { background: var(--ink); color: #fff; border-color: var(--ink); }
+    .tab-panel { display: none; }
+    .tab-panel.on { display: block; animation: rise .45s var(--ease) both; }
+    .tab-layout {
+      display: grid; grid-template-columns: 1.1fr 0.9fr; gap: 40px; align-items: center;
+      background: #fff; border: 1px solid var(--line); border-radius: 12px; padding: 32px;
+    }
+    .tab-layout h3 { font-size: 26px; letter-spacing: -0.02em; margin-bottom: 10px; }
+    .tab-layout .lead { color: var(--ink-3); font-size: 15px; margin-bottom: 18px; max-width: 42ch; }
+    .bullet { list-style: none; padding: 0; margin: 0 0 22px; }
+    .bullet li {
+      padding: 10px 0; border-bottom: 1px solid var(--paper-2); font-size: 14px;
+      display: grid; grid-template-columns: 18px 1fr; gap: 10px;
+    }
+    .bullet li::before { content: ""; width: 8px; height: 8px; margin-top: 6px; background: var(--accent); border-radius: 1px; }
+    .viz {
+      min-height: 280px; border-radius: 10px; padding: 20px; color: #fff;
+      background: linear-gradient(160deg, #152033, #0b1420 60%, #1a3040);
+      display: flex; flex-direction: column; justify-content: flex-end; gap: 10px;
+    }
+    .viz .row { display: flex; justify-content: space-between; font-size: 12px; opacity: 0.7; }
+    .viz .big { font-family: var(--font-display); font-size: 32px; letter-spacing: -0.02em; }
+    .viz .bars { display: flex; align-items: flex-end; gap: 8px; height: 100px; margin-top: 8px; }
+    .viz .bars span {
+      flex: 1; background: rgba(255, 92, 26, 0.7); border-radius: 3px 3px 0 0;
+      animation: rise .6s var(--ease) both;
+    }
+
+    /* Contrast band — GMV vanity */
+    .contrast {
+      background: var(--ink); color: #fff;
+      display: grid; grid-template-columns: 1fr 1.2fr; gap: 48px; align-items: center;
+    }
+    .contrast .strike {
+      font-family: var(--font-display); font-size: clamp(40px, 6vw, 64px);
+      letter-spacing: -0.04em; opacity: 0.28; text-decoration: line-through;
+    }
+    .contrast .win {
+      font-family: var(--font-display); font-size: clamp(32px, 5vw, 48px);
+      color: var(--accent); letter-spacing: -0.03em; margin-top: 8px;
+    }
+
+    /* Revenue graph */
+    .graph-flow {
+      display: flex; flex-wrap: wrap; gap: 8px; align-items: center;
+    }
+    .graph-flow .node {
+      background: #fff; border: 1px solid var(--line); padding: 12px 14px;
+      border-radius: 8px; font-size: 13px; font-weight: 600;
+    }
+    .graph-flow .node.hot { background: var(--ink); color: #fff; border-color: var(--ink); }
+    .graph-flow .arr { color: var(--accent); font-weight: 700; }
+
+    /* CRM / AI / Ops — one job each, dense but not card spam */
+    .split-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 48px; align-items: start; }
+    .feat-lines { list-style: none; padding: 0; margin: 0; }
+    .feat-lines li {
+      padding: 16px 0; border-bottom: 1px solid var(--line); font-size: 15px;
+      display: grid; grid-template-columns: 36px 1fr; gap: 12px;
+    }
+    .feat-lines .num {
+      font-family: var(--font-display); font-weight: 700; color: var(--accent); font-size: 18px;
+    }
+    .feat-lines strong { display: block; margin-bottom: 2px; }
+    .feat-lines span { font-size: 13px; color: var(--ink-3); }
+
+    .ai-band {
+      background:
+        linear-gradient(120deg, rgba(255, 92, 26, 0.08), transparent 45%),
+        var(--paper);
+    }
+    .ai-grid {
+      display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px;
+      background: var(--line); border: 1px solid var(--line); border-radius: 12px; overflow: hidden;
+    }
+    .ai-grid article {
+      background: #fff; padding: 28px 24px;
+    }
+    .ai-grid h3 { font-size: 17px; margin-bottom: 8px; font-family: var(--font-body); font-weight: 700; }
+    .ai-grid p { font-size: 13px; color: var(--ink-3); margin: 0; line-height: 1.5; }
+    .ai-grid .tag {
+      font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em;
+      color: var(--signal); margin-bottom: 10px;
+    }
+
+    .ops {
+      display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px;
+    }
+    .ops > div {
+      padding-top: 16px; border-top: 2px solid var(--ink);
+    }
+    .ops h3 { font-size: 16px; margin-bottom: 8px; font-family: var(--font-body); font-weight: 700; }
+    .ops p { font-size: 13px; color: var(--ink-3); margin: 0; }
+
+    /* Logos / trust */
+    .logos {
+      display: flex; flex-wrap: wrap; gap: 12px 28px; align-items: center;
+      font-family: var(--font-display); font-weight: 700; font-size: 15px;
+      color: var(--ink-3); letter-spacing: -0.02em;
+    }
+    .logos span { opacity: 0.55; }
+
+    /* Demo CTA */
+    .demo {
+      background: var(--ink); color: #fff;
+    }
+    .demo .sec-h p { color: rgba(255, 255, 255, 0.6); }
+    .demo-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; align-items: start; }
+    .form {
+      background: #fff; color: var(--ink); border-radius: 12px; padding: 28px;
+      display: grid; gap: 12px;
+    }
+    .form label { font-size: 12px; font-weight: 600; color: var(--ink-3); display: block; margin-bottom: 4px; }
+    .form .hint { font-size: 11px; color: var(--ink-3); }
+
+    .site-foot {
+      padding: 28px clamp(16px, 3.5vw, 48px);
+      display: flex; flex-wrap: wrap; justify-content: space-between; gap: 12px;
+      font-size: 13px; color: var(--ink-3); border-top: 1px solid var(--line);
+    }
+    .site-foot nav { display: flex; gap: 16px; flex-wrap: wrap; }
+
+    @media (max-width: 960px) {
+      .nav-links { display: none; }
+      .hero-plane { display: none; }
+      .proof-grid { grid-template-columns: repeat(2, 1fr); }
+      .tab-layout, .contrast, .split-2, .demo-grid, .ai-grid, .ops { grid-template-columns: 1fr; }
+      .hero { place-items: center start; }
+    }
+  </style>
+</head>
+<body>
+  <header class="site-nav" id="nav">
+    <a class="ptt-mark" href="index.html"><span class="dot"></span> PTT</a>
+    <nav class="nav-links">
+      <a href="#channels">Đa kênh</a>
+      <a href="#crm">CRM</a>
+      <a href="#ai">AI</a>
+      <a href="#ops">Vận hành</a>
+      <a href="#margin">Margin</a>
+    </nav>
+    <div class="nav-cta">
+      <a class="btn btn-ghost btn-sm" href="03-admin-command-center.html">Xem tour</a>
+      <a class="btn btn-primary btn-sm" href="#demo">Đặt demo</a>
+    </div>
+  </header>
+
+  <!-- 1. Hero — brand + one headline + one sub + CTA + full-bleed plane -->
+  <section class="hero">
+    <div class="hero-plane" aria-hidden="true">
+      <div class="hero-plane-inner">
+        <div class="hp-kpi anim-rise">
+          <div class="l">Contribution margin</div>
+          <div class="v">32.4%</div>
+          <div class="d">+2.1đ · sau return, fee & commission</div>
+        </div>
+        <div class="hp-row anim-rise-d1">
+          <div class="hp-mini">Net revenue<b>₫1.84 tỷ</b></div>
+          <div class="hp-mini">Đơn rủi ro<b>18</b></div>
+        </div>
+        <div class="hp-chan anim-rise-d2">
+          <div class="ln"><span style="width:56px">Live</span><div class="trk"><div class="fill" style="width:90%"></div></div><span>GMV</span></div>
+          <div class="ln"><span style="width:56px">Live</span><div class="trk"><div class="fill g" style="width:38%"></div></div><span>Margin</span></div>
+          <div class="ln"><span style="width:56px">Web</span><div class="trk"><div class="fill" style="width:62%"></div></div><span>GMV</span></div>
+          <div class="ln"><span style="width:56px">Web</span><div class="trk"><div class="fill g" style="width:74%"></div></div><span>Margin</span></div>
+        </div>
+      </div>
+    </div>
+    <div class="hero-inner">
+      <div class="brand-hero anim-rise">PTT<em>.</em></div>
+      <h1 class="anim-rise-d1">Bán đa kênh — điều hành theo lãi thật.</h1>
+      <p class="sub anim-rise-d2">Website, Social, Live, POS và sàn trên một OS. Đo contribution margin, không chỉ GMV.</p>
+      <div class="hero-actions anim-rise-d2">
+        <a class="btn btn-primary btn-lg" href="#demo">Đặt demo</a>
+        <a class="btn btn-ghost btn-lg" href="03-admin-command-center.html">Product tour</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- 2. Social proof — parity Haravan numbers strip -->
+  <section class="proof">
+    <div class="proof-grid">
+      <div><div class="n">1 OS</div><div class="t">Commerce · Website · AI · Margin</div></div>
+      <div><div class="n">5+</div><div class="t">Kênh bán đồng bộ realtime</div></div>
+      <div><div class="n">15+</div><div class="t">Nhà vận chuyển & COD</div></div>
+      <div><div class="n">12+</div><div class="t">Cổng thanh toán / QR</div></div>
+    </div>
+  </section>
+
+  <!-- 3. Channels — same IA as Haravan omnichannel homepage -->
+  <section class="sec channels" id="channels">
+    <div class="sec-narrow">
+      <div class="sec-h">
+        <div class="eyebrow">Omnichannel</div>
+        <h2>Bán hàng đa kênh dễ dàng — kiểm soát lãi từng kênh.</h2>
+        <p>Đủ Web, Social, Live, POS, sàn như đối thủ quen thuộc. PTT thêm lớp margin, reservation tồn và go-live governance.</p>
+      </div>
+
+      <div class="tabs" role="tablist">
+        <button type="button" class="on" data-tab="web" role="tab">Website</button>
+        <button type="button" data-tab="social" role="tab">Social Commerce</button>
+        <button type="button" data-tab="live" role="tab">Livestream</button>
+        <button type="button" data-tab="pos" role="tab">Chuỗi cửa hàng</button>
+        <button type="button" data-tab="mkt" role="tab">Sàn TMĐT</button>
+        <button type="button" data-tab="corp" role="tab">Website doanh nghiệp</button>
+      </div>
+
+      <div id="panel-web" class="tab-panel on" role="tabpanel">
+        <div class="tab-layout">
+          <div>
+            <h3>Website bán hàng chuẩn SEO — gắn commerce core</h3>
+            <p class="lead">Template có Conversion Playbook, Brand Kit, staging/rollback. Checkout server-side, Pixel/CAPI có consent.</p>
+            <ul class="bullet">
+              <li>400+ không quan trọng bằng theme đo được CVR / Mobile / SEO score</li>
+              <li>Gợi ý SP liên quan, deal chồng deal, member price, COD ETA</li>
+              <li>GA / Meta Pixel / CAPI / TikTok Pixel — health check sau publish</li>
+              <li>Blog & landing campaign gắn attribution + margin theo page</li>
+            </ul>
+            <a class="btn btn-primary" href="04-template-marketplace.html">Xem Template Marketplace</a>
+            <a class="btn btn-ghost" href="08-storefront-beauty.html">Storefront demo</a>
+          </div>
+          <div class="viz">
+            <div class="row"><span>Storefront · Mobile</span><span>CVR 3.8%</span></div>
+            <div class="big">LCP · INP · CLS</div>
+            <div class="bars">
+              <span style="height:40%"></span><span style="height:70%"></span>
+              <span style="height:55%"></span><span style="height:88%"></span>
+              <span style="height:62%"></span><span style="height:45%"></span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div id="panel-social" class="tab-panel" role="tabpanel">
+        <div class="tab-layout">
+          <div>
+            <h3>Hội thoại đa kênh — chốt đơn từ comment & DM</h3>
+            <p class="lead">Inbox Messenger, Instagram, Zalo OA, Shopee Chat, TikTok for Business. Comment → giỏ → đơn có policy AI.</p>
+            <ul class="bullet">
+              <li>Chatbot + AI reply + human handoff · risk medium cần duyệt</li>
+              <li>Post / Reels comment-to-order tự gửi giỏ</li>
+              <li>Click-to-Messenger ads gắn customer 360</li>
+              <li>Mỗi draft order có ước tính margin & tồn</li>
+            </ul>
+            <a class="btn btn-primary" href="10-social-live-console.html">Mở Social Console</a>
+          </div>
+          <div class="viz">
+            <div class="row"><span>Unified inbox</span><span>14 unread</span></div>
+            <div class="big">Comment → Order</div>
+            <p style="font-size:13px;opacity:.7;margin:0">Keyword “SET A” · reserve 15 phút · COD Q.7</p>
+          </div>
+        </div>
+      </div>
+
+      <div id="panel-live" class="tab-panel" role="tabpanel">
+        <div class="tab-layout">
+          <div>
+            <h3>Livestream — quét keyword, tồn realtime, margin sau show</h3>
+            <p class="lead">Chốt nhanh như Harasocial Live. PTT thêm recovery COD, claim risk và contribution sau return.</p>
+            <ul class="bullet">
+              <li>Tự động quét bình luận → tạo đơn / gửi giỏ</li>
+              <li>Gợi ý giỏ trên màn hình host</li>
+              <li>Cập nhật tồn liên tục, alert stockout</li>
+              <li>Retarget khách cũ + báo cáo lãi/lỗ phiên live</li>
+            </ul>
+            <a class="btn btn-primary" href="10-social-live-console.html">Live Console</a>
+          </div>
+          <div class="viz">
+            <div class="row"><span>ON AIR</span><span>12.4k viewers</span></div>
+            <div class="big">₫286tr GMV</div>
+            <p style="font-size:13px;opacity:.7;margin:0">Contribution ước tính 19% · return risk cao</p>
+          </div>
+        </div>
+      </div>
+
+      <div id="panel-pos" class="tab-panel" role="tabpanel">
+        <div class="tab-layout">
+          <div>
+            <h3>Chuỗi cửa hàng — POS đồng bộ online</h3>
+            <p class="lead">Không giới hạn chi nhánh trên 1 tenant. Giá, tồn, khách, khuyến mãi đồng bộ web ↔ quầy.</p>
+            <ul class="bullet">
+              <li>Ca làm, quét barcode, sửa giá theo quyền</li>
+              <li>Split payment · QR xác nhận · đổi trả web→store</li>
+              <li>Tồn theo địa điểm, lô/hạn, reservation chống oversell</li>
+              <li>Báo cáo theo chi nhánh / nhân viên / ngành hàng</li>
+            </ul>
+            <a class="btn btn-primary" href="03-admin-command-center.html">Command Center</a>
+          </div>
+          <div class="viz">
+            <div class="row"><span>POS · 12 chi nhánh</span><span>Sync &lt; 5s</span></div>
+            <div class="big">Offline queue</div>
+            <p style="font-size:13px;opacity:.7;margin:0">Bán được khi mạng yếu · đồng bộ khi online</p>
+          </div>
+        </div>
+      </div>
+
+      <div id="panel-mkt" class="tab-panel" role="tabpanel">
+        <div class="tab-layout">
+          <div>
+            <h3>Shopee · Lazada · TikTok Shop · Tiki</h3>
+            <p class="lead">Quản lý tập trung listing, tồn, đơn, hoàn. Sao chép SP từ sàn về PIM. Multi-kho map theo gian.</p>
+            <ul class="bullet">
+              <li>Stock sync / reconciliation · lag mục tiêu ≤ 60s</li>
+              <li>Order / return / refund / tracking sync</li>
+              <li>Nhập kho hàng loạt · phân loại hoàn theo sàn</li>
+              <li>Fee sàn vào unit economics — thấy kênh nào lỗ</li>
+            </ul>
+            <a class="btn btn-primary" href="11-revenue-intelligence.html">Xem margin theo sàn</a>
+          </div>
+          <div class="viz">
+            <div class="row"><span>4 sàn</span><span>Unmatched 0</span></div>
+            <div class="big">Fee-aware P&amp;L</div>
+            <div class="bars">
+              <span style="height:50%"></span><span style="height:30%"></span>
+              <span style="height:65%"></span><span style="height:25%"></span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div id="panel-corp" class="tab-panel" role="tabpanel">
+        <div class="tab-layout">
+          <div>
+            <h3>Website doanh nghiệp — lead, booking, uy tín</h3>
+            <p class="lead">Không chỉ shop: trang dịch vụ, booking, form, hotline/Zalo/Messenger. CMS có duyệt & version.</p>
+            <ul class="bullet">
+              <li>SEO / schema / CTA tối ưu lead</li>
+              <li>Đồng bộ lead vào CRM + Sales Copilot</li>
+              <li>Uỷ quyền agency / multi-brand</li>
+            </ul>
+            <a class="btn btn-primary" href="#demo">Đặt demo</a>
+          </div>
+          <div class="viz">
+            <div class="row"><span>Lead capture</span><span>UTM + consent</span></div>
+            <div class="big">Demo routing</div>
+            <p style="font-size:13px;opacity:.7;margin:0">Industry · size · intent → owner + SLA</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 4. Contrast — why not just Haravan-style GMV story -->
+  <section class="sec contrast" id="margin">
+    <div>
+      <div class="strike">+120% GMV</div>
+      <div class="win">−8% margin</div>
+    </div>
+    <div>
+      <div class="eyebrow" style="color:var(--accent)">Revenue Intelligence</div>
+      <h2 style="font-size:clamp(26px,3.5vw,36px);margin-bottom:12px">Báo cáo đẹp không đủ để điều hành.</h2>
+      <p style="opacity:.65;font-size:16px;margin:0;max-width:42ch">PTT trừ COGS, fee sàn, COD fail, return, commission KOL và subsidy vận chuyển trước khi bạn tăng ngân sách kênh.</p>
+    </div>
+  </section>
+
+  <!-- 5. Revenue Graph -->
+  <section class="sec">
+    <div class="sec-narrow">
+      <div class="sec-h">
+        <div class="eyebrow">Khác biệt PTT</div>
+        <h2>Revenue Graph</h2>
+        <p>Từ creative đến contribution profit — công thức có version, không rewrite lịch sử.</p>
+      </div>
+      <div class="graph-flow">
+        <span class="node">Ads / Creative</span><span class="arr">→</span>
+        <span class="node">Creator / Live</span><span class="arr">→</span>
+        <span class="node">Landing / Web</span><span class="arr">→</span>
+        <span class="node">Hội thoại</span><span class="arr">→</span>
+        <span class="node">Đơn / COD</span><span class="arr">→</span>
+        <span class="node">Return</span><span class="arr">→</span>
+        <span class="node hot">Contribution</span>
+      </div>
+      <div style="margin-top:28px">
+        <a class="btn btn-primary" href="11-revenue-intelligence.html">Mở Revenue Intelligence</a>
+        <a class="btn btn-ghost" href="12-creator-scorecard.html">Creator Scorecard</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- 6. CRM — parity Haravan CRM block -->
+  <section class="sec" id="crm" style="background:var(--paper)">
+    <div class="sec-narrow split-2">
+      <div class="sec-h" style="margin:0">
+        <div class="eyebrow">CRM & Retention</div>
+        <h2>Nuôi dưỡng khách trọn đời — đo được LTV:CAC.</h2>
+        <p>Customer 360, RFM, loyalty, broadcast đa kênh. Journey có holdout và ROI, không chỉ open rate.</p>
+        <div style="margin-top:24px;display:flex;gap:10px;flex-wrap:wrap">
+          <a class="btn btn-primary" href="03-admin-command-center.html">Xem hồ sơ 360</a>
+        </div>
+      </div>
+      <ul class="feat-lines">
+        <li><span class="num">01</span><div><strong>Customer 360°</strong><span>Đồng bộ web, social, POS, sàn · merge identity có audit</span></div></li>
+        <li><span class="num">02</span><div><strong>Phân khúc & RFM</strong><span>Chi tiêu, tần suất, hành vi, hạng thành viên, geo</span></div></li>
+        <li><span class="num">03</span><div><strong>Broadcast</strong><span>Zalo ZNS · Email · Messenger · SMS — consent & frequency cap</span></div></li>
+        <li><span class="num">04</span><div><strong>Loyalty & referral</strong><span>Tích điểm, hạng, đổi quà · online đến cửa hàng</span></div></li>
+        <li><span class="num">05</span><div><strong>Journey automation</strong><span>Abandoned cart, post-purchase, win-back · đo contribution</span></div></li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- 7. AI — parity AI Chat but guardrailed -->
+  <section class="sec ai-band" id="ai">
+    <div class="sec-narrow">
+      <div class="sec-h">
+        <div class="eyebrow">AI Platform</div>
+        <h2>AI bán hàng 24/7 — có policy, approval và audit.</h2>
+        <p>Không chỉ chatbot. Agent có tool permission, risk class và human-in-the-loop. Không tự refund hay đổi giá.</p>
+      </div>
+      <div class="ai-grid">
+        <article>
+          <div class="tag">Sales / Care</div>
+          <h3>AI Chat & Copilot</h3>
+          <p>Tư vấn SP, tồn, giao hàng, tạo order draft. Handoff khi low confidence.</p>
+        </article>
+        <article>
+          <div class="tag">Website</div>
+          <h3>Theme Match & Conversion</h3>
+          <p>Gợi ý template, copy, A/B — không tự publish. Go-live vẫn cần checklist.</p>
+        </article>
+        <article>
+          <div class="tag">Governance</div>
+          <h3>High-risk = bắt buộc duyệt</h3>
+          <p>Discount lớn, refund, mass send, stock adjust — luôn có người ký.</p>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <!-- 8. Ops — parity Haravan vận hành -->
+  <section class="sec" id="ops">
+    <div class="sec-narrow">
+      <div class="sec-h">
+        <div class="eyebrow">Operations</div>
+        <h2>Đơn · tồn · vận chuyển · thanh toán · hóa đơn</h2>
+        <p>Một hệ thống xử lý từ online đến offline — COD đối soát và e-invoice đa kênh.</p>
+      </div>
+      <div class="ops">
+        <div>
+          <h3>OMS thông minh</h3>
+          <p>Gộp/tách đơn, bulk đẩy vận chuyển, suspect duplicate, exception queue.</p>
+        </div>
+        <div>
+          <h3>Tồn đa kho</h3>
+          <p>Reservation realtime, lô/hạn, transfer, stocktake — giảm oversell đa kênh.</p>
+        </div>
+        <div>
+          <h3>15+ nhà vận chuyển</h3>
+          <p>Label, tracking, COD expected/collected/remitted, dispute.</p>
+        </div>
+        <div>
+          <h3>12+ thanh toán + e-invoice</h3>
+          <p>QR, ví, COD, BNPL · xuất VAT theo legal entity.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 9. Trust logos strip -->
+  <section class="sec" style="padding-top:40px;padding-bottom:40px;border-top:1px solid var(--line)">
+    <div class="sec-narrow">
+      <p style="font-size:12px;font-weight:600;color:var(--ink-3);margin-bottom:16px;text-transform:uppercase;letter-spacing:.06em">Kết nối hệ sinh thái Việt Nam</p>
+      <div class="logos">
+        <span>Shopee</span><span>Lazada</span><span>TikTok Shop</span><span>Tiki</span>
+        <span>Meta</span><span>Zalo OA</span><span>GHN</span><span>GHTK</span>
+        <span>Viettel Post</span><span>MoMo</span><span>VNPay</span><span>ZaloPay</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- 10. Demo — lead capture -->
+  <section class="sec demo" id="demo">
+    <div class="sec-narrow demo-grid">
+      <div class="sec-h" style="margin:0">
+        <div class="eyebrow">Bắt đầu</div>
+        <h2>Đặt demo 30 phút theo ngành của bạn</h2>
+        <p>Nhận tour Command Center, Website Go-live và Social/Live. Sales Copilot tóm tắt pain trước cuộc gọi.</p>
+        <ul class="bullet" style="margin-top:24px;max-width:420px">
+          <li style="border-color:rgba(255,255,255,.1)">Beauty / D2C / Agency / B2B playbook</li>
+          <li style="border-color:rgba(255,255,255,.1)">So sánh margin vs chỉ nhìn GMV</li>
+          <li style="border-color:rgba(255,255,255,.1)">Sandbox storefront trong tuần đầu</li>
+        </ul>
+      </div>
+      <form class="form" onsubmit="event.preventDefault();alert('Mockup: lead đã ghi nhận. CRM routing + Sales Copilot sẽ chạy ở bản production.');">
+        <div>
+          <label for="name">Họ tên</label>
+          <input class="input" id="name" required placeholder="Nguyễn Minh Anh" />
+        </div>
+        <div>
+          <label for="company">Công ty</label>
+          <input class="input" id="company" required placeholder="AURA Beauty" />
+        </div>
+        <div>
+          <label for="contact">Email / Zalo / SĐT</label>
+          <input class="input" id="contact" required placeholder="anh@aura.vn" />
+        </div>
+        <div>
+          <label for="need">Nhu cầu chính</label>
+          <select class="select" id="need">
+            <option>Omnichannel đủ kênh (parity vận hành)</option>
+            <option>Đo lãi theo kênh — Revenue Intelligence</option>
+            <option>Website + Go-live governance</option>
+            <option>Social / Live chốt đơn</option>
+            <option>Agency multi-brand</option>
+          </select>
+        </div>
+        <label style="display:flex;gap:8px;align-items:flex-start;font-weight:400">
+          <input type="checkbox" required style="margin-top:3px" />
+          <span>Tôi đồng ý được liên hệ và chính sách dữ liệu PTT (consent).</span>
+        </label>
+        <button class="btn btn-primary" type="submit">Gửi yêu cầu demo</button>
+        <p class="hint">UTM & trang nguồn sẽ gắn vào CRM · chống spam · dedupe SĐT/email.</p>
+      </form>
+    </div>
+  </section>
+
+  <footer class="site-foot">
+    <span>© PTT Commerce Intelligence OS</span>
+    <nav>
+      <a href="index.html">Mockup hub</a>
+      <a href="03-admin-command-center.html">Admin</a>
+      <a href="04-template-marketplace.html">Website</a>
+      <a href="10-social-live-console.html">Social/Live</a>
+      <a href="11-revenue-intelligence.html">Revenue</a>
+    </nav>
+  </footer>
+
+  <script>
+    const nav = document.getElementById("nav");
+    addEventListener("scroll", () => nav.classList.toggle("scrolled", scrollY > 8), { passive: true });
+
+    const tabs = document.querySelectorAll(".tabs button");
+    const panels = {
+      web: document.getElementById("panel-web"),
+      social: document.getElementById("panel-social"),
+      live: document.getElementById("panel-live"),
+      pos: document.getElementById("panel-pos"),
+      mkt: document.getElementById("panel-mkt"),
+      corp: document.getElementById("panel-corp"),
+    };
+    tabs.forEach((btn) => {
+      btn.addEventListener("click", () => {
+        tabs.forEach((b) => b.classList.remove("on"));
+        btn.classList.add("on");
+        Object.values(panels).forEach((p) => p.classList.remove("on"));
+        panels[btn.dataset.tab].classList.add("on");
+      });
+    });
+  </script>
+</body>
+</html>

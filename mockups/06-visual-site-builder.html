@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>PTT — Visual Site Builder</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&family=Syne:wght@600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="ptt-design.css" />
+  <style>
+    body { background: #1a222d; }
+    .builder { display: grid; grid-template-rows: 52px 1fr; height: 100vh; color: var(--ink); }
+    .b-top {
+      display: flex; align-items: center; justify-content: space-between; padding: 0 14px;
+      background: #121820; color: #fff; border-bottom: 1px solid rgba(255,255,255,.08); font-size: 13px;
+    }
+    .b-top .devs { display: flex; gap: 4px; background: rgba(255,255,255,.06); padding: 3px; border-radius: 6px; }
+    .b-top .devs button { height: 28px; padding: 0 10px; border-radius: 4px; color: rgba(255,255,255,.65); font-size: 12px; }
+    .b-top .devs button.on { background: #fff; color: var(--ink); font-weight: 600; }
+    .b-body { display: grid; grid-template-columns: 220px 1fr 280px; min-height: 0; }
+    .pane { background: #0f151c; color: rgba(255,255,255,.8); border-right: 1px solid rgba(255,255,255,.06); overflow: auto; }
+    .pane:last-child { border-right: 0; border-left: 1px solid rgba(255,255,255,.06); }
+    .pane-h { padding: 12px 14px; font-size: 11px; text-transform: uppercase; letter-spacing: .06em; opacity: .45; }
+    .layer { padding: 10px 14px; font-size: 13px; border-left: 2px solid transparent; cursor: pointer; }
+    .layer:hover, .layer.on { background: rgba(255,255,255,.05); border-left-color: var(--accent); color: #fff; }
+    .canvas-wrap { background: #2a3340; display: flex; justify-content: center; padding: 24px; overflow: auto; }
+    .canvas {
+      width: 390px; background: #faf8f6; border-radius: 12px; overflow: hidden;
+      box-shadow: 0 20px 50px rgba(0,0,0,.35); min-height: 640px;
+    }
+    .c-hero {
+      height: 220px; background: linear-gradient(160deg, #1a1514, #c4a090);
+      color: #fff; padding: 28px 20px; display: flex; flex-direction: column; justify-content: flex-end;
+    }
+    .c-hero h2 { font-size: 28px; margin-bottom: 6px; }
+    .c-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; padding: 12px; }
+    .c-grid .p { height: 110px; background: #e8ddd6; border-radius: 8px; }
+    .insp { padding: 14px; font-size: 13px; }
+    .insp label { display: block; font-size: 11px; opacity: .5; margin: 10px 0 4px; }
+    .insp input, .insp select {
+      width: 100%; height: 36px; background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.12);
+      border-radius: 6px; color: #fff; padding: 0 10px;
+    }
+    .ai-box {
+      margin: 14px; padding: 12px; border-radius: 8px; background: rgba(255,92,26,.12);
+      border: 1px solid rgba(255,92,26,.3); font-size: 12px;
+    }
+  </style>
+</head>
+<body>
+  <div class="builder">
+    <div class="b-top">
+      <div style="display:flex;gap:12px;align-items:center">
+        <a class="ptt-mark" href="index.html" style="font-size:14px"><span class="dot"></span> Builder</a>
+        <span style="opacity:.5">Aura Commerce · Draft v2.5.0-rc</span>
+        <span class="badge badge-signal">Autosaved 2s ago</span>
+      </div>
+      <div class="devs">
+        <button>Desktop</button>
+        <button>Tablet</button>
+        <button class="on">Mobile</button>
+      </div>
+      <div style="display:flex;gap:8px">
+        <button class="btn btn-ghost btn-sm" style="color:#fff;border-color:rgba(255,255,255,.2)">Undo</button>
+        <a class="btn btn-ghost btn-sm" style="color:#fff;border-color:rgba(255,255,255,.2)" href="08-storefront-beauty.html">Preview</a>
+        <a class="btn btn-primary btn-sm" href="07-golive-checklist.html" title="Publish bị khóa đến khi checklist pass">Publish…</a>
+      </div>
+    </div>
+    <div class="b-body">
+      <div class="pane">
+        <div class="pane-h">Layers</div>
+        <div class="layer">Announcement</div>
+        <div class="layer on">Hero</div>
+        <div class="layer">Collection strip</div>
+        <div class="layer">Product grid</div>
+        <div class="layer">Social proof</div>
+        <div class="layer">Footer</div>
+        <div class="pane-h">Blocks</div>
+        <div class="layer">+ Flash sale</div>
+        <div class="layer">+ Live embed</div>
+        <div class="layer">+ FAQ</div>
+      </div>
+      <div class="canvas-wrap">
+        <div class="canvas">
+          <div class="c-hero">
+            <div style="font-size:11px;opacity:.7;margin-bottom:8px">AURA</div>
+            <h2>Overnight repair, morning glow</h2>
+            <p style="font-size:13px;opacity:.8">Serum sạch · COD toàn quốc</p>
+          </div>
+          <div class="c-grid"><div class="p"></div><div class="p"></div><div class="p"></div><div class="p"></div></div>
+        </div>
+      </div>
+      <div class="pane">
+        <div class="pane-h">Inspector · Hero</div>
+        <div class="insp">
+          <label>Headline</label>
+          <input value="Overnight repair, morning glow" />
+          <label>CTA</label>
+          <input value="Mua best-seller" />
+          <label>Spacing</label>
+          <select><option>Compact</option><option selected>Default</option><option>Airy</option></select>
+          <label>Typography</label>
+          <select><option>Brand Kit · Display</option></select>
+        </div>
+        <div class="ai-box">
+          <strong>AI Assistant</strong>
+          <p style="opacity:.75;margin:6px 0 10px">Gợi ý headline (không tự publish):</p>
+          <div style="margin-bottom:6px">· “Da khỏe sau 7 đêm — chứng minh bằng routine”</div>
+          <div style="margin-bottom:10px">· “Serum overnight · giao COD ngày mai”</div>
+          <button class="btn btn-primary btn-sm">Chèn biến thể A</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

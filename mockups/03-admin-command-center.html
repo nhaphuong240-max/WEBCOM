@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>PTT — Admin Command Center</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&family=Syne:wght@600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="ptt-design.css" />
+  <style>
+    .bars { display: flex; flex-direction: column; gap: 14px; }
+    .bar-row { display: grid; grid-template-columns: 72px 1fr 1fr; gap: 10px; align-items: center; font-size: 12px; }
+    .bar-row .lab { font-weight: 600; }
+    .track { height: 8px; background: var(--paper-2); border-radius: 2px; overflow: hidden; }
+    .track .gmv { height: 100%; background: var(--ink-3); }
+    .track .mar { height: 100%; background: var(--signal); }
+    .legend { display: flex; gap: 16px; font-size: 11px; color: var(--ink-3); margin-bottom: 12px; }
+    .legend i { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 4px; }
+    .ai-item {
+      padding: 14px 0; border-bottom: 1px solid var(--paper-2);
+    }
+    .ai-item:last-child { border-bottom: 0; }
+    .ai-item h4 { font-size: 14px; font-family: var(--font-body); font-weight: 600; margin-bottom: 4px; }
+    .ai-item p { font-size: 12px; color: var(--ink-3); margin-bottom: 10px; }
+    .ai-actions { display: flex; gap: 8px; }
+  </style>
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar">
+      <a class="brand ptt-mark" href="index.html"><span class="dot"></span> PTT <span>OS</span></a>
+      <div class="nav-section">Điều hành</div>
+      <a class="nav-item active" href="03-admin-command-center.html"><span class="ico">◆</span> Command Center</a>
+      <a class="nav-item" href="#"><span class="ico">◇</span> Đơn hàng</a>
+      <a class="nav-item" href="#"><span class="ico">◇</span> Tồn kho</a>
+      <div class="nav-section">Tăng trưởng</div>
+      <a class="nav-item" href="04-template-marketplace.html"><span class="ico">◇</span> Website</a>
+      <a class="nav-item" href="10-social-live-console.html"><span class="ico">◇</span> Social / Live</a>
+      <a class="nav-item" href="#"><span class="ico">◇</span> CRM</a>
+      <a class="nav-item" href="12-creator-scorecard.html"><span class="ico">◇</span> Content</a>
+      <div class="nav-section">Trí tuệ</div>
+      <a class="nav-item" href="11-revenue-intelligence.html"><span class="ico">◇</span> Revenue</a>
+      <a class="nav-item" href="09-website-analytics.html"><span class="ico">◇</span> Web Analytics</a>
+      <a class="nav-item" href="#"><span class="ico">◇</span> AI Studio</a>
+      <div style="flex:1"></div>
+      <a class="nav-item" href="index.html"><span class="ico">←</span> Mockup hub</a>
+    </aside>
+
+    <div class="main">
+      <header class="topbar">
+        <div class="crumb">AURA Beauty · <strong>Command Center</strong></div>
+        <div style="display:flex;gap:10px;align-items:center">
+          <span class="badge badge-signal">Live sync</span>
+          <button class="btn btn-ghost btn-sm">Xuất báo cáo</button>
+          <button class="btn btn-primary btn-sm">Tạo đơn</button>
+        </div>
+      </header>
+
+      <div class="content">
+        <div class="page-head anim-rise">
+          <div>
+            <h1>Điều hành theo lãi thật</h1>
+            <p>GMV cao không đồng nghĩa margin khỏe. Ưu tiên exception và AI action cần duyệt trước khi tối ưu campaign.</p>
+          </div>
+          <select class="select" style="width:180px">
+            <option>Hôm nay</option>
+            <option>7 ngày</option>
+            <option>30 ngày</option>
+          </select>
+        </div>
+
+        <div class="kpi-row anim-rise-d1">
+          <div class="kpi emphasis">
+            <div class="label">Contribution margin</div>
+            <div class="value">32.4%</div>
+            <div class="delta up">↑ 2.1đ · sau return & fee</div>
+          </div>
+          <div class="kpi">
+            <div class="label">Net revenue</div>
+            <div class="value">₫1.84 tỷ</div>
+            <div class="delta up">↑ 12% WoW</div>
+          </div>
+          <div class="kpi">
+            <div class="label">Đơn rủi ro</div>
+            <div class="value">18</div>
+            <div class="delta down">↑ 4 COD / tồn</div>
+          </div>
+          <div class="kpi">
+            <div class="label">Checkout CVR</div>
+            <div class="value">3.8%</div>
+            <div class="delta up">↑ 0.4đ mobile</div>
+          </div>
+        </div>
+
+        <div class="grid-2 anim-rise-d2">
+          <div class="panel">
+            <div class="panel-h">
+              <span>Exception queue</span>
+              <a href="#" style="font-size:12px;color:var(--accent);font-weight:600">Xem tất cả</a>
+            </div>
+            <div class="panel-b" style="padding:0">
+              <table class="table">
+                <thead>
+                  <tr><th>Loại</th><th>Chi tiết</th><th>SLA</th><th></th></tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td><span class="badge badge-danger">COD</span></td>
+                    <td>12 đơn giao thất bại · quận 12</td>
+                    <td>2h</td>
+                    <td><button class="btn btn-ghost btn-sm">Xử lý</button></td>
+                  </tr>
+                  <tr>
+                    <td><span class="badge badge-warn">Tồn</span></td>
+                    <td>SKU SERUM-30 oversell risk Live</td>
+                    <td>45p</td>
+                    <td><button class="btn btn-ghost btn-sm">Giữ</button></td>
+                  </tr>
+                  <tr>
+                    <td><span class="badge badge-accent">Publish</span></td>
+                    <td>Go-live fail · Meta Pixel consent</td>
+                    <td>—</td>
+                    <td><a class="btn btn-ghost btn-sm" href="07-golive-checklist.html">Checklist</a></td>
+                  </tr>
+                  <tr>
+                    <td><span class="badge badge-muted">AI</span></td>
+                    <td>3 action chờ duyệt · discount &gt; 25%</td>
+                    <td>1h</td>
+                    <td><button class="btn btn-primary btn-sm">Duyệt</button></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="panel">
+            <div class="panel-h">
+              <span>AI Insight · Human-in-the-loop</span>
+              <span class="badge badge-muted">Policy on</span>
+            </div>
+            <div class="panel-b">
+              <div class="ai-item">
+                <h4>Giảm budget Live SET A 15%</h4>
+                <p>GMV cao nhưng contribution chỉ 11% sau return 18% và commission. Evidence: 14 ngày gần nhất.</p>
+                <div class="ai-actions">
+                  <button class="btn btn-primary btn-sm">Phê duyệt</button>
+                  <button class="btn btn-ghost btn-sm">Bỏ qua</button>
+                </div>
+              </div>
+              <div class="ai-item">
+                <h4>Đẩy bundle Serum + Toner lên PDP</h4>
+                <p>AOV +₫186k trên cohort mobile; margin bundle 38%. Draft page — không tự publish.</p>
+                <div class="ai-actions">
+                  <a class="btn btn-primary btn-sm" href="06-visual-site-builder.html">Mở draft</a>
+                  <button class="btn btn-ghost btn-sm">Bỏ qua</button>
+                </div>
+              </div>
+              <div class="ai-item">
+                <h4>Gọi lại 42 khách COD trễ</h4>
+                <p>Risk medium · tạo task CSKH. Agent không tự gửi ZNS hàng loạt.</p>
+                <div class="ai-actions">
+                  <button class="btn btn-primary btn-sm">Tạo task</button>
+                  <button class="btn btn-ghost btn-sm">Bỏ qua</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="grid-2" style="margin-top:16px">
+          <div class="panel">
+            <div class="panel-h">
+              <span>GMV vs Margin theo kênh</span>
+              <span style="font-size:12px;color:var(--ink-3);font-weight:400">Live bán chạy ≠ Live lãi</span>
+            </div>
+            <div class="panel-b">
+              <div class="legend">
+                <span><i style="background:var(--ink-3)"></i> GMV</span>
+                <span><i style="background:var(--signal)"></i> Contribution margin</span>
+              </div>
+              <div class="bars">
+                <div class="bar-row"><span class="lab">Website</span><div class="track"><div class="gmv" style="width:62%"></div></div><div class="track"><div class="mar" style="width:74%"></div></div></div>
+                <div class="bar-row"><span class="lab">Live</span><div class="track"><div class="gmv" style="width:90%"></div></div><div class="track"><div class="mar" style="width:38%"></div></div></div>
+                <div class="bar-row"><span class="lab">POS</span><div class="track"><div class="gmv" style="width:48%"></div></div><div class="track"><div class="mar" style="width:70%"></div></div></div>
+                <div class="bar-row"><span class="lab">Shopee</span><div class="track"><div class="gmv" style="width:72%"></div></div><div class="track"><div class="mar" style="width:28%"></div></div></div>
+                <div class="bar-row"><span class="lab">TikTok</span><div class="track"><div class="gmv" style="width:80%"></div></div><div class="track"><div class="mar" style="width:33%"></div></div></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="panel">
+            <div class="panel-h"><span>Đơn gần đây</span><a href="10-social-live-console.html" style="font-size:12px;color:var(--accent)">Social console</a></div>
+            <div class="panel-b" style="padding:0">
+              <table class="table">
+                <thead><tr><th>Mã</th><th>Nguồn</th><th>KH</th><th>TT</th><th>Giá trị</th></tr></thead>
+                <tbody>
+                  <tr><td>ORD-9182</td><td><span class="chip">Live</span></td><td>0903***221</td><td><span class="badge badge-warn">COD</span></td><td>₫890.000</td></tr>
+                  <tr><td>ORD-9181</td><td><span class="chip">Web</span></td><td>an@email</td><td><span class="badge badge-signal">Paid</span></td><td>₫1.240.000</td></tr>
+                  <tr><td>ORD-9180</td><td><span class="chip">Zalo</span></td><td>0988***019</td><td><span class="badge badge-muted">Draft</span></td><td>₫450.000</td></tr>
+                  <tr><td>ORD-9179</td><td><span class="chip">POS</span></td><td>Member Gold</td><td><span class="badge badge-signal">Paid</span></td><td>₫620.000</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

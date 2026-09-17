@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>PTT — Website Onboarding</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&family=Syne:wght@600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="ptt-design.css" />
+  <style>
+    .wiz { display: grid; grid-template-columns: 260px 1fr; gap: 0; min-height: calc(100vh - 64px); }
+    .steps { background: #fff; border-right: 1px solid var(--line); padding: 28px 18px; }
+    .step { display: flex; gap: 12px; padding: 12px 10px; border-radius: 8px; margin-bottom: 4px; font-size: 13px; }
+    .step.on { background: var(--accent-soft); font-weight: 600; }
+    .step .n { width: 24px; height: 24px; border-radius: 6px; background: var(--paper-2); display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; flex-shrink: 0; }
+    .step.on .n { background: var(--accent); color: #fff; }
+    .step.done .n { background: var(--signal); color: #fff; }
+    .wiz-main { padding: 32px 36px; }
+    .rank { display: grid; gap: 10px; margin-top: 18px; }
+    .rank-item {
+      display: grid; grid-template-columns: 48px 1fr auto; gap: 14px; align-items: center;
+      background: #fff; border: 1px solid var(--line); border-radius: 10px; padding: 14px;
+    }
+    .rank-item.best { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+    .rank-item .ph { height: 48px; border-radius: 8px; background: linear-gradient(135deg, #2a1f1c, #c4a090); }
+    .check { list-style: none; padding: 0; margin: 18px 0 0; }
+    .check li { padding: 8px 0; font-size: 13px; display: flex; gap: 8px; align-items: center; border-bottom: 1px solid var(--paper-2); }
+    .check .ok { color: var(--signal); font-weight: 700; }
+    @media (max-width: 900px) { .wiz { grid-template-columns: 1fr; } .steps { display: flex; overflow: auto; gap: 8px; } }
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <a class="ptt-mark" href="index.html"><span class="dot"></span> PTT Onboarding</a>
+    <div style="font-size:13px;color:var(--ink-3)">Bước <strong style="color:var(--ink)">3 / 5</strong> · Theme Match</div>
+    <a class="btn btn-ghost btn-sm" href="04-template-marketplace.html">Marketplace</a>
+  </header>
+  <div class="wiz">
+    <aside class="steps">
+      <div class="step done"><span class="n">✓</span> Brand Kit</div>
+      <div class="step done"><span class="n">✓</span> Import catalog</div>
+      <div class="step on"><span class="n">3</span> AI Theme Match</div>
+      <div class="step"><span class="n">4</span> Payment & Shipping</div>
+      <div class="step"><span class="n">5</span> Go-live readiness</div>
+    </aside>
+    <div class="wiz-main">
+      <h1 style="font-size:28px;margin-bottom:8px">Chọn theme theo mục tiêu tăng trưởng</h1>
+      <p style="color:var(--ink-3);max-width:520px">AURA Beauty · mobile CVR · TikTok/Live · 180 SKU. AI xếp hạng theo playbook, không chỉ thẩm mỹ.</p>
+      <div class="rank">
+        <div class="rank-item best">
+          <div class="ph"></div>
+          <div>
+            <strong>Aura Commerce</strong>
+            <div style="font-size:12px;color:var(--ink-3);margin-top:4px">Match 96 · CVR 92 · Mobile 95 · có Live block + COD trust</div>
+          </div>
+          <a class="btn btn-primary btn-sm" href="05-theme-library.html">Chọn</a>
+        </div>
+        <div class="rank-item">
+          <div class="ph" style="background:linear-gradient(135deg,#0f2a24,#1d5c4c)"></div>
+          <div>
+            <strong>Live Drop</strong>
+            <div style="font-size:12px;color:var(--ink-3);margin-top:4px">Match 91 · tốt flash keyword · cần Brand Kit ấm</div>
+          </div>
+          <button class="btn btn-ghost btn-sm">Chọn</button>
+        </div>
+        <div class="rank-item">
+          <div class="ph" style="background:linear-gradient(135deg,#1a2433,#445)"></div>
+          <div>
+            <strong>Editorial Shelf</strong>
+            <div style="font-size:12px;color:var(--ink-3);margin-top:4px">Match 88 · KOL landing · story-led</div>
+          </div>
+          <button class="btn btn-ghost btn-sm">Chọn</button>
+        </div>
+      </div>
+      <h2 style="font-size:16px;margin-top:28px">Conversion Playbook kèm theo</h2>
+      <ul class="check">
+        <li><span class="ok">✓</span> Sticky add-to-cart mobile bật mặc định</li>
+        <li><span class="ok">✓</span> Social proof + review above fold</li>
+        <li><span class="ok">✓</span> COD / ETA estimator trên PDP</li>
+        <li><span class="ok">○</span> Gắn Pixel/CAPI sau bước Payment</li>
+        <li><span class="ok">○</span> Chạy Go-live Checklist trước publish</li>
+      </ul>
+      <div style="margin-top:24px;display:flex;gap:10px">
+        <button class="btn btn-ghost">Quay lại</button>
+        <a class="btn btn-primary" href="05-theme-library.html">Tiếp tục với Aura Commerce</a>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

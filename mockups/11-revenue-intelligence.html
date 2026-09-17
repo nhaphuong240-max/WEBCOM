@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>PTT — Revenue Intelligence</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&family=Syne:wght@600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="ptt-design.css" />
+  <style>
+    .rg {
+      display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin-bottom: 20px;
+    }
+    .rg span {
+      background: #fff; border: 1px solid var(--line); padding: 10px 12px; border-radius: 8px;
+      font-size: 12px; font-weight: 600;
+    }
+    .rg span.hot { background: var(--ink); color: #fff; border-color: var(--ink); }
+    .rg .a { color: var(--accent); font-weight: 700; }
+  </style>
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar">
+      <a class="brand ptt-mark" href="index.html"><span class="dot"></span> PTT</a>
+      <a class="nav-item" href="03-admin-command-center.html"><span class="ico">◇</span> Command Center</a>
+      <a class="nav-item active" href="11-revenue-intelligence.html"><span class="ico">◆</span> Revenue</a>
+      <a class="nav-item" href="12-creator-scorecard.html"><span class="ico">◇</span> Creator</a>
+      <a class="nav-item" href="09-website-analytics.html"><span class="ico">◇</span> Web Analytics</a>
+      <a class="nav-item" href="index.html"><span class="ico">←</span> Hub</a>
+    </aside>
+    <div class="main">
+      <header class="topbar">
+        <div class="crumb">Intelligence · <strong>Revenue Graph</strong></div>
+        <div style="display:flex;gap:8px;align-items:center">
+          <select class="select" style="width:160px">
+            <option>Time decay</option>
+            <option>Last click</option>
+            <option>Data-driven</option>
+          </select>
+          <span class="badge badge-muted">formula v1.3</span>
+        </div>
+      </header>
+      <div class="content">
+        <div class="page-head">
+          <div>
+            <h1>Biết kênh nào lãi — không chỉ bán chạy</h1>
+            <p>Moat vs omnichannel phổ biến: trừ COGS, fee, subsidy, commission, return trước khi khen GMV.</p>
+          </div>
+        </div>
+        <div class="rg anim-rise">
+          <span>Ads / Creative</span><span class="a">→</span>
+          <span>Creator / Live</span><span class="a">→</span>
+          <span>Landing / Web</span><span class="a">→</span>
+          <span>Hội thoại</span><span class="a">→</span>
+          <span>Đơn / COD</span><span class="a">→</span>
+          <span>Return</span><span class="a">→</span>
+          <span class="hot">Contribution</span>
+        </div>
+        <div class="kpi-row">
+          <div class="kpi emphasis"><div class="label">Contribution profit</div><div class="value">₫412tr</div><div class="delta up">Margin 32.4%</div></div>
+          <div class="kpi"><div class="label">Ad spend</div><div class="value">₫186tr</div><div class="delta">Blend CAC ₫142k</div></div>
+          <div class="kpi"><div class="label">Return cost</div><div class="value">₫67tr</div><div class="delta down">Live SET A cao</div></div>
+          <div class="kpi"><div class="label">LTV:CAC</div><div class="value">3.4×</div><div class="delta up">Web cohort</div></div>
+        </div>
+        <div class="panel">
+          <div class="panel-h">
+            <span>Campaign scorecard</span>
+            <span style="font-size:12px;color:var(--ink-3);font-weight:400">Insight: Live SET A GMV top-2 nhưng contribution đáy bảng</span>
+          </div>
+          <div class="panel-b" style="padding:0">
+            <table class="table">
+              <thead>
+                <tr>
+                  <th>Campaign</th><th>GMV</th><th>Ad spend</th><th>Return</th><th>Fees</th><th>Contribution</th><th>LTV:CAC</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>TikTok · Serum Prospect</td>
+                  <td>₫520tr</td><td>₫78tr</td><td>₫22tr</td><td>₫31tr</td>
+                  <td><strong style="color:var(--signal)">34%</strong></td>
+                  <td>3.1×</td>
+                </tr>
+                <tr>
+                  <td>Live · SET A Flash</td>
+                  <td>₫610tr</td><td>₫45tr</td><td>₫98tr</td><td>₫52tr</td>
+                  <td><strong style="color:var(--danger)">11%</strong></td>
+                  <td>1.2×</td>
+                </tr>
+                <tr>
+                  <td>Meta · Retarget PDP</td>
+                  <td>₫280tr</td><td>₫32tr</td><td>₫12tr</td><td>₫18tr</td>
+                  <td><strong style="color:var(--signal)">41%</strong></td>
+                  <td>4.6×</td>
+                </tr>
+                <tr>
+                  <td>KOL · @beautylan</td>
+                  <td>₫190tr</td><td>₫40tr*</td><td>₫15tr</td><td>₫21tr</td>
+                  <td><strong>22%</strong></td>
+                  <td>2.0×</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+        <p style="font-size:12px;color:var(--ink-3);margin-top:10px">* Ad spend KOL gồm cash + product seeding, version công thức v1.3.</p>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

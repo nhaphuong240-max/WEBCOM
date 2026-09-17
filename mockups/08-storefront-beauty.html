@@ -1,0 +1,576 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>AURA Beauty — Serum tái tạo da đêm | Powered by PTT</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&family=Syne:wght@600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="ptt-design.css" />
+  <style>
+    :root {
+      --aura-rose: #c45a6a;
+      --aura-ink: #1a1214;
+      --aura-muted: #6b5559;
+      --aura-cream: #faf6f4;
+      --phone-max: 430px;
+      --bottom-nav-h: 56px;
+      --atc-h: 64px;
+    }
+
+    body {
+      background: #d8dde4;
+      color: var(--aura-ink);
+    }
+
+    /* Phone shell: scroll + pinned chrome */
+    .phone {
+      max-width: var(--phone-max);
+      margin: 0 auto;
+      height: 100vh;
+      height: 100dvh;
+      background: var(--aura-cream);
+      display: flex;
+      flex-direction: column;
+      position: relative;
+      box-shadow: 0 0 0 1px rgba(11, 20, 32, 0.06);
+    }
+    @media (min-width: 480px) {
+      body { padding: 24px 0 40px; }
+      .phone {
+        height: min(860px, calc(100vh - 48px));
+        border-radius: 20px;
+        overflow: hidden;
+        box-shadow: 0 24px 64px rgba(11, 20, 32, 0.14);
+      }
+    }
+
+    .phone-scroll {
+      flex: 1;
+      min-height: 0;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    /* Sticky store header */
+    .store-header {
+      position: sticky; top: 0; z-index: 40;
+      height: 52px;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0 14px;
+      background: rgba(250, 246, 244, 0.92);
+      backdrop-filter: blur(10px);
+      border-bottom: 1px solid rgba(26, 18, 20, 0.06);
+    }
+    .store-logo {
+      font-family: var(--font-display);
+      font-weight: 800; font-size: 17px; letter-spacing: -0.04em;
+      color: var(--aura-ink);
+    }
+    .store-logo span { color: var(--aura-rose); }
+    .store-actions { display: flex; align-items: center; gap: 4px; }
+    .icon-btn {
+      width: 40px; height: 40px; display: grid; place-items: center;
+      border-radius: var(--radius-sm); color: var(--aura-ink);
+      position: relative;
+    }
+    .icon-btn:hover { background: rgba(26, 18, 20, 0.04); }
+    .icon-btn svg { width: 20px; height: 20px; stroke: currentColor; fill: none; stroke-width: 1.6; }
+    .cart-count {
+      position: absolute; top: 6px; right: 6px;
+      min-width: 16px; height: 16px; padding: 0 4px;
+      background: var(--accent); color: #fff;
+      font-size: 10px; font-weight: 700; border-radius: 4px;
+      display: grid; place-items: center;
+    }
+    .suite-link {
+      font-size: 10px; color: var(--aura-muted); margin-right: 4px;
+      letter-spacing: 0.02em;
+    }
+
+    /* Full-bleed hero product plane */
+    .pdp-hero {
+      position: relative;
+      height: min(72vw, 360px);
+      min-height: 280px;
+      overflow: hidden;
+    }
+    .product-plane {
+      position: absolute; inset: 0;
+      background:
+        radial-gradient(ellipse 55% 50% at 62% 42%, rgba(255, 255, 255, 0.55), transparent 60%),
+        radial-gradient(ellipse 70% 60% at 30% 70%, rgba(196, 90, 106, 0.35), transparent 55%),
+        linear-gradient(155deg, #e8b4bc 0%, #c45a6a 38%, #8a3544 78%, #3d1a22 100%);
+      animation: planeShift 10s ease-in-out infinite alternate;
+    }
+    @keyframes planeShift {
+      from { filter: saturate(1) brightness(1); }
+      to { filter: saturate(1.08) brightness(1.04); }
+    }
+    .bottle {
+      position: absolute;
+      left: 50%; top: 54%;
+      transform: translate(-50%, -50%);
+      width: 88px; height: 200px;
+      animation: bottleRise 0.9s var(--ease) both;
+    }
+    @keyframes bottleRise {
+      from { opacity: 0; transform: translate(-50%, -42%); }
+      to { opacity: 1; transform: translate(-50%, -50%); }
+    }
+    .bottle-cap {
+      width: 36px; height: 28px; margin: 0 auto;
+      background: linear-gradient(180deg, #2a181c, #1a1012);
+      border-radius: 3px 3px 0 0;
+      position: relative; z-index: 2;
+    }
+    .bottle-cap::after {
+      content: ""; position: absolute; left: 50%; bottom: -6px;
+      transform: translateX(-50%);
+      width: 22px; height: 10px;
+      background: #1a1012; border-radius: 0 0 2px 2px;
+    }
+    .bottle-neck {
+      width: 22px; height: 18px; margin: 0 auto;
+      background: linear-gradient(90deg, rgba(255,255,255,.15), rgba(255,255,255,.4), rgba(255,255,255,.15));
+      background-color: rgba(255, 240, 242, 0.35);
+      border-left: 1px solid rgba(255,255,255,.3);
+      border-right: 1px solid rgba(255,255,255,.3);
+    }
+    .bottle-body {
+      width: 88px; height: 140px; margin: 0 auto;
+      background:
+        linear-gradient(105deg, rgba(255,255,255,.45) 0%, transparent 28%, transparent 72%, rgba(0,0,0,.08) 100%),
+        linear-gradient(180deg, rgba(255, 220, 224, 0.5), rgba(196, 90, 106, 0.25) 40%, rgba(120, 40, 55, 0.15));
+      background-color: rgba(255, 248, 249, 0.55);
+      border: 1px solid rgba(255,255,255,.5);
+      border-radius: 8px 8px 18px 18px;
+      box-shadow: inset 0 0 40px rgba(196, 90, 106, 0.15);
+      position: relative;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      padding-top: 24px;
+    }
+    .bottle-label {
+      font-family: var(--font-display); font-weight: 700;
+      font-size: 9px; letter-spacing: 0.14em; text-transform: uppercase;
+      color: rgba(26, 18, 20, 0.75); text-align: center;
+      position: relative; z-index: 1;
+    }
+    .bottle-label small {
+      display: block; font-size: 7px; letter-spacing: 0.2em;
+      margin-top: 4px; opacity: 0.6; font-weight: 600;
+    }
+    .bottle-liquid {
+      position: absolute; bottom: 10px; left: 10px; right: 10px; height: 48%;
+      background: linear-gradient(180deg, rgba(232, 140, 150, 0.5), rgba(180, 60, 80, 0.65));
+      border-radius: 0 0 12px 12px;
+      animation: liquid 4s ease-in-out infinite alternate;
+    }
+    @keyframes liquid {
+      from { height: 46%; }
+      to { height: 52%; }
+    }
+    .gallery-dots {
+      position: absolute; bottom: 14px; left: 0; right: 0;
+      display: flex; justify-content: center; gap: 6px; z-index: 2;
+    }
+    .gallery-dots i {
+      width: 6px; height: 6px; background: rgba(255,255,255,.4); display: block;
+    }
+    .gallery-dots i.on { background: #fff; width: 18px; }
+
+    .collection-strip {
+      display: flex; gap: 8px; padding: 14px 14px 4px;
+      overflow-x: auto; scrollbar-width: none;
+      -webkit-overflow-scrolling: touch;
+    }
+    .collection-strip::-webkit-scrollbar { display: none; }
+    .coll-chip {
+      flex: 0 0 auto;
+      height: 34px; padding: 0 14px;
+      border: 1px solid rgba(26, 18, 20, 0.12);
+      font-size: 12px; font-weight: 500; color: var(--aura-muted);
+      border-radius: var(--radius-sm);
+      display: inline-flex; align-items: center;
+      white-space: nowrap; background: #fff;
+    }
+    .coll-chip.active {
+      background: var(--aura-ink); color: #fff; border-color: var(--aura-ink);
+    }
+
+    .pdp-body { padding: 18px 16px 28px; }
+    .pdp-meta {
+      display: flex; align-items: center; gap: 8px; margin-bottom: 8px;
+    }
+    .pdp-meta .badge { height: 22px; font-size: 10px; }
+    .pdp-title {
+      font-family: var(--font-display);
+      font-size: 24px; letter-spacing: -0.03em; line-height: 1.2;
+      margin-bottom: 6px;
+    }
+    .pdp-sub {
+      font-size: 13px; color: var(--aura-muted); margin-bottom: 16px; line-height: 1.5;
+    }
+
+    .price-block {
+      display: flex; align-items: baseline; flex-wrap: wrap; gap: 8px 12px;
+      margin-bottom: 6px;
+    }
+    .price-member {
+      font-family: var(--font-display); font-size: 28px; letter-spacing: -0.03em;
+      color: var(--aura-rose);
+    }
+    .price-list {
+      font-size: 15px; color: var(--aura-muted); text-decoration: line-through;
+    }
+    .price-save {
+      font-size: 12px; font-weight: 600; color: var(--signal);
+    }
+    .member-note {
+      font-size: 12px; color: var(--aura-muted); margin-bottom: 18px;
+    }
+    .member-note strong { color: var(--aura-ink); font-weight: 600; }
+
+    .stock-row {
+      display: flex; align-items: center; gap: 8px;
+      font-size: 13px; margin-bottom: 20px;
+      padding: 10px 12px; background: var(--signal-soft);
+      border-radius: var(--radius-sm);
+    }
+    .stock-dot {
+      width: 8px; height: 8px; background: var(--signal); border-radius: 1px;
+    }
+    .stock-row span { color: var(--signal); font-weight: 600; }
+
+    .field-label {
+      font-size: 12px; font-weight: 600; text-transform: uppercase;
+      letter-spacing: 0.05em; color: var(--aura-muted); margin-bottom: 10px;
+    }
+    .variants {
+      display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 22px;
+    }
+    .variant {
+      height: 40px; padding: 0 14px;
+      border: 1px solid rgba(26, 18, 20, 0.14);
+      font-size: 13px; font-weight: 500; background: #fff;
+      border-radius: var(--radius-sm);
+      transition: border-color .15s, background .15s;
+    }
+    .variant.on {
+      border-color: var(--aura-ink); background: var(--aura-ink); color: #fff;
+    }
+    .variant:disabled {
+      opacity: 0.4; text-decoration: line-through;
+    }
+
+    .qty-row {
+      display: flex; align-items: center; gap: 12px; margin-bottom: 24px;
+    }
+    .qty {
+      display: inline-flex; align-items: center;
+      border: 1px solid rgba(26, 18, 20, 0.14); background: #fff;
+      border-radius: var(--radius-sm); height: 40px;
+    }
+    .qty button {
+      width: 40px; height: 40px; font-size: 18px; color: var(--aura-ink);
+      display: grid; place-items: center;
+    }
+    .qty span {
+      min-width: 28px; text-align: center; font-weight: 600; font-size: 14px;
+    }
+
+    .trust {
+      display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1px;
+      background: rgba(26, 18, 20, 0.08);
+      border: 1px solid rgba(26, 18, 20, 0.08);
+      margin-bottom: 28px;
+    }
+    .trust-item {
+      background: #fff; padding: 14px 10px; text-align: center;
+    }
+    .trust-item strong {
+      display: block; font-size: 12px; font-weight: 600; margin-bottom: 2px;
+    }
+    .trust-item span {
+      font-size: 11px; color: var(--aura-muted);
+    }
+
+    .contact-row {
+      display: flex; gap: 8px; margin-bottom: 28px;
+    }
+    .contact-btn {
+      flex: 1; height: 40px;
+      display: inline-flex; align-items: center; justify-content: center;
+      font-size: 12px; font-weight: 600;
+      border: 1px solid rgba(26, 18, 20, 0.12);
+      background: #fff; border-radius: var(--radius-sm);
+      color: var(--aura-ink);
+    }
+    .contact-btn:hover { border-color: var(--aura-ink); }
+
+    .desc h3 { font-size: 15px; margin-bottom: 8px; }
+    .desc p {
+      font-size: 13.5px; color: var(--aura-muted); line-height: 1.6; margin-bottom: 20px;
+    }
+    .desc ul {
+      margin: 0 0 28px; padding-left: 18px;
+      font-size: 13.5px; color: var(--aura-muted); line-height: 1.7;
+    }
+
+    .related-head {
+      display: flex; justify-content: space-between; align-items: baseline;
+      margin-bottom: 12px;
+    }
+    .related-head h3 { font-size: 16px; }
+    .related-head a { font-size: 12px; font-weight: 600; color: var(--aura-rose); }
+    .related {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 10px;
+      margin-bottom: 16px;
+    }
+    .rel-card {
+      background: #fff;
+      border: 1px solid rgba(26, 18, 20, 0.06);
+      overflow: hidden;
+    }
+    .rel-img { height: 110px; }
+    .rel-img.a {
+      background:
+        radial-gradient(circle at 40% 40%, rgba(255,255,255,.5), transparent 50%),
+        linear-gradient(145deg, #d4e8e0, #0d8f6b 70%);
+    }
+    .rel-img.b {
+      background:
+        radial-gradient(circle at 60% 35%, rgba(255,255,255,.45), transparent 45%),
+        linear-gradient(160deg, #f0e0c8, #c98500 75%);
+    }
+    .rel-body { padding: 10px 10px 12px; }
+    .rel-body h4 {
+      font-size: 13px; font-family: var(--font-body); font-weight: 600; margin-bottom: 4px;
+    }
+    .rel-body .rp {
+      font-family: var(--font-display); font-size: 15px; letter-spacing: -0.02em;
+    }
+
+    .powered {
+      text-align: center; padding: 8px 0 4px;
+      font-size: 10px; color: var(--aura-muted); letter-spacing: 0.04em;
+    }
+    .powered a {
+      font-weight: 600; color: var(--ink-3);
+      border-bottom: 1px solid var(--line);
+    }
+
+    /* Pinned chrome */
+    .chrome {
+      flex-shrink: 0;
+      z-index: 35;
+    }
+    .atc-bar {
+      height: var(--atc-h);
+      display: flex; align-items: center; gap: 10px;
+      padding: 0 12px;
+      background: rgba(250, 246, 244, 0.98);
+      backdrop-filter: blur(10px);
+      border-top: 1px solid rgba(26, 18, 20, 0.08);
+    }
+    .atc-bar .atc-price { flex: 0 0 auto; min-width: 88px; }
+    .atc-bar .atc-price .lbl { font-size: 10px; color: var(--aura-muted); }
+    .atc-bar .atc-price .val {
+      font-family: var(--font-display); font-size: 18px; letter-spacing: -0.02em;
+      color: var(--aura-rose);
+    }
+    .atc-bar .btn {
+      flex: 1; height: 44px; background: var(--aura-ink); color: #fff;
+      font-weight: 700; font-size: 14px; border-radius: var(--radius-sm);
+    }
+    .atc-bar .btn:hover { background: #2a1c1f; }
+
+    .bottom-nav {
+      height: var(--bottom-nav-h);
+      display: grid; grid-template-columns: repeat(5, 1fr);
+      background: #fff;
+      border-top: 1px solid rgba(26, 18, 20, 0.08);
+    }
+    .bottom-nav a {
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      gap: 2px; font-size: 10px; font-weight: 500; color: var(--aura-muted);
+    }
+    .bottom-nav a.active { color: var(--aura-ink); }
+    .bottom-nav a.active .nav-ico { color: var(--aura-rose); }
+    .bottom-nav svg {
+      width: 20px; height: 20px; stroke: currentColor; fill: none; stroke-width: 1.6;
+    }
+    .bottom-nav .live-dot { position: relative; }
+    .bottom-nav .live-dot::after {
+      content: ""; position: absolute; top: -1px; right: -3px;
+      width: 6px; height: 6px; background: var(--accent);
+    }
+  </style>
+</head>
+<body>
+  <div class="phone">
+    <div class="phone-scroll">
+      <header class="store-header">
+        <div style="display:flex;align-items:center;gap:8px">
+          <a href="index.html" class="suite-link">← Suite</a>
+          <a href="08-storefront-beauty.html" class="store-logo">AURA <span>Beauty</span></a>
+        </div>
+        <div class="store-actions">
+          <button class="icon-btn" type="button" aria-label="Tìm kiếm">
+            <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
+          </button>
+          <button class="icon-btn" type="button" aria-label="Giỏ hàng">
+            <svg viewBox="0 0 24 24"><path d="M6 7h12l-1 12H7L6 7z"/><path d="M9 7V5a3 3 0 016 0v2"/></svg>
+            <span class="cart-count">2</span>
+          </button>
+        </div>
+      </header>
+
+      <section class="pdp-hero" aria-label="Hình sản phẩm">
+        <div class="product-plane"></div>
+        <div class="bottle" aria-hidden="true">
+          <div class="bottle-cap"></div>
+          <div class="bottle-neck"></div>
+          <div class="bottle-body">
+            <div class="bottle-label">AURA<small>Night Repair</small></div>
+            <div class="bottle-liquid"></div>
+          </div>
+        </div>
+        <div class="gallery-dots" aria-hidden="true"><i class="on"></i><i></i><i></i></div>
+      </section>
+
+      <div class="collection-strip" role="navigation" aria-label="Bộ sưu tập">
+        <a class="coll-chip active" href="#">Serum đêm</a>
+        <a class="coll-chip" href="#">Làm sáng</a>
+        <a class="coll-chip" href="#">Chống lão hóa</a>
+        <a class="coll-chip" href="#">Set quà</a>
+        <a class="coll-chip" href="#">Mini size</a>
+      </div>
+
+      <main class="pdp-body">
+        <div class="pdp-meta">
+          <span class="badge badge-accent">Bán chạy</span>
+          <span class="badge badge-muted">30ml</span>
+        </div>
+        <h1 class="pdp-title anim-rise">Serum tái tạo da đêm</h1>
+        <p class="pdp-sub anim-rise-d1">Peptide + 2% niacinamide. Phục hồi hàng rào da trong khi ngủ — kết cấu nhẹ, không bết.</p>
+
+        <div class="price-block anim-rise-d2">
+          <span class="price-member">389.000₫</span>
+          <span class="price-list">459.000₫</span>
+          <span class="price-save">Tiết kiệm 70k</span>
+        </div>
+        <p class="member-note">Giá <strong>thành viên AURA</strong> · Giá khách 459.000₫</p>
+
+        <div class="stock-row">
+          <span class="stock-dot" aria-hidden="true"></span>
+          <span>Còn hàng</span>
+          <span style="color:var(--aura-muted);font-weight:500">· Giao HCM trong 24h</span>
+        </div>
+
+        <div class="field-label">Dung tích</div>
+        <div class="variants" role="group" aria-label="Chọn dung tích">
+          <button type="button" class="variant on">30ml</button>
+          <button type="button" class="variant">50ml</button>
+          <button type="button" class="variant" disabled>15ml — hết</button>
+        </div>
+
+        <div class="field-label">Số lượng</div>
+        <div class="qty-row">
+          <div class="qty">
+            <button type="button" aria-label="Giảm">−</button>
+            <span>1</span>
+            <button type="button" aria-label="Tăng">+</button>
+          </div>
+        </div>
+
+        <div class="trust">
+          <div class="trust-item">
+            <strong>Giao 24–48h</strong>
+            <span>Nội thành HN/HCM</span>
+          </div>
+          <div class="trust-item">
+            <strong>COD</strong>
+            <span>Thanh toán khi nhận</span>
+          </div>
+          <div class="trust-item">
+            <strong>Đổi 7 ngày</strong>
+            <span>Seal còn nguyên</span>
+          </div>
+        </div>
+
+        <div class="contact-row">
+          <a class="contact-btn" href="#">Nhắn Zalo</a>
+          <a class="contact-btn" href="#">Messenger</a>
+        </div>
+
+        <div class="desc">
+          <h3>Về sản phẩm</h3>
+          <p>Công thức đêm tập trung phục hồi: peptide tín hiệu + niacinamide ổn định tone. Thấm nhanh — phù hợp da hỗn hợp đến khô tại khí hậu Việt Nam.</p>
+          <ul>
+            <li>Không hương liệu nặng, không cồn khô</li>
+            <li>Đã test kích ứng trên panel nội địa</li>
+            <li>Dùng sau toner, trước kem dưỡng</li>
+          </ul>
+        </div>
+
+        <div class="related-head">
+          <h3>Mua kèm</h3>
+          <a href="#">Xem tất cả</a>
+        </div>
+        <div class="related">
+          <a class="rel-card" href="#">
+            <div class="rel-img a"></div>
+            <div class="rel-body">
+              <h4>Toner cân bằng pH</h4>
+              <div class="rp">219.000₫</div>
+            </div>
+          </a>
+          <a class="rel-card" href="#">
+            <div class="rel-img b"></div>
+            <div class="rel-body">
+              <h4>Kem mắt peptide</h4>
+              <div class="rp">329.000₫</div>
+            </div>
+          </a>
+        </div>
+
+        <p class="powered">Powered by <a href="index.html">PTT</a></p>
+      </main>
+    </div>
+
+    <div class="chrome">
+      <div class="atc-bar">
+        <div class="atc-price">
+          <div class="lbl">Thành viên</div>
+          <div class="val">389.000₫</div>
+        </div>
+        <button type="button" class="btn">Thêm vào giỏ</button>
+      </div>
+      <nav class="bottom-nav" aria-label="Điều hướng chính">
+        <a href="#" class="active">
+          <span class="nav-ico"><svg viewBox="0 0 24 24"><path d="M4 10.5L12 4l8 6.5V20H4v-9.5z"/></svg></span>
+          Home
+        </a>
+        <a href="#">
+          <span class="nav-ico"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg></span>
+          Search
+        </a>
+        <a href="#">
+          <span class="nav-ico live-dot"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M5 12a7 7 0 0114 0"/><path d="M2 12a10 10 0 0120 0"/></svg></span>
+          Live
+        </a>
+        <a href="#">
+          <span class="nav-ico"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.5"/><path d="M5 19c1.5-3 4-4.5 7-4.5S17.5 16 19 19"/></svg></span>
+          Account
+        </a>
+        <a href="#">
+          <span class="nav-ico"><svg viewBox="0 0 24 24"><path d="M6 7h12l-1 12H7L6 7z"/><path d="M9 7V5a3 3 0 016 0v2"/></svg></span>
+          Cart
+        </a>
+      </nav>
+    </div>
+  </div>
+</body>
+</html>

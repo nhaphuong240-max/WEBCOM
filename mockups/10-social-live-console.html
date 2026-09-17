@@ -1,0 +1,475 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Social / Live Console — PTT Commerce Intelligence OS</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&family=Syne:wght@600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="ptt-design.css" />
+  <style>
+    body { overflow: hidden; }
+    .app-shell { height: 100vh; grid-template-rows: auto 1fr; grid-template-columns: var(--sidebar-w) 1fr; }
+    .sidebar { grid-row: 1 / -1; }
+    .live-bar {
+      grid-column: 2; display: flex; align-items: center; gap: 20px; flex-wrap: wrap;
+      padding: 10px 20px; background: var(--ink); color: #fff;
+      border-bottom: 1px solid rgba(255,255,255,.08);
+    }
+    .live-bar .pulse {
+      display: inline-flex; align-items: center; gap: 8px;
+      font-family: var(--font-display); font-weight: 700; font-size: 13px; letter-spacing: .04em;
+    }
+    .live-bar .pulse i {
+      width: 8px; height: 8px; background: #ff3b3b; border-radius: 2px;
+      animation: blink 1.2s ease infinite; display: block;
+    }
+    @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: .35; } }
+    .live-stat { display: flex; flex-direction: column; gap: 2px; min-width: 88px; }
+    .live-stat .l { font-size: 10px; text-transform: uppercase; letter-spacing: .06em; color: rgba(255,255,255,.45); }
+    .live-stat .v { font-family: var(--font-display); font-size: 18px; letter-spacing: -.02em; }
+    .live-stat.warn .v { color: #ffb020; }
+    .live-stat.accent .v { color: var(--accent); }
+    .live-bar .sep { width: 1px; height: 28px; background: rgba(255,255,255,.12); }
+    .console-main { grid-column: 2; min-height: 0; display: flex; flex-direction: column; }
+    .console-body {
+      flex: 1; min-height: 0;
+      display: grid; grid-template-columns: 300px 1fr 340px;
+      background: var(--paper);
+    }
+
+    /* Left inbox */
+    .inbox { display: flex; flex-direction: column; min-height: 0; background: var(--surface); border-right: 1px solid var(--line); }
+    .inbox-h { padding: 14px 14px 10px; border-bottom: 1px solid var(--line); }
+    .inbox-h h2 { font-size: 16px; margin-bottom: 10px; }
+    .channel-tabs { display: flex; flex-wrap: wrap; gap: 6px; }
+    .ch-tab {
+      height: 28px; padding: 0 10px; border-radius: 4px; font-size: 11px; font-weight: 600;
+      background: var(--paper-2); color: var(--ink-3); border: 1px solid transparent;
+    }
+    .ch-tab.active { background: var(--ink); color: #fff; }
+    .ch-tab .n {
+      display: inline-block; margin-left: 4px; min-width: 16px; padding: 0 4px;
+      background: var(--accent); color: #fff; border-radius: 3px; font-size: 10px; text-align: center;
+    }
+    .ch-tab.active .n { background: var(--accent); }
+    .thread-list { flex: 1; overflow: auto; }
+    .thread {
+      display: grid; grid-template-columns: 40px 1fr auto; gap: 10px;
+      padding: 12px 14px; border-bottom: 1px solid var(--paper-2); cursor: pointer;
+      transition: background .15s;
+    }
+    .thread:hover, .thread.active { background: rgba(255, 92, 26, .06); }
+    .thread.active { box-shadow: inset 3px 0 0 var(--accent); }
+    .avatar {
+      width: 40px; height: 40px; border-radius: 8px;
+      background: linear-gradient(145deg, var(--ink-2), var(--ink-3));
+      color: #fff; display: grid; place-items: center;
+      font-family: var(--font-display); font-weight: 700; font-size: 13px;
+    }
+    .avatar.ig { background: linear-gradient(145deg, #c13584, #833ab4); }
+    .avatar.zl { background: linear-gradient(145deg, #0068ff, #004bb5); }
+    .avatar.tt { background: linear-gradient(145deg, #111, #333); }
+    .avatar.sh { background: linear-gradient(145deg, #ee4d2d, #c23a1f); }
+    .thread .who { font-weight: 600; font-size: 13px; }
+    .thread .preview { font-size: 12px; color: var(--ink-3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 160px; }
+    .thread .time { font-size: 11px; color: var(--ink-3); }
+    .unread-dot { width: 8px; height: 8px; background: var(--accent); border-radius: 2px; margin-top: 4px; margin-left: auto; }
+
+    /* Center chat */
+    .chat { display: flex; flex-direction: column; min-height: 0; min-width: 0; background: var(--paper); }
+    .chat-h {
+      display: flex; align-items: center; justify-content: space-between; gap: 12px;
+      padding: 12px 18px; background: var(--surface); border-bottom: 1px solid var(--line);
+    }
+    .chat-h .title { font-weight: 600; font-size: 14px; }
+    .chat-h .sub { font-size: 12px; color: var(--ink-3); }
+    .msgs { flex: 1; overflow: auto; padding: 18px; display: flex; flex-direction: column; gap: 12px; }
+    .bubble {
+      max-width: 78%; padding: 10px 14px; border-radius: 10px; font-size: 13.5px; line-height: 1.45;
+      animation: rise .4s var(--ease) both;
+    }
+    .bubble.in { align-self: flex-start; background: var(--surface); border: 1px solid var(--line); }
+    .bubble.out { align-self: flex-end; background: var(--ink); color: #fff; }
+    .bubble .ts { display: block; font-size: 10px; opacity: .55; margin-top: 6px; }
+    .bubble.keyword {
+      border-color: var(--accent); background: linear-gradient(135deg, var(--accent-soft), var(--surface));
+      box-shadow: 0 0 0 1px rgba(255,92,26,.25);
+    }
+    .kw-tag {
+      display: inline-block; font-size: 10px; font-weight: 700; letter-spacing: .04em;
+      text-transform: uppercase; color: var(--accent-2); margin-bottom: 4px;
+    }
+    .ai-draft {
+      margin: 0 18px 12px; padding: 14px; background: var(--surface);
+      border: 1px solid var(--line); border-radius: var(--radius);
+      border-left: 3px solid var(--accent);
+      animation: rise .5s var(--ease) .1s both;
+    }
+    .ai-draft .head {
+      display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 8px;
+    }
+    .ai-draft .head strong { font-size: 13px; }
+    .ai-draft .body { font-size: 13.5px; color: var(--ink-2); line-height: 1.5; }
+    .ai-draft .actions { display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap; }
+    .composer {
+      display: flex; gap: 10px; padding: 12px 18px; background: var(--surface);
+      border-top: 1px solid var(--line); align-items: center;
+    }
+    .composer .input { flex: 1; }
+
+    /* Right 360 */
+    .rail {
+      display: flex; flex-direction: column; min-height: 0; overflow: auto;
+      background: var(--surface); border-left: 1px solid var(--line);
+    }
+    .rail-sec { padding: 14px 16px; border-bottom: 1px solid var(--line); }
+    .rail-sec h3 {
+      font-size: 11px; font-family: var(--font-body); font-weight: 700;
+      text-transform: uppercase; letter-spacing: .06em; color: var(--ink-3); margin-bottom: 12px;
+    }
+    .cust-name { font-family: var(--font-display); font-size: 18px; letter-spacing: -.02em; }
+    .cust-meta { font-size: 12px; color: var(--ink-3); margin-top: 4px; }
+    .stat-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 12px; }
+    .stat-3 div {
+      background: var(--paper); border-radius: 6px; padding: 8px; text-align: center;
+    }
+    .stat-3 .v { font-family: var(--font-display); font-size: 14px; font-weight: 700; }
+    .stat-3 .l { font-size: 10px; color: var(--ink-3); margin-top: 2px; }
+
+    .order-draft {
+      background: linear-gradient(160deg, rgba(255,92,26,.1), transparent 55%), var(--paper);
+      border: 1px solid rgba(255,92,26,.35); border-radius: var(--radius); padding: 14px;
+    }
+    .order-draft .od-h {
+      display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px;
+    }
+    .order-draft .od-h strong { font-size: 14px; }
+    .prod-card {
+      display: grid; grid-template-columns: 48px 1fr auto; gap: 10px; align-items: center;
+      padding: 8px 0; border-bottom: 1px solid var(--line);
+    }
+    .prod-card:last-of-type { border-bottom: none; }
+    .prod-thumb {
+      width: 48px; height: 48px; border-radius: 6px;
+      background:
+        linear-gradient(135deg, rgba(11,20,32,.08), transparent),
+        radial-gradient(circle at 30% 30%, #f0d5c8, #c4a090 60%, #8a6b5c);
+    }
+    .prod-thumb.serum { background: linear-gradient(145deg, #e8f4f0, #7ab8a8 50%, #2d6b5c); }
+    .prod-thumb.cream { background: linear-gradient(145deg, #f5efe6, #d4b896 55%, #8b6914); }
+    .prod-card .pn { font-size: 12.5px; font-weight: 600; }
+    .prod-card .ps { font-size: 11px; color: var(--ink-3); }
+    .prod-card .pp { font-family: var(--font-display); font-size: 13px; font-weight: 700; }
+    .inv-ok { color: var(--signal); font-size: 11px; font-weight: 600; }
+    .inv-low { color: var(--warn); font-size: 11px; font-weight: 600; }
+    .od-total {
+      display: flex; justify-content: space-between; align-items: baseline;
+      margin-top: 10px; padding-top: 10px; border-top: 1px dashed var(--line-strong);
+    }
+    .od-total .t { font-size: 12px; color: var(--ink-3); }
+    .od-total .a { font-family: var(--font-display); font-size: 22px; letter-spacing: -.03em; }
+    .cta-order {
+      width: 100%; margin-top: 12px; height: 48px;
+      background: var(--accent); color: #fff; font-weight: 700; font-size: 14px;
+      border-radius: var(--radius-sm); letter-spacing: -.01em;
+      box-shadow: 0 4px 14px rgba(255, 92, 26, .35);
+      transition: background .2s, transform .2s var(--ease);
+    }
+    .cta-order:hover { background: var(--accent-2); transform: translateY(-1px); }
+
+    @media (max-width: 1200px) {
+      .console-body { grid-template-columns: 260px 1fr; }
+      .rail { display: none; }
+    }
+    @media (max-width: 900px) {
+      .app-shell { grid-template-columns: 1fr; }
+      .sidebar { display: none; }
+      .live-bar, .console-main { grid-column: 1; }
+      .console-body { grid-template-columns: 1fr; }
+      .inbox { display: none; }
+      body { overflow: auto; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar">
+      <a class="brand ptt-mark" href="index.html"><span class="dot"></span> PTT <span>OS</span></a>
+      <div class="nav-section">Điều hành</div>
+      <a class="nav-item" href="03-admin-command-center.html"><span class="ico">◆</span> Command Center</a>
+      <a class="nav-item" href="#"><span class="ico">◇</span> Đơn hàng</a>
+      <a class="nav-item" href="#"><span class="ico">◇</span> Tồn kho</a>
+      <div class="nav-section">Tăng trưởng</div>
+      <a class="nav-item" href="04-template-marketplace.html"><span class="ico">◇</span> Website</a>
+      <a class="nav-item active" href="10-social-live-console.html"><span class="ico">▣</span> Social / Live</a>
+      <a class="nav-item" href="#"><span class="ico">◇</span> CRM</a>
+      <a class="nav-item" href="12-creator-scorecard.html"><span class="ico">◇</span> Content</a>
+      <div class="nav-section">Trí tuệ</div>
+      <a class="nav-item" href="11-revenue-intelligence.html"><span class="ico">◇</span> Revenue</a>
+      <a class="nav-item" href="09-website-analytics.html"><span class="ico">◇</span> Web Analytics</a>
+      <a class="nav-item" href="#"><span class="ico">◇</span> AI Studio</a>
+      <div style="flex:1"></div>
+      <a class="nav-item" href="index.html"><span class="ico">←</span> Mockup hub</a>
+    </aside>
+
+    <div class="live-bar anim-fade">
+      <div class="pulse"><i></i> LIVE · GlowLab × TikTok</div>
+      <div class="sep"></div>
+      <div class="live-stat">
+        <span class="l">Viewers</span>
+        <span class="v">12.8K</span>
+      </div>
+      <div class="live-stat accent">
+        <span class="l">GMV tonight</span>
+        <span class="v">₫428M</span>
+      </div>
+      <div class="live-stat">
+        <span class="l">Orders / min</span>
+        <span class="v">18.4</span>
+      </div>
+      <div class="live-stat warn">
+        <span class="l">Stock alerts</span>
+        <span class="v">3 SKU</span>
+      </div>
+      <div class="sep"></div>
+      <span class="badge badge-accent" style="background:var(--accent-soft);color:#ffb48a">Keyword SET A · 47 hits</span>
+      <div style="margin-left:auto;display:flex;gap:8px">
+        <button class="btn btn-ghost btn-sm" style="border-color:rgba(255,255,255,.25);color:#fff">Pin sản phẩm</button>
+        <button class="btn btn-primary btn-sm">Mở comment→order</button>
+      </div>
+    </div>
+
+    <div class="console-main">
+      <div class="console-body">
+        <!-- LEFT: Inbox -->
+        <aside class="inbox">
+          <div class="inbox-h">
+            <h2>Hộp thư thống nhất</h2>
+            <div class="channel-tabs">
+              <button class="ch-tab active">Tất cả <span class="n">23</span></button>
+              <button class="ch-tab">Messenger <span class="n">8</span></button>
+              <button class="ch-tab">Instagram <span class="n">5</span></button>
+              <button class="ch-tab">Zalo <span class="n">4</span></button>
+              <button class="ch-tab">TikTok <span class="n">4</span></button>
+              <button class="ch-tab">Shopee <span class="n">2</span></button>
+            </div>
+          </div>
+          <div class="thread-list">
+            <div class="thread active">
+              <div class="avatar">NH</div>
+              <div>
+                <div class="who">Nguyễn Hương</div>
+                <div class="preview">Comment: SET A ship HCM hôm nay…</div>
+              </div>
+              <div style="text-align:right">
+                <div class="time">0:42</div>
+                <div class="unread-dot"></div>
+              </div>
+            </div>
+            <div class="thread">
+              <div class="avatar ig">LT</div>
+              <div>
+                <div class="who">Lan Trần · IG</div>
+                <div class="preview">Serum C còn hàng size 30ml?</div>
+              </div>
+              <div class="time">1:05</div>
+            </div>
+            <div class="thread">
+              <div class="avatar zl">MK</div>
+              <div>
+                <div class="who">Minh Khoa · Zalo</div>
+                <div class="preview">Đổi địa chỉ COD giúp shop ạ</div>
+              </div>
+              <div class="time">1:18</div>
+            </div>
+            <div class="thread">
+              <div class="avatar tt">QV</div>
+              <div>
+                <div class="who">Quỳnh Vy · TikTok</div>
+                <div class="preview">Live pin lại SET A với ạ!!</div>
+              </div>
+              <div style="text-align:right">
+                <div class="time">2:01</div>
+                <div class="unread-dot"></div>
+              </div>
+            </div>
+            <div class="thread">
+              <div class="avatar sh">TH</div>
+              <div>
+                <div class="who">Thảo · Shopee Chat</div>
+                <div class="preview">Mã FS99 áp được với SET A?</div>
+              </div>
+              <div class="time">3:22</div>
+            </div>
+            <div class="thread">
+              <div class="avatar">BP</div>
+              <div>
+                <div class="who">Bảo Phương</div>
+                <div class="preview">Da dầu dùng cleanser tea tree OK?</div>
+              </div>
+              <div class="time">4:10</div>
+            </div>
+            <div class="thread">
+              <div class="avatar ig">HA</div>
+              <div>
+                <div class="who">Hà Anh · IG DM</div>
+                <div class="preview">Muốn mua combo dưỡng ẩm</div>
+              </div>
+              <div style="text-align:right">
+                <div class="time">5:44</div>
+                <div class="unread-dot"></div>
+              </div>
+            </div>
+          </div>
+        </aside>
+
+        <!-- CENTER: Conversation -->
+        <section class="chat">
+          <div class="chat-h">
+            <div>
+              <div class="title">Nguyễn Hương · Messenger</div>
+              <div class="sub">Từ comment Live TikTok · keyword phát hiện · risk medium</div>
+            </div>
+            <div style="display:flex;gap:8px;align-items:center">
+              <span class="badge badge-warn">Risk medium</span>
+              <span class="badge badge-accent">SET A</span>
+              <button class="btn btn-ghost btn-sm">Gán agent</button>
+            </div>
+          </div>
+
+          <div class="msgs">
+            <div class="bubble in">
+              Cho mình hỏi live còn SET A không ạ?
+              <span class="ts">21:38 · TikTok comment</span>
+            </div>
+            <div class="bubble in keyword">
+              <span class="kw-tag">Keyword matched · tạo đơn</span>
+              SET A ship HCM hôm nay giúp mình với, COD nha shop
+              <span class="ts">21:39 · Messenger (deep-link)</span>
+            </div>
+            <div class="bubble out">
+              Dạ Hương ơi, SET A còn hàng — mình soạn đơn nháp COD HCM giúp bạn ngay nhé.
+              <span class="ts">21:40 · Agent Mai</span>
+            </div>
+            <div class="bubble in">
+              Ok ạ, số 0882 *** 214, địa chỉ Q.7
+              <span class="ts">21:41</span>
+            </div>
+          </div>
+
+          <div class="ai-draft">
+            <div class="head">
+              <strong>AI nháp trả lời</strong>
+              <span class="badge badge-warn">Cần duyệt · risk medium</span>
+            </div>
+            <div class="body">
+              Cảm ơn Hương! Đã giữ <strong>SET A Dưỡng ẩm</strong> (Serum C 30ml + Cream HA + Cleanser) —
+              tồn kho 14 set. Đơn nháp COD Q.7 · phí ship ₫25K · tổng dự kiến <strong>₫589.000</strong>.
+              Bạn xác nhận giúp shop để chốt trong live nhé?
+            </div>
+            <div class="actions">
+              <button class="btn btn-primary btn-sm">Gửi nháp</button>
+              <button class="btn btn-ink btn-sm">Cần duyệt</button>
+              <button class="btn btn-ghost btn-sm">Sửa nội dung</button>
+              <button class="btn btn-ghost btn-sm">Tạo đơn từ keyword</button>
+            </div>
+          </div>
+
+          <div class="composer">
+            <input class="input" type="text" placeholder="Nhập tin nhắn… (Enter để gửi)" />
+            <button class="btn btn-ink btn-sm">Gửi</button>
+          </div>
+        </section>
+
+        <!-- RIGHT: Customer 360 + order draft -->
+        <aside class="rail">
+          <div class="rail-sec">
+            <h3>Customer 360</h3>
+            <div class="cust-name">Nguyễn Hương</div>
+            <div class="cust-meta">VIP Silver · HCM · Lần mua gần nhất 12 ngày</div>
+            <div class="stat-3">
+              <div>
+                <div class="v">₫2.1M</div>
+                <div class="l">LTV</div>
+              </div>
+              <div>
+                <div class="v">4</div>
+                <div class="l">Đơn</div>
+              </div>
+              <div>
+                <div class="v">0%</div>
+                <div class="l">Hoàn</div>
+              </div>
+            </div>
+            <div style="margin-top:10px;display:flex;gap:6px;flex-wrap:wrap">
+              <span class="chip">Da hỗn hợp</span>
+              <span class="chip">Thích serum C</span>
+              <span class="chip">COD</span>
+            </div>
+          </div>
+
+          <div class="rail-sec">
+            <h3>Đơn nháp từ comment</h3>
+            <div class="order-draft">
+              <div class="od-h">
+                <strong>SET A · Dưỡng ẩm</strong>
+                <span class="badge badge-accent">Keyword</span>
+              </div>
+              <div class="prod-card">
+                <div class="prod-thumb serum"></div>
+                <div>
+                  <div class="pn">Serum Vitamin C 30ml</div>
+                  <div class="ps">SKU GL-SC30 · ×1</div>
+                  <div class="inv-ok">Tồn 86</div>
+                </div>
+                <div class="pp">₫249K</div>
+              </div>
+              <div class="prod-card">
+                <div class="prod-thumb cream"></div>
+                <div>
+                  <div class="pn">Cream HA Deep Moisture</div>
+                  <div class="ps">SKU GL-HA50 · ×1</div>
+                  <div class="inv-low">Tồn 14 · cảnh báo</div>
+                </div>
+                <div class="pp">₫219K</div>
+              </div>
+              <div class="prod-card">
+                <div class="prod-thumb"></div>
+                <div>
+                  <div class="pn">Cleanser Tea Tree</div>
+                  <div class="ps">SKU GL-TT150 · ×1</div>
+                  <div class="inv-ok">Tồn 120</div>
+                </div>
+                <div class="pp">₫96K</div>
+              </div>
+              <div class="od-total">
+                <span class="t">Tạm tính + ship COD</span>
+                <span class="a">₫589K</span>
+              </div>
+              <div style="font-size:11px;color:var(--ink-3);margin-top:6px">
+                CM ước tính <strong style="color:var(--signal)">₫214K · 36.3%</strong> · không flash-sale
+              </div>
+              <button class="cta-order">Chốt đơn từ comment SET A</button>
+              <button class="btn btn-ghost btn-sm" style="width:100%;margin-top:8px">Gửi link thanh toán</button>
+            </div>
+          </div>
+
+          <div class="rail-sec">
+            <h3>Gợi ý upsell</h3>
+            <div class="prod-card">
+              <div class="prod-thumb serum"></div>
+              <div>
+                <div class="pn">Toner Balancing Mist</div>
+                <div class="ps">+₫12K CM nếu bundle</div>
+              </div>
+              <div class="pp">₫129K</div>
+            </div>
+          </div>
+        </aside>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

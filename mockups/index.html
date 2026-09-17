@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>PTT Commerce Intelligence OS — UI Mockup Suite</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&family=Syne:wght@600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="ptt-design.css" />
+  <style>
+    body { background: var(--ink); color: #fff; }
+    .wrap { max-width: 1180px; margin: 0 auto; padding: 48px 24px 80px; }
+    .hero-brand {
+      font-family: var(--font-display); font-size: clamp(40px, 7vw, 72px);
+      letter-spacing: -0.04em; line-height: .95; margin: 24px 0 16px;
+    }
+    .hero-brand span { color: var(--accent); }
+    .lead { max-width: 560px; color: rgba(255,255,255,.65); font-size: 17px; margin-bottom: 36px; }
+    .flow {
+      display: flex; flex-wrap: wrap; gap: 8px; align-items: center;
+      font-size: 12px; color: rgba(255,255,255,.45); margin-bottom: 48px;
+    }
+    .flow a { color: rgba(255,255,255,.85); border-bottom: 1px solid rgba(255,92,26,.5); }
+    .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+    .card {
+      background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.1);
+      border-radius: 12px; padding: 20px; transition: border-color .2s, background .2s, transform .2s var(--ease);
+      min-height: 160px; display: flex; flex-direction: column;
+    }
+    .card:hover { background: rgba(255,255,255,.07); border-color: rgba(255,92,26,.45); transform: translateY(-2px); }
+    .card .tag { font-size: 11px; text-transform: uppercase; letter-spacing: .06em; color: var(--accent); margin-bottom: 10px; }
+    .card h3 { font-size: 18px; margin-bottom: 8px; }
+    .card p { font-size: 13px; color: rgba(255,255,255,.55); flex: 1; }
+    .card .go { margin-top: 14px; font-size: 13px; font-weight: 600; color: #fff; }
+    .vs {
+      margin-top: 48px; padding: 24px; border: 1px solid rgba(255,255,255,.12); border-radius: 12px;
+      background: linear-gradient(135deg, rgba(255,92,26,.12), transparent 60%);
+    }
+    .vs h2 { font-size: 22px; margin-bottom: 10px; }
+    .vs ul { margin: 0; padding-left: 18px; color: rgba(255,255,255,.65); font-size: 14px; }
+    .vs li { margin: 6px 0; }
+    @media (max-width: 900px) { .grid { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="ptt-mark anim-fade"><span class="dot"></span> PTT Mockup Suite v5.1</div>
+    <h1 class="hero-brand anim-rise">Commerce<br /><span>Intelligence</span> OS</h1>
+    <p class="lead anim-rise-d1">Bộ UI mockup đầy đủ theo SRS — thiết kế để thắng omnichannel phổ biến bằng hierarchy rõ, margin-first, website governance và social console vận hành thật.</p>
+
+    <div class="flow anim-rise-d2">
+      <a href="01-corporate-gtm.html">Corporate</a> →
+      <a href="02-onboarding.html">Onboarding</a> →
+      <a href="04-template-marketplace.html">Template</a> →
+      <a href="05-theme-library.html">Theme</a> →
+      <a href="06-visual-site-builder.html">Builder</a> →
+      <a href="07-golive-checklist.html">Go-live</a> →
+      <a href="08-storefront-beauty.html">Storefront</a> →
+      <a href="03-admin-command-center.html">Command Center</a> →
+      <a href="09-website-analytics.html">Analytics</a> →
+      <a href="10-social-live-console.html">Social/Live</a> →
+      <a href="11-revenue-intelligence.html">Revenue</a> →
+      <a href="12-creator-scorecard.html">Creator</a>
+    </div>
+
+    <div class="grid">
+      <a class="card anim-rise" href="01-corporate-gtm.html">
+        <div class="tag">GTM</div>
+        <h3>Corporate Website</h3>
+        <p>Hero brand-first, full-bleed product plane, CTA demo — bán “omnichannel có lãi”.</p>
+        <div class="go">Mở mockup →</div>
+      </a>
+      <a class="card anim-rise" href="02-onboarding.html">
+        <div class="tag">Website</div>
+        <h3>Onboarding Wizard</h3>
+        <p>Brand Kit → catalog → theme match → payment/shipping → go-live trong một luồng.</p>
+        <div class="go">Mở mockup →</div>
+      </a>
+      <a class="card anim-rise" href="03-admin-command-center.html">
+        <div class="tag">Ops</div>
+        <h3>Admin Command Center</h3>
+        <p>KPI margin, exception queue, AI insight, approval — không vanity GMV.</p>
+        <div class="go">Mở mockup →</div>
+      </a>
+      <a class="card" href="04-template-marketplace.html">
+        <div class="tag">Website</div>
+        <h3>Template Marketplace</h3>
+        <p>Conversion score, playbook ngành, AI Theme Matchmaker — hơn kho theme mỏng.</p>
+        <div class="go">Mở mockup →</div>
+      </a>
+      <a class="card" href="05-theme-library.html">
+        <div class="tag">Website</div>
+        <h3>Theme Library</h3>
+        <p>Staging / publish / diff / rollback — governance Shopify-grade.</p>
+        <div class="go">Mở mockup →</div>
+      </a>
+      <a class="card" href="06-visual-site-builder.html">
+        <div class="tag">Website</div>
+        <h3>Visual Site Builder</h3>
+        <p>Section/block, responsive, autosave, AI copy — không publish trái phép.</p>
+        <div class="go">Mở mockup →</div>
+      </a>
+      <a class="card" href="07-golive-checklist.html">
+        <div class="tag">Governance</div>
+        <h3>Go-live Checklist</h3>
+        <p>Gate checkout/SEO/tracking/CWV trước publish — thắng bằng độ tin cậy.</p>
+        <div class="go">Mở mockup →</div>
+      </a>
+      <a class="card" href="08-storefront-beauty.html">
+        <div class="tag">Storefront</div>
+        <h3>Beauty Mobile-first</h3>
+        <p>PDP sticky ATC, deep link social, loyalty — trải nghiệm mua vượt Haraweb trung bình.</p>
+        <div class="go">Mở mockup →</div>
+      </a>
+      <a class="card" href="09-website-analytics.html">
+        <div class="tag">Analytics</div>
+        <h3>Website Analytics</h3>
+        <p>Funnel + revenue + contribution margin theo page/device/channel.</p>
+        <div class="go">Mở mockup →</div>
+      </a>
+      <a class="card" href="10-social-live-console.html">
+        <div class="tag">Omnichannel</div>
+        <h3>Social / Live Console</h3>
+        <p>Inbox đa kênh, keyword order, GMV live, risk — parity Harasocial + margin.</p>
+        <div class="go">Mở mockup →</div>
+      </a>
+      <a class="card" href="11-revenue-intelligence.html">
+        <div class="tag">Moat</div>
+        <h3>Revenue Intelligence</h3>
+        <p>Revenue Graph: ads → content → order → return → contribution profit.</p>
+        <div class="go">Mở mockup →</div>
+      </a>
+      <a class="card" href="12-creator-scorecard.html">
+        <div class="tag">Content</div>
+        <h3>Creator Scorecard</h3>
+        <p>KOL/KOC theo doanh thu, hoàn, commission và margin thật.</p>
+        <div class="go">Mở mockup →</div>
+      </a>
+    </div>
+
+    <div class="vs">
+      <h2>UI thắng đối thủ ở điểm nào?</h2>
+      <ul>
+        <li>Hierarchy một composition — giảm “feature card spam” kiểu landing omnichannel phổ biến.</li>
+        <li>Margin & exception là tín hiệu hạng nhất trên Command Center / RI.</li>
+        <li>Website có staging–rollback–checklist — cảm giác sản phẩm trưởng thành hơn theme shop.</li>
+        <li>Typography Syne + Be Vietnam Pro; accent cam tín hiệu; tránh purple / cream-terracotta.</li>
+        <li>Social/Live và Creator gắn attribution — UI kể câu chuyện “có lãi”, không chỉ “có đơn”.</li>
+      </ul>
+    </div>
+  </div>
+</body>
+</html>

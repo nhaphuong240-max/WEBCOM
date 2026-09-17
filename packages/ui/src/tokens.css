@@ -1,0 +1,24 @@
+:root {
+  --ptt-ink: #0b1420;
+  --ptt-ink-2: #1a2838;
+  --ptt-ink-3: #334155;
+  --ptt-paper: #f3f5f7;
+  --ptt-paper-2: #e8ecf0;
+  --ptt-surface: #ffffff;
+  --ptt-line: #d5dbe3;
+  --ptt-line-strong: #b8c2ce;
+  --ptt-accent: #ff5c1a;
+  --ptt-accent-2: #e24a0c;
+  --ptt-accent-soft: rgba(255, 92, 26, 0.12);
+  --ptt-signal: #0d8f6b;
+  --ptt-signal-soft: rgba(13, 143, 107, 0.12);
+  --ptt-warn: #c98500;
+  --ptt-danger: #d14343;
+  --ptt-radius: 10px;
+  --ptt-radius-sm: 6px;
+  --ptt-font-display: "Syne", sans-serif;
+  --ptt-font-body: "Be Vietnam Pro", sans-serif;
+  --ptt-sidebar-w: 248px;
+  --ptt-nav-h: 64px;
+  --ptt-ease: cubic-bezier(0.22, 1, 0.36, 1);
+}

@@ -1,0 +1,37 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: ptt
+      POSTGRES_PASSWORD: ptt
+      POSTGRES_DB: ptt_commerce
+    volumes:
+      - ptt_pg:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ptt -d ptt_commerce"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+
+  minio:
+    image: minio/minio:latest
+    command: server /data --console-address ":9001"
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    environment:
+      MINIO_ROOT_USER: ptt
+      MINIO_ROOT_PASSWORD: pttsecret1
+    volumes:
+      - ptt_minio:/data
+
+volumes:
+  ptt_pg:
+  ptt_minio:

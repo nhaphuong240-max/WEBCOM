@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>PTT — Go-live Checklist</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&family=Syne:wght@600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="ptt-design.css" />
+  <style>
+    .group { margin-bottom: 16px; }
+    .item {
+      display: grid; grid-template-columns: 28px 1fr auto; gap: 12px; align-items: start;
+      padding: 14px 16px; background: #fff; border: 1px solid var(--line); border-bottom: 0;
+    }
+    .group .item:first-child { border-radius: 10px 10px 0 0; }
+    .group .item:last-child { border-bottom: 1px solid var(--line); border-radius: 0 0 10px 10px; }
+    .item .st { width: 22px; height: 22px; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; }
+    .st.ok { background: var(--signal-soft); color: var(--signal); }
+    .st.fail { background: rgba(209,67,67,.12); color: var(--danger); }
+    .item h3 { font-family: var(--font-body); font-size: 14px; font-weight: 600; }
+    .item p { font-size: 12px; color: var(--ink-3); margin-top: 2px; }
+    .publish-box {
+      position: sticky; top: 80px; background: var(--ink); color: #fff; border-radius: 12px; padding: 20px;
+    }
+    .publish-box .btn[disabled] { opacity: .4; cursor: not-allowed; transform: none; }
+  </style>
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar">
+      <a class="brand ptt-mark" href="index.html"><span class="dot"></span> PTT</a>
+      <a class="nav-item" href="05-theme-library.html"><span class="ico">◇</span> Theme Library</a>
+      <a class="nav-item" href="06-visual-site-builder.html"><span class="ico">◇</span> Builder</a>
+      <a class="nav-item active" href="07-golive-checklist.html"><span class="ico">◆</span> Go-live</a>
+      <a class="nav-item" href="index.html"><span class="ico">←</span> Hub</a>
+    </aside>
+    <div class="main">
+      <header class="topbar">
+        <div class="crumb">Publish · <strong>Go-live Checklist</strong></div>
+        <span class="badge badge-danger">2 blocking</span>
+      </header>
+      <div class="content">
+        <div class="page-head">
+          <div>
+            <h1>Publish bị chặn cho đến khi an toàn</h1>
+            <p>Checklist là gate — không phải trang trang trí. Waiver enterprise cần approval + audit.</p>
+          </div>
+        </div>
+        <div class="grid-2">
+          <div>
+            <div class="group">
+              <div class="item"><div class="st ok">✓</div><div><h3>Catalog / price / inventory sync</h3><p>180 SKU · warehouse HN/HCM</p></div><span class="badge badge-signal">Pass</span></div>
+              <div class="item"><div class="st ok">✓</div><div><h3>Checkout · Payment · COD · Shipping</h3><p>Smoke test đơn ₫150k COD OK</p></div><span class="badge badge-signal">Pass</span></div>
+              <div class="item"><div class="st ok">✓</div><div><h3>Domain / SSL / Brand Kit</h3><p>aura.vn · cert active</p></div><span class="badge badge-signal">Pass</span></div>
+            </div>
+            <div class="group">
+              <div class="item"><div class="st fail">!</div><div><h3>Analytics · Pixel / CAPI · Consent</h3><p>Meta Pixel fire trước consent banner — vi phạm BR-020</p></div><span class="badge badge-danger">Fail</span></div>
+              <div class="item"><div class="st fail">!</div><div><h3>Core Web Vitals</h3><p>LCP mobile homepage 3.2s · ngưỡng 2.5s</p></div><span class="badge badge-danger">Fail</span></div>
+              <div class="item"><div class="st ok">✓</div><div><h3>SEO · sitemap · schema</h3><p>Canonical + Product schema OK</p></div><span class="badge badge-signal">Pass</span></div>
+              <div class="item"><div class="st ok">✓</div><div><h3>Backup published version</h3><p>v2.4.1 snapshot sẵn sàng rollback</p></div><span class="badge badge-signal">Pass</span></div>
+            </div>
+          </div>
+          <aside class="publish-box">
+            <h2 style="font-size:20px;margin-bottom:8px">Publish</h2>
+            <p style="font-size:13px;opacity:.65;margin-bottom:16px">2 mục blocking. Sửa consent + tối ưu LCP hero image rồi chạy lại synthetic test.</p>
+            <button class="btn btn-primary" style="width:100%;margin-bottom:10px" disabled>Publish ngay (disabled)</button>
+            <button class="btn btn-ghost" style="width:100%;color:#fff;border-color:rgba(255,255,255,.25);margin-bottom:12px">Schedule…</button>
+            <p style="font-size:11px;opacity:.45;margin:0">Enterprise waiver: yêu cầu Owner approve + lý do + audit ID. Không khuyến nghị cho storefront production.</p>
+            <a href="06-visual-site-builder.html" class="btn btn-ink btn-sm" style="width:100%;margin-top:16px;background:#fff;color:var(--ink)">Quay lại Builder</a>
+          </aside>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>
