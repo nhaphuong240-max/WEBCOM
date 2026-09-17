@@ -1,0 +1,44 @@
+meta {
+  name: WebCom B2
+}
+
+get {
+  url: {{BASE}}/api/health
+}
+
+get {
+  url: {{BASE}}/api/v1/admin/social/status
+  headers: {
+    x-tenant-id: ten_aura
+    x-actor-id: bruno
+  }
+}
+
+get {
+  url: {{BASE}}/api/v1/admin/social/products?q=glow
+  headers: {
+    x-tenant-id: ten_aura
+    x-brand-id: brd_aura
+    x-actor-id: bruno
+  }
+}
+
+post {
+  url: {{BASE}}/api/v1/admin/social/drafts
+  headers: {
+    x-tenant-id: ten_aura
+    x-actor-id: bruno
+    content-type: application/json
+  }
+  body: json
+  json: {
+    "conversation_id": "{{conv_id}}",
+    "source": "comment",
+    "lines": [{ "sku_id": "sku_aura_glow_30", "qty": 1 }],
+    "shipping_name": "Bruno",
+    "shipping_phone": "0901234567",
+    "shipping_address": "1 Test",
+    "shipping_city": "HCM",
+    "payment_method": "COD"
+  }
+}

@@ -8,7 +8,7 @@ export class HealthController {
       status: 'ok',
       service: 'admin-api',
       phase: 'W5',
-      wave: 'A6',
+      wave: 'B2',
       time: new Date().toISOString(),
     };
   }

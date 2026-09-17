@@ -18,6 +18,7 @@ import { PaymentModule } from './payment/payment.module';
 import { TemporalModule } from './temporal/temporal.module';
 import { SearchModule } from './search/search.module';
 import { AiModule } from './ai/ai.module';
+import { SocialModule } from './social/social.module';
 import { HealthController } from './health/health.controller';
 import { MeController } from './iam/me.controller';
 import { AuthController } from './iam/auth.controller';
@@ -44,6 +45,7 @@ import { TenancyController } from './tenancy/tenancy.controller';
     TemporalModule,
     SearchModule,
     AiModule,
+    SocialModule,
   ],
   controllers: [HealthController, MeController, AuthController, TenancyController],
 })

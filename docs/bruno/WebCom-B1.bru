@@ -1,0 +1,39 @@
+meta {
+  name: WebCom B1
+}
+
+get {
+  url: {{BASE}}/api/health
+}
+
+get {
+  url: {{BASE}}/api/v1/admin/social/status
+  headers: {
+    x-tenant-id: ten_aura
+    x-actor-id: bruno
+  }
+}
+
+post {
+  url: {{BASE}}/api/v1/admin/social/channels/bind
+  headers: {
+    x-tenant-id: ten_aura
+    x-actor-id: bruno
+    content-type: application/json
+  }
+  body: json
+  json: {
+    "provider": "meta",
+    "channel_type": "messenger",
+    "storefront_id": "sf_aura",
+    "display_name": "Bruno Meta"
+  }
+}
+
+get {
+  url: {{BASE}}/api/v1/admin/social/inbox
+  headers: {
+    x-tenant-id: ten_aura
+    x-actor-id: bruno
+  }
+}

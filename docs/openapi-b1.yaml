@@ -1,0 +1,50 @@
+openapi: 3.0.3
+info:
+  title: WebCom B1 — Channel binding + Unified Inbox
+  version: 1.0.0
+paths:
+  /api/health:
+    get:
+      summary: wave B1
+  /api/v1/admin/social/status:
+    get:
+      summary: Connector modes (Meta/Zalo stub|live) + SLA default
+  /api/v1/admin/social/channels:
+    get:
+      summary: List channel accounts
+  /api/v1/admin/social/channels/bind:
+    post:
+      summary: Bind Meta/Zalo channel (stub OAuth)
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [provider, channel_type]
+              properties:
+                provider: { type: string, enum: [meta, zalo] }
+                channel_type: { type: string }
+                storefront_id: { type: string }
+                external_id: { type: string }
+                display_name: { type: string }
+  /api/v1/admin/social/channels/{id}/disconnect:
+    post:
+      summary: Disconnect channel
+  /api/v1/admin/social/inbox:
+    get:
+      summary: List conversations (filter status/channel/owner/tag)
+  /api/v1/admin/social/inbox/{id}:
+    get:
+      summary: Conversation detail + messages
+  /api/v1/admin/social/inbox/{id}/assign:
+    post:
+      summary: Assign owner / tags / notes / SLA
+  /api/v1/admin/social/inbox/{id}/reply:
+    post:
+      summary: Outbound reply via connector stub
+  /api/v1/admin/social/webhooks/{provider}:
+    post:
+      summary: Ingest inbound stub (meta|zalo) → thread + message
+  /api/v1/admin/social/sla/refresh:
+    post:
+      summary: Recompute SLA ok/warning/breached

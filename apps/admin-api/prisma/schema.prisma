@@ -44,6 +44,10 @@ model Tenant {
   webhookEvents  WebhookEvent[]
   searchOutbox   SearchOutbox[]
   aiBudgets      AiBudgetLedger[]
+  channelAccounts ChannelAccount[]
+  inboxConversations InboxConversation[]
+  inboxMessages InboxMessage[]
+  socialOrderDrafts SocialOrderDraft[]
 
   @@map("tenants")
 }
@@ -116,6 +120,7 @@ model Storefront {
   apiKeys          ApiKey[]
   agencyDeliveries AgencyDelivery[]
   domains          StorefrontDomain[]
+  channelAccounts  ChannelAccount[]
 
   @@unique([tenantId, slug])
   @@index([tenantId])
@@ -345,6 +350,11 @@ model Order {
   voucherCode      String?            @map("voucher_code")
   note             String             @default("")
   idempotencyKey   String?            @map("idempotency_key")
+  /// B2 channel attribution (FR-SOC-004 · BR-023)
+  attributionChannel   String?  @map("attribution_channel")
+  attributionThreadId  String?  @map("attribution_thread_id")
+  attributionProvider  String?  @map("attribution_provider")
+  socialDraftId        String?  @map("social_draft_id")
   createdAt        DateTime           @default(now()) @map("created_at")
   updatedAt        DateTime           @updatedAt @map("updated_at")
   tenant           Tenant             @relation(fields: [tenantId], references: [id])
@@ -353,9 +363,11 @@ model Order {
   lines            OrderLine[]
   reservations     StockReservation[]
   paymentIntents   PaymentIntent[]
+  socialDraft      SocialOrderDraft?
 
   @@unique([tenantId, idempotencyKey])
   @@index([tenantId, status])
+  @@index([tenantId, socialDraftId])
   @@map("orders")
 }
 
@@ -954,4 +966,138 @@ model SearchOutbox {
   @@index([status, createdAt])
   @@index([tenantId, aggregateId])
   @@map("search_outbox")
+}
+
+/// B1 — Channel account binding (Fanpage / OA / Shop) · FR-ORG-011
+model ChannelAccount {
+  id             String     @id @default(uuid())
+  tenantId       String     @map("tenant_id")
+  storefrontId   String?    @map("storefront_id")
+  /// meta | zalo | shopee | tiktok
+  provider       String
+  /// fanpage | messenger | ig | oa | shop
+  channelType    String     @map("channel_type")
+  externalId     String     @map("external_id")
+  displayName    String     @map("display_name")
+  /// pending | connected | disconnected | error
+  status         String     @default("pending")
+  /// stub credentials / tokens — never log raw secrets in API responses
+  credentials    Json       @default("{}")
+  metadata       Json       @default("{}")
+  connectedAt    DateTime?  @map("connected_at")
+  lastSyncAt     DateTime?  @map("last_sync_at")
+  createdAt      DateTime   @default(now()) @map("created_at")
+  updatedAt      DateTime   @updatedAt @map("updated_at")
+  tenant         Tenant     @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  storefront     Storefront? @relation(fields: [storefrontId], references: [id], onDelete: SetNull)
+  conversations  InboxConversation[]
+
+  @@unique([tenantId, provider, externalId])
+  @@index([tenantId, status])
+  @@index([tenantId, storefrontId])
+  @@map("channel_accounts")
+}
+
+/// B1 — Unified inbox conversation · FR-SOC-001/002
+model InboxConversation {
+  id               String   @id @default(uuid())
+  tenantId         String   @map("tenant_id")
+  channelAccountId String   @map("channel_account_id")
+  externalThreadId String   @map("external_thread_id")
+  customerId       String?  @map("customer_id")
+  contactName      String   @default("") @map("contact_name")
+  contactHandle    String   @default("") @map("contact_handle")
+  /// open | pending | closed
+  status           String   @default("open")
+  ownerId          String?  @map("owner_id")
+  tags             String[] @default([])
+  notes            String   @default("")
+  /// ok | warning | breached
+  slaStatus        String   @default("ok") @map("sla_status")
+  slaDueAt         DateTime? @map("sla_due_at")
+  lastMessageAt    DateTime  @default(now()) @map("last_message_at")
+  lastMessagePreview String  @default("") @map("last_message_preview")
+  unreadCount      Int       @default(0) @map("unread_count")
+  createdAt        DateTime  @default(now()) @map("created_at")
+  updatedAt        DateTime  @updatedAt @map("updated_at")
+  tenant           Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  channelAccount   ChannelAccount @relation(fields: [channelAccountId], references: [id], onDelete: Cascade)
+  messages         InboxMessage[]
+  orderDrafts      SocialOrderDraft[]
+
+  @@unique([channelAccountId, externalThreadId])
+  @@index([tenantId, status, lastMessageAt])
+  @@index([tenantId, ownerId])
+  @@index([tenantId, slaStatus])
+  @@map("inbox_conversations")
+}
+
+/// B1 — Inbox message (inbound stub / outbound reply)
+model InboxMessage {
+  id                String   @id @default(uuid())
+  tenantId          String   @map("tenant_id")
+  conversationId    String   @map("conversation_id")
+  /// inbound | outbound | system
+  direction         String
+  body              String
+  externalMessageId String?  @map("external_message_id")
+  authorName        String   @default("") @map("author_name")
+  payload           Json     @default("{}")
+  createdAt         DateTime @default(now()) @map("created_at")
+  tenant            Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  conversation      InboxConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  @@unique([conversationId, externalMessageId])
+  @@index([tenantId, conversationId, createdAt])
+  @@map("inbox_messages")
+}
+
+/// B2 — Social order draft (comment/chat → OMS) · FR-SOC-004/005 · BR-023 · FR-OMS-010
+model SocialOrderDraft {
+  id                 String   @id @default(uuid())
+  tenantId           String   @map("tenant_id")
+  storefrontId       String   @map("storefront_id")
+  conversationId     String   @map("conversation_id")
+  messageId          String?  @map("message_id")
+  channelAccountId   String   @map("channel_account_id")
+  /// BR-023: channel thread ID bắt buộc
+  externalThreadId   String   @map("external_thread_id")
+  /// comment | chat | messenger_cart
+  source             String   @default("chat")
+  /// draft | cart_sent | converted | cancelled
+  status             String   @default("draft")
+  /// 0–100 soft risk
+  riskScore          Int      @default(0) @map("risk_score")
+  riskFlags          String[] @default([]) @map("risk_flags")
+  contactName        String   @default("") @map("contact_name")
+  contactPhone       String   @default("") @map("contact_phone")
+  shippingName       String   @default("") @map("shipping_name")
+  shippingPhone      String   @default("") @map("shipping_phone")
+  shippingAddress    String   @default("") @map("shipping_address")
+  shippingCity       String   @default("") @map("shipping_city")
+  /// COD | TRANSFER
+  paymentMethod      String   @default("COD") @map("payment_method")
+  currency           String   @default("VND")
+  subtotalAmount     Decimal  @default(0) @map("subtotal_amount") @db.Decimal(18, 2)
+  /// BR-023 product snapshot lines (frozen at draft time)
+  linesSnapshot      Json     @default("[]") @map("lines_snapshot")
+  /// post/reel/context from comment-to-order
+  sourceContext      Json     @default("{}") @map("source_context")
+  /// stub Messenger cart payload (FR-SOC-005)
+  messengerCart      Json?    @map("messenger_cart")
+  cartId             String?  @map("cart_id")
+  orderId            String?  @unique @map("order_id")
+  note               String   @default("")
+  createdBy          String?  @map("created_by")
+  convertedAt        DateTime? @map("converted_at")
+  createdAt          DateTime  @default(now()) @map("created_at")
+  updatedAt          DateTime  @updatedAt @map("updated_at")
+  tenant             Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  conversation       InboxConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  order              Order?    @relation(fields: [orderId], references: [id], onDelete: SetNull)
+
+  @@index([tenantId, status, createdAt])
+  @@index([tenantId, conversationId])
+  @@index([tenantId, externalThreadId])
+  @@map("social_order_drafts")
 }

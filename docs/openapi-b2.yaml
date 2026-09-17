@@ -1,0 +1,40 @@
+openapi: 3.0.3
+info:
+  title: WebCom B2 — Comment/chat → Order draft → OMS
+  version: 1.0.0
+paths:
+  /api/health:
+    get:
+      summary: wave B2
+  /api/v1/admin/social/status:
+    get:
+      summary: B2 features (comment_to_order, messenger_cart, draft_convert)
+  /api/v1/admin/social/products:
+    get:
+      summary: Product picker for agents (SKU + price + available)
+  /api/v1/admin/social/drafts:
+    get:
+      summary: List social order drafts
+    post:
+      summary: Create draft with product snapshot + external_thread_id (BR-023)
+  /api/v1/admin/social/inbox/{id}/drafts:
+    post:
+      summary: Create draft on conversation thread
+  /api/v1/admin/social/comments/{messageId}/order-draft:
+    post:
+      summary: Comment-to-order 1-click draft (FR-SOC-004 · FR-OMS-010)
+  /api/v1/admin/social/drafts/{id}:
+    get:
+      summary: Draft detail (snapshot + risk)
+  /api/v1/admin/social/drafts/{id}/send-cart:
+    post:
+      summary: Stub Messenger cart link + reply (FR-SOC-005)
+  /api/v1/admin/social/drafts/{id}/convert:
+    post:
+      summary: Convert → cart → checkout CONFIRMED (COD/TRANSFER) + stock reserve + attribution
+  /api/v1/admin/social/drafts/{id}/cancel:
+    post:
+      summary: Cancel draft
+  /api/v1/admin/social/webhooks/{provider}:
+    post:
+      summary: Ingest chat|comment (kind=comment + post_id)

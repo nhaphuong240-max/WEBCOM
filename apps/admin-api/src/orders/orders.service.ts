@@ -91,6 +91,10 @@ export class OrdersService {
     shippingCarrier: string | null;
     shippingService: string | null;
     voucherCode: string | null;
+    attributionChannel?: string | null;
+    attributionThreadId?: string | null;
+    attributionProvider?: string | null;
+    socialDraftId?: string | null;
     createdAt: Date;
     lines: Array<{
       skuCode: string;
@@ -111,6 +115,10 @@ export class OrdersService {
       shipping_amount: money(order.shippingAmount),
       total: money(order.totalAmount),
       voucher_code: order.voucherCode,
+      attribution_channel: order.attributionChannel ?? null,
+      attribution_thread_id: order.attributionThreadId ?? null,
+      attribution_provider: order.attributionProvider ?? null,
+      social_draft_id: order.socialDraftId ?? null,
       shipping: {
         name: order.shippingName,
         phone: order.shippingPhone,

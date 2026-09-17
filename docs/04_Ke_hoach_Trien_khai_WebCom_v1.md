@@ -549,6 +549,64 @@ Repo chạy được, design system từ mockup, auth tenant, admin/storefront s
 
 ---
 
+# 9h. Nhánh B — Omnichannel Sales (kế hoạch)
+
+> Sau A6 · Canvas: `canvases/ke-hoach-nhanh-b-omnichannel.canvas.tsx` · ~16 tuần · B1–B6.
+
+| Wave | Focus | Exit chính |
+|---|---|---|
+| B1 | Channel binding + Unified Inbox | ≥2 kênh stub; thread + SLA/tag · **shipped** `wave: B1` |
+| B2 | Comment/chat → Order draft | Draft → OMS/checkout E2E · **shipped** `wave: B2` |
+| B3 | POS 1 cửa hàng | Barcode sell + shift + tồn realtime |
+| B4 | Live Commerce MVP | Keyword→order + alert tồn |
+| B5 | Marketplace connector #1 | Listing/order/stock; lag ≤60s mục tiêu |
+| B6 | AI social + đa cửa hàng | AI reply approval; POS ≥2 location |
+
+**Phạm vi:** FR-POS · FR-SOCIAL · FR-LIVE · FR-MKTPLACE. **Không** full CRM Journey/Loyalty (nhánh C).
+
+---
+
+# 9i. Wave B1 — Channel binding + Unified Inbox
+
+## Exit criteria
+- [x] `ChannelAccount` + `InboxConversation` + `InboxMessage` (Prisma · migration `b1_social_inbox`).
+- [x] Nest `SocialModule`: bind Meta/Zalo stub (≥2 kênh); webhook ingest → thread; owner/SLA/tag/note; reply stub.
+- [x] Admin `/social` list + `/social/[id]` detail (assign + reply).
+- [x] Health `wave: B1` · `docs/openapi-b1.yaml` · Bruno · `scripts/e2e-b1.sh`.
+
+## API (tóm tắt)
+| Method | Path | Mô tả |
+|---|---|---|
+| GET | `/api/v1/admin/social/status` | Connector modes |
+| POST | `/api/v1/admin/social/channels/bind` | Bind Meta/Zalo |
+| GET | `/api/v1/admin/social/inbox` | List threads |
+| POST | `/api/v1/admin/social/webhooks/:provider` | Ingest stub inbound |
+| POST | `/api/v1/admin/social/inbox/:id/assign` | Owner / tags / SLA |
+
+**SRS:** FR-ORG-011 · FR-SOC-001/002. Live OAuth: `FEATURE_SOCIAL_LIVE` + `META_APP_ID` / `ZALO_APP_ID` (chưa gọi partner — vẫn stub send).
+
+---
+
+# 9j. Wave B2 — Comment/chat → Order draft → OMS
+
+## Exit criteria
+- [x] `SocialOrderDraft` + product snapshot + `external_thread_id` (BR-023).
+- [x] Comment ingest (`kind=comment`) + product picker + 1-click draft (FR-SOC-004 · FR-OMS-010).
+- [x] Messenger cart stub (FR-SOC-005) · risk score soft.
+- [x] Convert → cart → checkout COD/TRANSFER → `CONFIRMED` + stock reserve + channel attribution trên Order.
+- [x] Admin `/social/[id]` draft UI · Health `wave: B2` · `openapi-b2.yaml` · `scripts/e2e-b2.sh` · runbook.
+
+## API (tóm tắt)
+| Method | Path | Mô tả |
+|---|---|---|
+| GET | `/api/v1/admin/social/products` | Product picker |
+| POST | `/api/v1/admin/social/drafts` | Tạo draft |
+| POST | `/api/v1/admin/social/comments/:messageId/order-draft` | Comment→draft |
+| POST | `/api/v1/admin/social/drafts/:id/send-cart` | Stub giỏ Messenger |
+| POST | `/api/v1/admin/social/drafts/:id/convert` | → OMS CONFIRMED |
+
+---
+
 # 10. Backlog ưu tiên MoSCoW (WebCom)
 
 ## Must (trước GA Platform)
