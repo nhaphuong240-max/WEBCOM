@@ -57,6 +57,15 @@ type Draft = {
   messenger_cart?: { cart_url?: string } | null;
 };
 
+type AiReply = {
+  id: string;
+  status: string;
+  risk: string;
+  reply_draft: string | null;
+  reviewed_by: string | null;
+  created_at: string;
+};
+
 async function assign(formData: FormData) {
   'use server';
   const id = String(formData.get('conversation_id'));
@@ -81,6 +90,37 @@ async function reply(formData: FormData) {
     body: String(formData.get('body') || ''),
   });
   revalidatePath(`/social/${id}`);
+  revalidatePath('/social');
+}
+
+async function suggestAiReply(formData: FormData) {
+  'use server';
+  const id = String(formData.get('conversation_id'));
+  await apiJson(`/v1/admin/social/inbox/${id}/ai-reply`, 'POST', {
+    tone: String(formData.get('tone') || 'friendly'),
+    upsell_sku_code: String(formData.get('upsell_sku_code') || 'AURA-GLOW-30'),
+    storefront_id: SF,
+  });
+  revalidatePath(`/social/${id}`);
+}
+
+async function approveAiReply(formData: FormData) {
+  'use server';
+  const convId = String(formData.get('conversation_id'));
+  const actionId = String(formData.get('action_id'));
+  await apiJson(`/v1/admin/ai/actions/${actionId}/review`, 'POST', {
+    decision: 'approved',
+    note: String(formData.get('note') || 'Approved social AI reply'),
+  });
+  revalidatePath(`/social/${convId}`);
+}
+
+async function sendAiReply(formData: FormData) {
+  'use server';
+  const convId = String(formData.get('conversation_id'));
+  const actionId = String(formData.get('action_id'));
+  await apiJson(`/v1/admin/ai/actions/${actionId}/apply`, 'POST', {});
+  revalidatePath(`/social/${convId}`);
   revalidatePath('/social');
 }
 
@@ -138,12 +178,14 @@ export default async function ConversationPage({
   let detail: Detail | null = null;
   let products: ProductPick[] = [];
   let drafts: Draft[] = [];
+  let aiReplies: AiReply[] = [];
   let error = '';
   try {
     detail = await apiGet(`/v1/admin/social/inbox/${id}`);
     const prod = await apiGet<{ items: ProductPick[] }>('/v1/admin/social/products?q=glow');
     products = prod.items || [];
     drafts = await apiGet(`/v1/admin/social/drafts?conversation_id=${id}`);
+    aiReplies = await apiGet(`/v1/admin/social/inbox/${id}/ai-replies`);
   } catch (e) {
     error = e instanceof Error ? e.message : 'API error';
   }
@@ -155,7 +197,7 @@ export default async function ConversationPage({
     <>
       <PageHeader
         title={detail?.contact_name || 'Conversation'}
-        description={`${detail?.channel?.provider || ''}/${detail?.channel?.channel_type || ''} · thread ${detail?.external_thread_id || '—'}`}
+        description={`${detail?.channel?.provider || ''}/${detail?.channel?.channel_type || ''} · thread ${detail?.external_thread_id || '—'} · B6 AI reply approval`}
         actions={
           <Link href="/social" style={{ fontSize: 13 }}>
             ← Inbox
@@ -169,6 +211,53 @@ export default async function ConversationPage({
       ) : null}
       {detail ? (
         <>
+          <Panel title="B6 — AI reply (approval required)">
+            <p style={{ fontSize: 13, color: 'var(--ptt-ink-3)', marginBottom: 12 }}>
+              FR-SOC-003 · BR-018 — nháp AI không tự gửi; approve rồi apply mới outbound.
+            </p>
+            <form action={suggestAiReply} style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 12 }}>
+              <input type="hidden" name="conversation_id" value={detail.id} />
+              <input name="tone" defaultValue="friendly" style={{ padding: 8 }} />
+              <input name="upsell_sku_code" defaultValue="AURA-GLOW-30" style={{ padding: 8 }} />
+              <Button type="submit" variant="primary">
+                Gợi ý AI reply
+              </Button>
+            </form>
+            <ul style={{ listStyle: 'none', padding: 0, fontSize: 13 }}>
+              {aiReplies.map((a) => (
+                <li key={a.id} style={{ borderTop: '1px solid var(--ptt-line)', padding: '10px 0' }}>
+                  <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
+                    <code style={{ fontSize: 11 }}>{a.id}</code>
+                    <Badge tone="accent">{a.status}</Badge>
+                    <Badge>{a.risk}</Badge>
+                  </div>
+                  <p style={{ margin: '8px 0', whiteSpace: 'pre-wrap' }}>{a.reply_draft}</p>
+                  {a.status === 'pending_approval' ? (
+                    <form action={approveAiReply} style={{ display: 'inline' }}>
+                      <input type="hidden" name="conversation_id" value={detail!.id} />
+                      <input type="hidden" name="action_id" value={a.id} />
+                      <Button type="submit" size="sm">
+                        Approve
+                      </Button>
+                    </form>
+                  ) : null}
+                  {a.status === 'approved' ? (
+                    <form action={sendAiReply} style={{ display: 'inline', marginLeft: 8 }}>
+                      <input type="hidden" name="conversation_id" value={detail!.id} />
+                      <input type="hidden" name="action_id" value={a.id} />
+                      <Button type="submit" size="sm" variant="primary">
+                        Send (apply)
+                      </Button>
+                    </form>
+                  ) : null}
+                </li>
+              ))}
+              {!aiReplies.length ? (
+                <li style={{ opacity: 0.6 }}>Chưa có AI draft — bấm Gợi ý AI reply.</li>
+              ) : null}
+            </ul>
+          </Panel>
+
           <Panel title="Thread meta">
             <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', fontSize: 13, marginBottom: 12 }}>
               <Badge>{detail.status}</Badge>

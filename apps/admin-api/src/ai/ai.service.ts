@@ -1,10 +1,13 @@
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable, forwardRef } from '@nestjs/common';
 import { AppError, createId } from '@ptt/shared-kernel';
 import { Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { AuditService } from '../audit/audit.service';
+import { SocialService } from '../social/social.service';
 import { AiGatewayClient, type AiKind } from './ai-gateway.client';
 import { AiBudgetService } from './ai-budget.service';
+
+const HIGH_RISK_KINDS: AiKind[] = ['shopping_qa', 'social_reply'];
 
 @Injectable()
 export class AiService {
@@ -13,17 +16,21 @@ export class AiService {
     private readonly audit: AuditService,
     private readonly gateway: AiGatewayClient,
     private readonly budget: AiBudgetService,
+    @Inject(forwardRef(() => SocialService))
+    private readonly social: SocialService,
   ) {}
 
   status() {
     return {
-      wave: 'A6',
+      wave: 'B6',
       gateway: this.gateway.status(),
       guardrails: {
         auto_publish: false,
         price_mutation: false,
         refund_mutation: false,
+        auto_send: false,
         high_risk_requires_approval: true,
+        social_reply_requires_approval: true,
       },
     };
   }
@@ -61,8 +68,8 @@ export class AiService {
       throw e;
     }
 
-    // Enforce risk matrix: shopping_qa always high + pending_approval
-    const risk = input.kind === 'shopping_qa' ? 'high' : generated.risk;
+    // Enforce risk matrix: shopping_qa + social_reply always high + pending_approval
+    const risk = HIGH_RISK_KINDS.includes(input.kind) ? 'high' : generated.risk;
     const status = risk === 'high' ? 'pending_approval' : generated.status_hint;
 
     await this.budget.assertAndCharge(tenantId, generated.cost_usd);
@@ -150,6 +157,7 @@ export class AiService {
   /**
    * Apply draft output — never publishes theme or mutates price.
    * High-risk must be approved first.
+   * social_reply → send outbound via SocialService (FR-SOC-003 · BR-018).
    */
   async applyAction(tenantId: string, id: string, actorId: string) {
     const row = await this.prisma.db.aiAction.findFirst({ where: { id, tenantId } });
@@ -161,11 +169,39 @@ export class AiService {
       });
     }
     if (row.status === 'rejected') throw AppError.conflict('Rejected AI action cannot be applied');
+    if (row.status === 'applied') {
+      return {
+        ...this.mapAi(row),
+        applied: {
+          side_effects: [],
+          auto_publish: false,
+          price_changed: false,
+          message_sent: false,
+          deduped: true,
+        },
+      };
+    }
 
     const output = row.output as Record<string, unknown>;
     const policy = (output.policy || {}) as Record<string, unknown>;
     if (policy.auto_publish === true || policy.price_mutation === true || policy.refund_mutation === true) {
       throw AppError.conflict('Guardrail blocked apply — publish/price/refund forbidden');
+    }
+    if (policy.auto_send === true) {
+      throw AppError.conflict('Guardrail blocked apply — auto_send forbidden');
+    }
+
+    let messageSent: { id: string; body: string } | null = null;
+    if (row.kind === 'social_reply') {
+      const input = row.input as Record<string, unknown>;
+      const conversationId = String(input.conversation_id || '');
+      if (!conversationId) throw AppError.validation('social_reply missing conversation_id');
+      const body = String(
+        output.reply_draft || output.answer_draft || input.edited_body || '',
+      ).trim();
+      if (!body) throw AppError.validation('social_reply missing reply_draft');
+      const msg = await this.social.reply(tenantId, conversationId, body, actorId);
+      messageSent = { id: msg.id, body: msg.body };
     }
 
     const updated = await this.prisma.db.aiAction.update({
@@ -180,16 +216,22 @@ export class AiService {
       entityId: id,
       payload: {
         kind: row.kind,
-        applied_as: 'draft_only',
-        note: 'No theme publish / price / refund side-effects',
+        applied_as: row.kind === 'social_reply' ? 'social_outbound' : 'draft_only',
+        message_id: messageSent?.id ?? null,
+        note:
+          row.kind === 'social_reply'
+            ? 'Sent approved AI reply to channel stub'
+            : 'No theme publish / price / refund side-effects',
       },
     });
     return {
       ...this.mapAi(updated),
       applied: {
-        side_effects: [],
+        side_effects: messageSent ? ['social_outbound'] : [],
         auto_publish: false,
         price_changed: false,
+        message_sent: Boolean(messageSent),
+        message_id: messageSent?.id ?? null,
       },
     };
   }

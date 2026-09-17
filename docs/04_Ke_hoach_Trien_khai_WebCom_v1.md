@@ -560,7 +560,7 @@ Repo chạy được, design system từ mockup, auth tenant, admin/storefront s
 | B3 | POS 1 cửa hàng | Barcode sell + shift + tồn realtime · **shipped** `wave: B3` |
 | B4 | Live Commerce MVP | Keyword→order + alert tồn · **shipped** `wave: B4` |
 | B5 | Marketplace connector #1 | Listing/order/stock; lag ≤60s · **shipped** `wave: B5` |
-| B6 | AI social + đa cửa hàng | AI reply approval; POS ≥2 location |
+| B6 | AI social + đa cửa hàng | AI reply approval; POS ≥2 location · **shipped** `wave: B6` |
 
 **Phạm vi:** FR-POS · FR-SOCIAL · FR-LIVE · FR-MKTPLACE. **Không** full CRM Journey/Loyalty (nhánh C).
 
@@ -670,6 +670,28 @@ Repo chạy được, design system từ mockup, auth tenant, admin/storefront s
 | GET | `/api/v1/admin/marketplace/outbox` | Jobs + `lag_ms` |
 
 **SRS:** FR-MKTPLACE · BR-004. Live partner: `FEATURE_SHOPEE_LIVE` + `SHOPEE_PARTNER_ID` (chưa gọi API đối tác — vẫn stub push).
+
+---
+
+# 9n. Wave B6 — AI social reply + POS đa cửa hàng
+
+## Exit criteria
+- [x] AI kind `social_reply` high-risk → `pending_approval` (BR-018 · FR-SOC-003).
+- [x] `POST .../inbox/:id/ai-reply` draft; approve + apply → outbound send; không auto-send.
+- [x] POS ≥2 location (seed Q1+Q3); transfer tồn inter-store (`PosStockTransfer`).
+- [x] Location mới không copy full global stock nếu SKU đã phân bổ.
+- [x] Admin social AI panel + POS multi/transfer · Health `wave: B6` · `openapi-b6.yaml` · `scripts/e2e-b6.sh`.
+
+## API (tóm tắt)
+| Method | Path | Mô tả |
+|---|---|---|
+| POST | `/api/v1/admin/social/inbox/:id/ai-reply` | Nháp AI reply |
+| POST | `/api/v1/admin/ai/actions/:id/review` | Approve/reject |
+| POST | `/api/v1/admin/ai/actions/:id/apply` | Gửi outbound |
+| POST | `/api/v1/admin/pos/locations/ensure` | Bootstrap store theo code |
+| POST | `/api/v1/admin/pos/transfers` | Transfer tồn giữa location |
+
+**SRS:** FR-SOC-003 · FR-POS · BR-018.
 
 ---
 

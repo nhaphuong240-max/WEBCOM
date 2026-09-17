@@ -1,0 +1,60 @@
+meta {
+  name: WebCom B6
+}
+
+get {
+  url: {{BASE}}/api/health
+}
+
+get {
+  url: {{BASE}}/api/v1/admin/social/status
+  headers: {
+    x-tenant-id: ten_aura
+    x-actor-id: bruno
+  }
+}
+
+post {
+  url: {{BASE}}/api/v1/admin/social/inbox/{{conversation_id}}/ai-reply
+  headers: {
+    x-tenant-id: ten_aura
+    x-actor-id: bruno
+    content-type: application/json
+  }
+  body: json
+  json: {
+    "tone": "friendly",
+    "upsell_sku_code": "AURA-GLOW-30"
+  }
+}
+
+post {
+  url: {{BASE}}/api/v1/admin/pos/locations/ensure
+  headers: {
+    x-tenant-id: ten_aura
+    x-actor-id: bruno
+    content-type: application/json
+  }
+  body: json
+  json: {
+    "code": "store_q3",
+    "name": "AURA Store Q3",
+    "register_code": "reg_1"
+  }
+}
+
+post {
+  url: {{BASE}}/api/v1/admin/pos/transfers
+  headers: {
+    x-tenant-id: ten_aura
+    x-actor-id: bruno
+    content-type: application/json
+  }
+  body: json
+  json: {
+    "from_location_id": "{{from_location_id}}",
+    "to_location_id": "{{to_location_id}}",
+    "sku_id": "sku_aura_glow_30",
+    "qty": 5
+  }
+}

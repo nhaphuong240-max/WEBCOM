@@ -1,0 +1,37 @@
+openapi: 3.0.3
+info:
+  title: WebCom B6 — AI social reply approval + POS multi-store
+  version: 1.0.0
+paths:
+  /api/health:
+    get:
+      summary: wave B6
+  /api/v1/admin/social/status:
+    get:
+      summary: Includes ai_reply_approval features
+  /api/v1/admin/social/inbox/{id}/ai-reply:
+    post:
+      summary: Draft AI reply (high-risk → pending_approval)
+  /api/v1/admin/social/inbox/{id}/ai-replies:
+    get:
+      summary: List AI reply drafts for conversation
+  /api/v1/admin/ai/actions:
+    post:
+      summary: kind social_reply supported
+  /api/v1/admin/ai/actions/{id}/review:
+    post:
+      summary: Approve/reject AI reply
+  /api/v1/admin/ai/actions/{id}/apply:
+    post:
+      summary: Apply approved social_reply → outbound send
+  /api/v1/admin/pos/status:
+    get:
+      summary: multi_location + stock_transfer
+  /api/v1/admin/pos/locations/ensure:
+    post:
+      summary: Bootstrap store by code (2nd+ starts stock 0)
+  /api/v1/admin/pos/transfers:
+    get:
+      summary: List inter-store transfers
+    post:
+      summary: Transfer stock between locations

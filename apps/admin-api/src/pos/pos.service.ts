@@ -25,7 +25,7 @@ export class PosService {
 
   status() {
     return {
-      wave: 'B3',
+      wave: 'B6',
       features: {
         location_register_shift: true,
         barcode_search: true,
@@ -33,6 +33,8 @@ export class PosService {
         location_inventory_sync: true,
         basic_return: true,
         receipt: true,
+        multi_location: true,
+        stock_transfer: true,
       },
       nfr: { barcode_search_p95_ms_target: 500 },
     };
@@ -647,7 +649,7 @@ export class PosService {
     };
   }
 
-  /** Pull global on_hand into location inventory if missing (bootstrap). */
+  /** Pull missing SKU rows into location — never invent stock on 2nd+ store. */
   async syncLocationStockFromGlobal(tenantId: string, locationId: string) {
     const balances = await this.prisma.db.inventoryBalance.findMany({ where: { tenantId } });
     let upserted = 0;
@@ -655,20 +657,189 @@ export class PosService {
       const existing = await this.prisma.db.locationInventory.findFirst({
         where: { locationId, skuId: b.skuId },
       });
-      if (!existing) {
-        await this.prisma.db.locationInventory.create({
+      if (existing) continue;
+
+      const otherCount = await this.prisma.db.locationInventory.count({
+        where: { tenantId, skuId: b.skuId, locationId: { not: locationId } },
+      });
+      // First location for this SKU inherits global on_hand; additional locations start at 0.
+      const onHand = otherCount === 0 ? b.onHand : 0;
+      await this.prisma.db.locationInventory.create({
+        data: {
+          id: createId('linv'),
+          tenantId,
+          locationId,
+          skuId: b.skuId,
+          onHand,
+        },
+      });
+      upserted += 1;
+    }
+    return { synced: upserted, skus: balances.length };
+  }
+
+  /**
+   * B6 — Transfer stock between locations (location ledger only; global on_hand unchanged).
+   */
+  async transferStock(
+    tenantId: string,
+    input: {
+      from_location_id: string;
+      to_location_id: string;
+      sku_id: string;
+      qty: number;
+      reason?: string;
+    },
+    actorId?: string,
+  ) {
+    if (input.from_location_id === input.to_location_id) {
+      throw AppError.validation('from and to locations must differ');
+    }
+    if (input.qty < 1) throw AppError.validation('qty must be >= 1');
+
+    const [fromLoc, toLoc] = await Promise.all([
+      this.prisma.db.posLocation.findFirst({
+        where: { id: input.from_location_id, tenantId, status: 'active' },
+      }),
+      this.prisma.db.posLocation.findFirst({
+        where: { id: input.to_location_id, tenantId, status: 'active' },
+      }),
+    ]);
+    if (!fromLoc) throw AppError.notFound('From location not found');
+    if (!toLoc) throw AppError.notFound('To location not found');
+
+    const sku = await this.prisma.db.sku.findFirst({ where: { id: input.sku_id, tenantId } });
+    if (!sku) throw AppError.notFound('SKU not found');
+
+    const result = await this.prisma.db.$transaction(async (tx) => {
+      let fromInv = await tx.locationInventory.findFirst({
+        where: { locationId: fromLoc.id, skuId: input.sku_id },
+      });
+      if (!fromInv) {
+        fromInv = await tx.locationInventory.create({
           data: {
             id: createId('linv'),
             tenantId,
-            locationId,
-            skuId: b.skuId,
-            onHand: b.onHand,
+            locationId: fromLoc.id,
+            skuId: input.sku_id,
+            onHand: 0,
           },
         });
-        upserted += 1;
       }
-    }
-    return { synced: upserted, skus: balances.length };
+      if (fromInv.onHand < input.qty) {
+        throw AppError.insufficientStock('Insufficient stock at source location', {
+          sku_id: input.sku_id,
+          on_hand_location: fromInv.onHand,
+          requested: input.qty,
+          location_id: fromLoc.id,
+        });
+      }
+
+      let toInv = await tx.locationInventory.findFirst({
+        where: { locationId: toLoc.id, skuId: input.sku_id },
+      });
+      if (!toInv) {
+        toInv = await tx.locationInventory.create({
+          data: {
+            id: createId('linv'),
+            tenantId,
+            locationId: toLoc.id,
+            skuId: input.sku_id,
+            onHand: 0,
+          },
+        });
+      }
+
+      await tx.locationInventory.update({
+        where: { id: fromInv.id },
+        data: { onHand: fromInv.onHand - input.qty },
+      });
+      await tx.locationInventory.update({
+        where: { id: toInv.id },
+        data: { onHand: toInv.onHand + input.qty },
+      });
+
+      const transfer = await tx.posStockTransfer.create({
+        data: {
+          id: createId('ptr'),
+          tenantId,
+          fromLocationId: fromLoc.id,
+          toLocationId: toLoc.id,
+          skuId: input.sku_id,
+          qty: input.qty,
+          reason: input.reason || 'inter_store_transfer',
+          actorId,
+        },
+      });
+
+      await tx.stockLedger.create({
+        data: {
+          id: createId('ldg'),
+          tenantId,
+          skuId: input.sku_id,
+          delta: 0,
+          reason: 'pos_transfer',
+          refType: 'pos_transfer',
+          refId: transfer.id,
+          actorId,
+        },
+      });
+
+      return {
+        transfer,
+        from_on_hand: fromInv.onHand - input.qty,
+        to_on_hand: toInv.onHand + input.qty,
+      };
+    });
+
+    await this.audit.write({
+      tenantId,
+      actorId,
+      action: 'pos.stock_transfer',
+      entity: 'pos_stock_transfer',
+      entityId: result.transfer.id,
+      payload: {
+        from_location_id: fromLoc.id,
+        to_location_id: toLoc.id,
+        sku_id: input.sku_id,
+        qty: input.qty,
+      },
+    });
+
+    return {
+      id: result.transfer.id,
+      from_location_id: fromLoc.id,
+      from_location_code: fromLoc.code,
+      to_location_id: toLoc.id,
+      to_location_code: toLoc.code,
+      sku_id: input.sku_id,
+      qty: input.qty,
+      from_on_hand: result.from_on_hand,
+      to_on_hand: result.to_on_hand,
+      reason: result.transfer.reason,
+      created_at: result.transfer.createdAt.toISOString(),
+    };
+  }
+
+  async listTransfers(tenantId: string, limit = 50) {
+    const rows = await this.prisma.db.posStockTransfer.findMany({
+      where: { tenantId },
+      orderBy: { createdAt: 'desc' },
+      take: Math.min(Math.max(limit, 1), 100),
+      include: { fromLocation: true, toLocation: true },
+    });
+    return rows.map((r) => ({
+      id: r.id,
+      from_location_id: r.fromLocationId,
+      from_location_code: r.fromLocation.code,
+      to_location_id: r.toLocationId,
+      to_location_code: r.toLocation.code,
+      sku_id: r.skuId,
+      qty: r.qty,
+      reason: r.reason,
+      actor_id: r.actorId,
+      created_at: r.createdAt.toISOString(),
+    }));
   }
 
   private async nextReceiptNo(tenantId: string, locationCode: string) {
@@ -690,14 +861,13 @@ export class PosService {
   ) {
     let loc = await tx.locationInventory.findFirst({ where: { locationId, skuId } });
     if (!loc) {
-      const bal = await tx.inventoryBalance.findFirst({ where: { tenantId, skuId } });
       loc = await tx.locationInventory.create({
         data: {
           id: createId('linv'),
           tenantId,
           locationId,
           skuId,
-          onHand: bal?.onHand ?? 0,
+          onHand: 0,
         },
       });
     }

@@ -57,6 +57,30 @@ async function ensureStore() {
   revalidatePath('/pos');
 }
 
+async function ensureStoreQ3() {
+  'use server';
+  await apiJson('/v1/admin/pos/locations/ensure', 'POST', {
+    code: 'store_q3',
+    name: 'AURA Store Q3',
+    address: '90 Le Loi',
+    city: 'HCM',
+    register_code: 'reg_1',
+  });
+  revalidatePath('/pos');
+}
+
+async function transferStock(formData: FormData) {
+  'use server';
+  await apiJson('/v1/admin/pos/transfers', 'POST', {
+    from_location_id: String(formData.get('from_location_id')),
+    to_location_id: String(formData.get('to_location_id')),
+    sku_id: String(formData.get('sku_id') || SKU),
+    qty: Number(formData.get('qty') || 10),
+    reason: String(formData.get('reason') || 'UI transfer'),
+  });
+  revalidatePath('/pos');
+}
+
 async function openShift(formData: FormData) {
   'use server';
   await apiJson('/v1/admin/pos/shifts/open', 'POST', {
@@ -113,6 +137,13 @@ export default async function PosPage() {
   let lookup: Lookup | null = null;
   let sales: Sale[] = [];
   let stock: Array<{ sku_id: string; on_hand_location: number; available_global: number; consistent: boolean }> = [];
+  let transfers: Array<{
+    id: string;
+    from_location_code: string;
+    to_location_code: string;
+    qty: number;
+    sku_id: string;
+  }> = [];
   let error = '';
   let registerId = '';
   let locationId = '';
@@ -133,6 +164,7 @@ export default async function PosPage() {
     if (shift?.id) {
       sales = await apiGet(`/v1/admin/pos/sales?shift_id=${shift.id}`);
     }
+    transfers = await apiGet('/v1/admin/pos/transfers?limit=10');
   } catch (e) {
     error = e instanceof Error ? e.message : 'API error';
   }
@@ -141,8 +173,8 @@ export default async function PosPage() {
     <>
       <PageHeader
         title="POS"
-        description="B3 — 1 cửa hàng · barcode sell · shift · tồn location đồng bộ web · đổi trả cơ bản."
-        actions={<Badge tone="accent">B3</Badge>}
+        description="B6 — ≥2 cửa hàng · transfer tồn · barcode sell · shift · đổi trả."
+        actions={<Badge tone="accent">B6</Badge>}
       />
       {error ? (
         <Panel title="API">
@@ -150,26 +182,71 @@ export default async function PosPage() {
         </Panel>
       ) : null}
 
-      <Panel title="Cửa hàng / quầy">
-        {!locations.length ? (
+      <Panel title="Cửa hàng / quầy (≥2)">
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 12 }}>
           <form action={ensureStore}>
             <Button type="submit" variant="primary">
-              Tạo Store Q1 + Register 1
+              Ensure Store Q1
             </Button>
           </form>
-        ) : (
-          <ul style={{ fontSize: 13, listStyle: 'none', padding: 0 }}>
-            {locations.map((l) => (
-              <li key={l.id} style={{ marginBottom: 8 }}>
-                <strong>{l.name}</strong> · {l.code}
-                <div style={{ opacity: 0.7 }}>
-                  Registers: {l.registers.map((r) => `${r.code} (${r.id.slice(0, 12)}…)`).join(', ')}
-                </div>
+          <form action={ensureStoreQ3}>
+            <Button type="submit">Ensure Store Q3</Button>
+          </form>
+        </div>
+        <ul style={{ fontSize: 13, listStyle: 'none', padding: 0 }}>
+          {locations.map((l) => (
+            <li key={l.id} style={{ marginBottom: 8 }}>
+              <strong>{l.name}</strong> · {l.code}
+              <div style={{ opacity: 0.7 }}>
+                Registers: {l.registers.map((r) => `${r.code} (${r.id.slice(0, 12)}…)`).join(', ')}
+              </div>
+            </li>
+          ))}
+          {!locations.length ? <li style={{ opacity: 0.6 }}>Chưa có location.</li> : null}
+        </ul>
+      </Panel>
+
+      {locations.length >= 2 ? (
+        <Panel title="Transfer tồn giữa cửa hàng">
+          <form action={transferStock} style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'end' }}>
+            <label style={{ fontSize: 12, display: 'grid', gap: 4 }}>
+              From
+              <select name="from_location_id" defaultValue={locations[0].id} style={{ padding: 8 }}>
+                {locations.map((l) => (
+                  <option key={l.id} value={l.id}>
+                    {l.code}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label style={{ fontSize: 12, display: 'grid', gap: 4 }}>
+              To
+              <select name="to_location_id" defaultValue={locations[1]?.id} style={{ padding: 8 }}>
+                {locations.map((l) => (
+                  <option key={l.id} value={l.id}>
+                    {l.code}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <input type="hidden" name="sku_id" value={SKU} />
+            <label style={{ fontSize: 12, display: 'grid', gap: 4 }}>
+              Qty
+              <input name="qty" type="number" defaultValue={10} style={{ padding: 8, width: 80 }} />
+            </label>
+            <Button type="submit" variant="primary">
+              Transfer
+            </Button>
+          </form>
+          <ul style={{ listStyle: 'none', padding: 0, marginTop: 12, fontSize: 13 }}>
+            {transfers.map((t) => (
+              <li key={t.id} style={{ borderTop: '1px solid var(--ptt-line)', padding: '6px 0' }}>
+                {t.from_location_code} → {t.to_location_code} · {t.qty} × {t.sku_id}
               </li>
             ))}
           </ul>
-        )}
-      </Panel>
+        </Panel>
+      ) : null}
 
       <Panel title="Ca làm việc">
         {shift ? (

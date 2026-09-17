@@ -53,6 +53,7 @@ model Tenant {
   posShifts PosShift[]
   posSales PosSale[]
   locationInventories LocationInventory[]
+  posStockTransfers PosStockTransfer[]
   liveSessions LiveSession[]
   liveComments LiveComment[]
   liveAlerts LiveAlert[]
@@ -777,12 +778,12 @@ model CwvSnapshot {
   @@map("cwv_snapshots")
 }
 
-/// W4/A6 — Guardrailed AI assist actions
+/// W4/A6/B6 — Guardrailed AI assist actions
 model AiAction {
   id                 String     @id @default(uuid())
   tenantId           String     @map("tenant_id")
   storefrontId       String?    @map("storefront_id")
-  /// theme_match_explain | headline_variants | shopping_qa
+  /// theme_match_explain | headline_variants | shopping_qa | social_reply
   kind               String
   /// low | high
   risk               String     @default("low")
@@ -1115,7 +1116,7 @@ model SocialOrderDraft {
   @@map("social_order_drafts")
 }
 
-/// B3 — POS store location (1 store MVP) · FR-POS
+/// B3/B6 — POS store location (multi-store) · FR-POS
 model PosLocation {
   id          String   @id @default(uuid())
   tenantId    String   @map("tenant_id")
@@ -1133,10 +1134,32 @@ model PosLocation {
   shifts      PosShift[]
   sales       PosSale[]
   inventories LocationInventory[]
+  transfersOut PosStockTransfer[] @relation("PosTransferFrom")
+  transfersIn  PosStockTransfer[] @relation("PosTransferTo")
 
   @@unique([tenantId, code])
   @@index([tenantId, status])
   @@map("pos_locations")
+}
+
+/// B6 — Inter-location stock transfer (no global on_hand change)
+model PosStockTransfer {
+  id             String   @id @default(uuid())
+  tenantId       String   @map("tenant_id")
+  fromLocationId String   @map("from_location_id")
+  toLocationId   String   @map("to_location_id")
+  skuId          String   @map("sku_id")
+  qty            Int
+  reason         String   @default("")
+  actorId        String?  @map("actor_id")
+  createdAt      DateTime @default(now()) @map("created_at")
+  tenant         Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  fromLocation   PosLocation @relation("PosTransferFrom", fields: [fromLocationId], references: [id], onDelete: Cascade)
+  toLocation     PosLocation @relation("PosTransferTo", fields: [toLocationId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, createdAt])
+  @@index([tenantId, skuId])
+  @@map("pos_stock_transfers")
 }
 
 /// B3 — Cash register / terminal

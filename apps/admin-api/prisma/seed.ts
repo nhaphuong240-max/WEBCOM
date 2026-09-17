@@ -143,9 +143,11 @@ async function main() {
     update: { onHand: 100, reserved: 0 },
   });
 
-  // B3: POS 1 store + register + location stock
+  // B3/B6: POS ≥2 stores + location stock (sum = global 100)
   const posLocId = 'ploc_aura_q1';
   const posRegId = 'preg_aura_1';
+  const posLoc2Id = 'ploc_aura_q3';
+  const posReg2Id = 'preg_aura_q3_1';
   await prisma.posLocation.upsert({
     where: { tenantId_code: { tenantId, code: 'store_q1' } },
     create: {
@@ -173,8 +175,39 @@ async function main() {
   });
   await prisma.locationInventory.upsert({
     where: { locationId_skuId: { locationId: posLocId, skuId } },
-    create: { id: 'linv_glow_q1', tenantId, locationId: posLocId, skuId, onHand: 100 },
-    update: { onHand: 100 },
+    create: { id: 'linv_glow_q1', tenantId, locationId: posLocId, skuId, onHand: 60 },
+    update: { onHand: 60 },
+  });
+
+  await prisma.posLocation.upsert({
+    where: { tenantId_code: { tenantId, code: 'store_q3' } },
+    create: {
+      id: posLoc2Id,
+      tenantId,
+      code: 'store_q3',
+      name: 'AURA Store Q3',
+      address: '90 Le Loi',
+      city: 'HCM',
+      status: 'active',
+    },
+    update: { name: 'AURA Store Q3', status: 'active' },
+  });
+  await prisma.posRegister.upsert({
+    where: { locationId_code: { locationId: posLoc2Id, code: 'reg_1' } },
+    create: {
+      id: posReg2Id,
+      tenantId,
+      locationId: posLoc2Id,
+      code: 'reg_1',
+      name: 'Register 1',
+      status: 'active',
+    },
+    update: { status: 'active' },
+  });
+  await prisma.locationInventory.upsert({
+    where: { locationId_skuId: { locationId: posLoc2Id, skuId } },
+    create: { id: 'linv_glow_q3', tenantId, locationId: posLoc2Id, skuId, onHand: 40 },
+    update: { onHand: 40 },
   });
 
   // W2: Aura Commerce Lite theme + nav + home + voucher

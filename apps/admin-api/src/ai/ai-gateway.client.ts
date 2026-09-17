@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 
-export type AiKind = 'theme_match_explain' | 'headline_variants' | 'shopping_qa';
+export type AiKind = 'theme_match_explain' | 'headline_variants' | 'shopping_qa' | 'social_reply';
 
 export type GatewayGenerateResult = {
   request_id: string;
@@ -24,6 +24,10 @@ function featureAi() {
   return v === '1' || v.toLowerCase() === 'true';
 }
 
+function isHighRisk(kind: AiKind) {
+  return kind === 'shopping_qa' || kind === 'social_reply';
+}
+
 @Injectable()
 export class AiGatewayClient {
   private readonly log = new Logger(AiGatewayClient.name);
@@ -39,6 +43,7 @@ export class AiGatewayClient {
       mode: process.env.AI_GATEWAY_URL?.trim() ? 'fastapi' : 'nest_stub',
       budget_cap_usd: Number(process.env.AI_TENANT_BUDGET_USD || 5),
       model: process.env.AI_MODEL || 'stub-llm-v1',
+      kinds: ['theme_match_explain', 'headline_variants', 'shopping_qa', 'social_reply'],
     };
   }
 
@@ -93,9 +98,15 @@ export class AiGatewayClient {
     kind: AiKind;
     payload: Record<string, unknown>;
   }): GatewayGenerateResult {
-    const risk: 'low' | 'high' = input.kind === 'shopping_qa' ? 'high' : 'low';
+    const risk: 'low' | 'high' = isHighRisk(input.kind) ? 'high' : 'low';
     const cost =
-      input.kind === 'shopping_qa' ? 0.004 : input.kind === 'headline_variants' ? 0.0015 : 0.002;
+      input.kind === 'shopping_qa'
+        ? 0.004
+        : input.kind === 'social_reply'
+          ? 0.0035
+          : input.kind === 'headline_variants'
+            ? 0.0015
+            : 0.002;
     let output: Record<string, unknown>;
     let guardrails: string[];
     let rag_hits: GatewayGenerateResult['rag_hits'] = [];
@@ -118,6 +129,40 @@ export class AiGatewayClient {
         policy: { auto_publish: false, price_mutation: false, refund_mutation: false },
       };
       guardrails = ['draft_only', 'no_auto_publish', 'no_price_change'];
+    } else if (input.kind === 'social_reply') {
+      const inbound = String(input.payload.inbound_preview || input.payload.message || '');
+      const contact = String(input.payload.contact_name || 'bạn');
+      const upsell = String(input.payload.upsell_sku_code || 'AURA-GLOW-30');
+      rag_hits = [
+        {
+          id: 'kb_social',
+          score: 1,
+          text: 'AI reply cần human approval trước khi gửi kênh. Không cam kết giá/refund.',
+        },
+      ];
+      const draft = `Chào ${contact}! Cảm ơn tin nhắn «${inbound.slice(0, 80)}». Em gửi thêm gợi ý ${upsell} — shop sẽ xác nhận chi tiết. (Nháp AI — chờ duyệt)`;
+      output = {
+        reply_draft: draft,
+        answer_draft: draft,
+        upsell_sku_code: upsell,
+        intent: String(input.payload.intent || 'general'),
+        handoff_suggested: false,
+        guardrail: 'High-risk social reply: approval trước khi gửi. Không tự commit giá/refund.',
+        forbidden_tools: ['send_without_approval', 'update_price', 'issue_refund'],
+        policy: {
+          auto_publish: false,
+          price_mutation: false,
+          refund_mutation: false,
+          auto_send: false,
+        },
+      };
+      guardrails = [
+        'high_risk_approval_required',
+        'no_auto_send',
+        'no_price_change',
+        'no_refund',
+        'human_handoff_available',
+      ];
     } else {
       const question = String(input.payload.question || '');
       rag_hits = [

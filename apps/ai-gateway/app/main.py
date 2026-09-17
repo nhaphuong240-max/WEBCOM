@@ -15,7 +15,7 @@ from pydantic import BaseModel, Field
 
 app = FastAPI(title="WebCom AI Gateway", version="1.0.0", docs_url="/docs")
 
-Kind = Literal["theme_match_explain", "headline_variants", "shopping_qa"]
+Kind = Literal["theme_match_explain", "headline_variants", "shopping_qa", "social_reply"]
 
 # In-process budget ledger: tenant_id -> spent USD (month key ignored for stub simplicity)
 _BUDGET: dict[str, float] = {}
@@ -24,6 +24,7 @@ _COST = {
     "theme_match_explain": 0.002,
     "headline_variants": 0.0015,
     "shopping_qa": 0.004,
+    "social_reply": 0.0035,
 }
 
 # Qdrant-stub knowledge (tenant-scoped ACL by filtering tenant_id==* or matching)
@@ -102,7 +103,7 @@ def health():
     return {
         "status": "ok",
         "service": "ai-gateway",
-        "wave": "A6",
+        "wave": "B6",
         "qdrant": "stub",
         "model": os.getenv("AI_MODEL", "stub-llm-v1"),
         "time": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
@@ -142,7 +143,7 @@ def generate(
     t0 = time.time()
     cost = _COST[req.kind]
     spent_after = _charge(req.tenant_id, cost)
-    risk: Literal["low", "high"] = "high" if req.kind == "shopping_qa" else "low"
+    risk: Literal["low", "high"] = "high" if req.kind in ("shopping_qa", "social_reply") else "low"
     status_hint: Literal["draft", "pending_approval"] = "pending_approval" if risk == "high" else "draft"
     rag_hits: list[dict[str, Any]] = []
     model = os.getenv("AI_MODEL", "stub-llm-v1")
@@ -173,6 +174,32 @@ def generate(
         }
         guardrails = ["draft_only", "no_auto_publish", "no_price_change"]
         prompt_tokens, completion_tokens = 90, 100
+    elif req.kind == "social_reply":
+        inbound = str(req.payload.get("inbound_preview") or req.payload.get("message") or "")
+        contact = str(req.payload.get("contact_name") or "bạn")
+        upsell = str(req.payload.get("upsell_sku_code") or "AURA-GLOW-30")
+        rag_hits = _rag(req.tenant_id, inbound or "reply policy")
+        draft = (
+            f"Chào {contact}! Cảm ơn tin nhắn «{inbound[:80]}». "
+            f"Em gửi thêm gợi ý {upsell} — shop sẽ xác nhận chi tiết. (Nháp AI — chờ duyệt)"
+        )
+        output = {
+            "reply_draft": draft,
+            "answer_draft": draft,
+            "upsell_sku_code": upsell,
+            "intent": str(req.payload.get("intent") or "general"),
+            "handoff_suggested": False,
+            "guardrail": "High-risk social reply: approval trước khi gửi. Không tự commit giá/refund.",
+            "forbidden_tools": ["send_without_approval", "update_price", "issue_refund"],
+        }
+        guardrails = [
+            "high_risk_approval_required",
+            "no_auto_send",
+            "no_price_change",
+            "no_refund",
+            "human_handoff_available",
+        ]
+        prompt_tokens, completion_tokens = 180, 120
     else:
         question = str(req.payload.get("question") or "")
         rag_hits = _rag(req.tenant_id, question)
@@ -200,6 +227,7 @@ def generate(
         "auto_publish": False,
         "price_mutation": False,
         "refund_mutation": False,
+        "auto_send": False,
     }
 
     return GenerateResponse(

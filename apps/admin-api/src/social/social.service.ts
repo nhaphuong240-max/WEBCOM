@@ -1,8 +1,9 @@
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable, forwardRef } from '@nestjs/common';
 import { AppError, createId } from '@ptt/shared-kernel';
 import { Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { AuditService } from '../audit/audit.service';
+import { AiService } from '../ai/ai.service';
 import { SocialConnectors, type SocialProvider } from './social.connectors';
 
 const PROVIDERS = ['meta', 'zalo'] as const;
@@ -21,17 +22,23 @@ export class SocialService {
     private readonly prisma: PrismaService,
     private readonly audit: AuditService,
     private readonly connectors: SocialConnectors,
+    @Inject(forwardRef(() => AiService))
+    private readonly ai: AiService,
   ) {}
 
   status() {
     return {
-      wave: 'B2',
+      wave: 'B6',
       features: {
         channel_binding: true,
         unified_inbox: true,
         comment_to_order: true,
         messenger_cart_stub: true,
         draft_convert_oms: true,
+        ai_reply: true,
+        ai_reply_approval: true,
+        ai_upsell_hint: true,
+        human_handoff: true,
       },
       ...this.connectors.status(),
     };
@@ -294,6 +301,95 @@ export class SocialService {
       payload: { conversation_id: id, mode: sent.mode },
     });
     return this.mapMessage(msg);
+  }
+
+  /**
+   * B6 FR-SOC-003 — Draft AI reply (high-risk → pending_approval). Never auto-sends.
+   */
+  async suggestAiReply(
+    tenantId: string,
+    conversationId: string,
+    input: {
+      tone?: string;
+      upsell_sku_code?: string;
+      intent?: string;
+      storefront_id?: string;
+    },
+    actorId?: string,
+  ) {
+    const conv = await this.prisma.db.inboxConversation.findFirst({
+      where: { id: conversationId, tenantId },
+      include: {
+        channelAccount: true,
+        messages: { orderBy: { createdAt: 'desc' }, take: 5 },
+      },
+    });
+    if (!conv) throw AppError.notFound('Conversation not found');
+
+    const lastInbound =
+      conv.messages.find((m) => m.direction === 'inbound') || conv.messages[0];
+    const inboundPreview = lastInbound?.body || conv.lastMessagePreview || '';
+
+    const action = await this.ai.createAction(
+      tenantId,
+      {
+        storefrontId: input.storefront_id || conv.channelAccount.storefrontId || undefined,
+        kind: 'social_reply',
+        payload: {
+          conversation_id: conversationId,
+          channel_account_id: conv.channelAccountId,
+          provider: conv.channelAccount.provider,
+          contact_name: conv.contactName || 'bạn',
+          contact_handle: conv.contactHandle || '',
+          inbound_preview: inboundPreview,
+          tone: input.tone || 'friendly',
+          upsell_sku_code: input.upsell_sku_code || 'AURA-GLOW-30',
+          intent: input.intent || 'general',
+        },
+      },
+      actorId,
+    );
+
+    await this.audit.write({
+      tenantId,
+      actorId,
+      action: 'social.ai_reply_suggest',
+      entity: 'ai_action',
+      entityId: action.id,
+      payload: { conversation_id: conversationId, status: action.status },
+    });
+
+    return {
+      conversation_id: conversationId,
+      ai_action: action,
+      requires_approval: action.status === 'pending_approval',
+    };
+  }
+
+  async listAiReplies(tenantId: string, conversationId: string) {
+    const rows = await this.prisma.db.aiAction.findMany({
+      where: {
+        tenantId,
+        kind: 'social_reply',
+      },
+      orderBy: { createdAt: 'desc' },
+      take: 30,
+    });
+    return rows
+      .filter((r) => {
+        const input = r.input as Record<string, unknown>;
+        return String(input.conversation_id || '') === conversationId;
+      })
+      .map((r) => ({
+        id: r.id,
+        status: r.status,
+        risk: r.risk,
+        reply_draft: (r.output as Record<string, unknown>)?.reply_draft
+          || (r.output as Record<string, unknown>)?.answer_draft
+          || null,
+        reviewed_by: r.reviewedBy,
+        created_at: r.createdAt.toISOString(),
+      }));
   }
 
   /**

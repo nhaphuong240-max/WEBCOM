@@ -32,7 +32,7 @@ export class AiController {
     const parsed = z
       .object({
         storefront_id: z.string().optional(),
-        kind: z.enum(['theme_match_explain', 'headline_variants', 'shopping_qa']),
+        kind: z.enum(['theme_match_explain', 'headline_variants', 'shopping_qa', 'social_reply']),
         payload: z.record(z.unknown()).default({}),
       })
       .safeParse(body);

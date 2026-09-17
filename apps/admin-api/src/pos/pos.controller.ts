@@ -158,4 +158,24 @@ export class PosController {
     if (!parsed.success) throw AppError.validation('Invalid return', parsed.error.flatten());
     return this.pos.createReturn(ctx.tenantId, parsed.data, ctx.actorId);
   }
+
+  @Post('v1/admin/pos/transfers')
+  transfer(@ReqContext() ctx: RequestContext, @Body() body: unknown) {
+    const parsed = z
+      .object({
+        from_location_id: z.string().min(1),
+        to_location_id: z.string().min(1),
+        sku_id: z.string().min(1),
+        qty: z.number().int().positive(),
+        reason: z.string().optional(),
+      })
+      .safeParse(body);
+    if (!parsed.success) throw AppError.validation('Invalid transfer', parsed.error.flatten());
+    return this.pos.transferStock(ctx.tenantId, parsed.data, ctx.actorId);
+  }
+
+  @Get('v1/admin/pos/transfers')
+  listTransfers(@ReqContext() ctx: RequestContext, @Query('limit') limit?: string) {
+    return this.pos.listTransfers(ctx.tenantId, limit ? Number(limit) : undefined);
+  }
 }

@@ -94,6 +94,26 @@ export class SocialController {
     return this.social.reply(ctx.tenantId, id, parsed.data.body, ctx.actorId);
   }
 
+  /** B6 — AI reply draft (pending_approval); send via AI approve+apply */
+  @Post('v1/admin/social/inbox/:id/ai-reply')
+  aiReply(@ReqContext() ctx: RequestContext, @Param('id') id: string, @Body() body: unknown) {
+    const parsed = z
+      .object({
+        tone: z.string().optional(),
+        upsell_sku_code: z.string().optional(),
+        intent: z.string().optional(),
+        storefront_id: z.string().optional(),
+      })
+      .safeParse(body ?? {});
+    if (!parsed.success) throw AppError.validation('Invalid ai-reply', parsed.error.flatten());
+    return this.social.suggestAiReply(ctx.tenantId, id, parsed.data, ctx.actorId);
+  }
+
+  @Get('v1/admin/social/inbox/:id/ai-replies')
+  listAiReplies(@ReqContext() ctx: RequestContext, @Param('id') id: string) {
+    return this.social.listAiReplies(ctx.tenantId, id);
+  }
+
   @Post('v1/admin/social/webhooks/:provider')
   webhook(
     @ReqContext() ctx: RequestContext,
