@@ -129,16 +129,21 @@ async function convertDraft(formData: FormData) {
   revalidatePath('/orders');
 }
 
-export default async function ConversationPage({ params }: { params: { id: string } }) {
+export default async function ConversationPage({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
+  const { id } = await params;
   let detail: Detail | null = null;
   let products: ProductPick[] = [];
   let drafts: Draft[] = [];
   let error = '';
   try {
-    detail = await apiGet(`/v1/admin/social/inbox/${params.id}`);
+    detail = await apiGet(`/v1/admin/social/inbox/${id}`);
     const prod = await apiGet<{ items: ProductPick[] }>('/v1/admin/social/products?q=glow');
     products = prod.items || [];
-    drafts = await apiGet(`/v1/admin/social/drafts?conversation_id=${params.id}`);
+    drafts = await apiGet(`/v1/admin/social/drafts?conversation_id=${id}`);
   } catch (e) {
     error = e instanceof Error ? e.message : 'API error';
   }
