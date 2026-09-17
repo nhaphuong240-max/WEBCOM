@@ -1,0 +1,67 @@
+openapi: 3.0.3
+info:
+  title: PTT WebCom API — W2 Website Foundation
+  version: 2.0.0-w2
+servers:
+  - url: http://127.0.0.1:3001/api
+  - url: https://webecom.ngoinhahomnay.vn/api
+paths:
+  /v1/storefronts/{idOrSlug}/runtime:
+    get:
+      summary: Theme + nav + home JSON for SSR
+      parameters:
+        - name: idOrSlug
+          in: path
+          required: true
+          schema: { type: string }
+        - name: x-tenant-id
+          in: header
+          required: true
+          schema: { type: string }
+      responses:
+        '200': { description: Runtime payload }
+  /v1/events:
+    post:
+      summary: Track storefront funnel event
+      responses:
+        '201': { description: Stored }
+  /v1/shipping/quotes:
+    get:
+      summary: Carrier stubs
+      responses:
+        '200': { description: Quotes }
+  /v1/vouchers/validate:
+    post:
+      summary: Validate voucher code
+      responses:
+        '200': { description: Discount }
+  /v1/leads:
+    post:
+      summary: Corporate GTM lead
+      responses:
+        '201': { description: Created }
+  /v1/catalog/products:
+    get:
+      summary: Catalog with q/collection/sort
+      parameters:
+        - name: q
+          in: query
+          schema: { type: string }
+        - name: collection
+          in: query
+          schema: { type: string }
+        - name: sort
+          in: query
+          schema: { type: string, enum: [price_asc, price_desc, newest] }
+      responses:
+        '200': { description: Products }
+  /v1/admin/storefronts/{id}/ensure-aura-lite:
+    post:
+      summary: Install/publish Aura Commerce Lite
+      responses:
+        '200': { description: Runtime }
+  /v1/admin/storefronts/{id}/status:
+    post:
+      summary: draft|staging|published|maintenance
+      responses:
+        '200': { description: Updated }

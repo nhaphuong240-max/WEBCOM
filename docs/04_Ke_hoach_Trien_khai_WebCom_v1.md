@@ -310,11 +310,13 @@ Repo chạy được, design system từ mockup, auth tenant, admin/storefront s
 `Storefront`, `Theme` (1 built-in), `ThemeVersion`, `Page`/`PageVersion` (home + templates hệ thống), `MediaAsset`, `NavigationMenu`, `StorefrontEvent` (raw).
 
 ## 6.4. Exit criteria (SRS 15.3 subset)
-- [ ] Merchant seed AURA: domain staging, mua được trên mobile.
-- [ ] Desktop/mobile checkout idempotent.
-- [ ] SEO basic + consent trước pixel.
-- [ ] LCP/INP/CLS đo được (chưa gate publish).
-- [ ] Soft launch ≥ 1–3 merchant nội bộ / design partner.
+- [x] Merchant seed AURA: domain staging, mua được trên mobile (storefront routes + COD).
+- [x] Desktop/mobile checkout idempotent (W1 Idempotency-Key + W2 UX).
+- [x] SEO basic + consent trước pixel (`sitemap`/`robots`/Product JSON-LD + ConsentBanner).
+- [x] LCP/INP/CLS đo được (chưa gate publish) — đo bằng Lighthouse/CWV tools trên staging.
+- [ ] Soft launch ≥ 1–3 merchant nội bộ / design partner (ops).
+
+**Trạng thái W2 (2026-09):** Theme/Page/Nav/Events/Voucher/Lead schema; Aura Commerce Lite runtime; storefront home/PDP/collection/cart/checkout/account; corporate lead form; admin theme+analytics.
 
 ---
 

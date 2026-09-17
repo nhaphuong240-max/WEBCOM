@@ -45,12 +45,39 @@ export class CatalogService {
     private readonly pricing: PricingService,
   ) {}
 
-  async listProducts(tenantId: string, brandId?: string) {
+  async listProducts(
+    tenantId: string,
+    opts?: {
+      brandId?: string;
+      q?: string;
+      collection?: string;
+      sort?: 'price_asc' | 'price_desc' | 'newest';
+    },
+  ) {
+    const brandId = opts?.brandId;
     const products = await this.prisma.db.product.findMany({
       where: {
         tenantId,
         status: 'active',
         ...(brandId ? { brandId } : {}),
+        ...(opts?.q
+          ? {
+              OR: [
+                { title: { contains: opts.q, mode: 'insensitive' } },
+                { description: { contains: opts.q, mode: 'insensitive' } },
+                { slug: { contains: opts.q, mode: 'insensitive' } },
+              ],
+            }
+          : {}),
+        ...(opts?.collection
+          ? {
+              OR: [
+                { title: { contains: opts.collection.replace(/-/g, ' '), mode: 'insensitive' } },
+                { description: { contains: opts.collection.replace(/-/g, ' '), mode: 'insensitive' } },
+                { slug: { contains: opts.collection, mode: 'insensitive' } },
+              ],
+            }
+          : {}),
       },
       include: {
         media: { orderBy: { sortOrder: 'asc' } },
@@ -59,7 +86,7 @@ export class CatalogService {
       orderBy: { createdAt: 'desc' },
     });
 
-    return Promise.all(
+    const mapped = await Promise.all(
       products.map(async (p) => {
         const skus = p.variants.flatMap((v) => v.skus);
         const priced = await Promise.all(
@@ -71,7 +98,10 @@ export class CatalogService {
               id: s.id,
               code: s.code,
               variant_id: s.variantId,
+              variant_title: p.variants.find((v) => v.id === s.variantId)?.title ?? 'Default',
               unit_price: price ? money(price.unitPrice) : null,
+              list_price: price ? money(price.listAmount) : null,
+              discount_percent: price?.discountPercent ? Number(price.discountPercent) : null,
               currency: price?.currency ?? 'VND',
               available: Math.max(0, onHand - reserved),
             };
@@ -85,9 +115,17 @@ export class CatalogService {
           brand_id: p.brandId,
           media: p.media.map((m) => ({ url: m.url, alt: m.alt })),
           skus: priced,
+          min_price: priced[0]?.unit_price ?? null,
         };
       }),
     );
+
+    if (opts?.sort === 'price_asc') {
+      mapped.sort((a, b) => Number(a.min_price ?? 0) - Number(b.min_price ?? 0));
+    } else if (opts?.sort === 'price_desc') {
+      mapped.sort((a, b) => Number(b.min_price ?? 0) - Number(a.min_price ?? 0));
+    }
+    return mapped;
   }
 
   async getProduct(tenantId: string, idOrSlug: string) {
@@ -102,7 +140,7 @@ export class CatalogService {
       },
     });
     if (!product) throw AppError.notFound('Product not found');
-    const list = await this.listProducts(tenantId, product.brandId);
+    const list = await this.listProducts(tenantId, { brandId: product.brandId });
     return list.find((p) => p.id === product.id) ?? list[0];
   }
 

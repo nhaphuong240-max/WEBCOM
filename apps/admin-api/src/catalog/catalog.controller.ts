@@ -24,8 +24,19 @@ export class CatalogController {
 
   @Get('v1/catalog/products')
   @UseGuards(StorefrontContextGuard)
-  listStorefront(@ReqContext() ctx: RequestContext, @Query('brand_id') brandId?: string) {
-    return this.catalog.listProducts(ctx.tenantId, brandId ?? ctx.brandId);
+  listStorefront(
+    @ReqContext() ctx: RequestContext,
+    @Query('brand_id') brandId?: string,
+    @Query('q') q?: string,
+    @Query('collection') collection?: string,
+    @Query('sort') sort?: 'price_asc' | 'price_desc' | 'newest',
+  ) {
+    return this.catalog.listProducts(ctx.tenantId, {
+      brandId: brandId ?? ctx.brandId,
+      q,
+      collection,
+      sort,
+    });
   }
 
   @Get('v1/catalog/products/:idOrSlug')
@@ -36,8 +47,12 @@ export class CatalogController {
 
   @Get('v1/admin/products')
   @UseGuards(TenantAuthGuard)
-  listAdmin(@ReqContext() ctx: RequestContext, @Query('brand_id') brandId?: string) {
-    return this.catalog.listProducts(ctx.tenantId, brandId ?? ctx.brandId);
+  listAdmin(
+    @ReqContext() ctx: RequestContext,
+    @Query('brand_id') brandId?: string,
+    @Query('q') q?: string,
+  ) {
+    return this.catalog.listProducts(ctx.tenantId, { brandId: brandId ?? ctx.brandId, q });
   }
 
   @Post('v1/admin/products')

@@ -1,125 +1,27 @@
-'use client';
-
-import { useEffect, useMemo, useState, useTransition } from 'react';
-import { Badge, Button, Input, PttMark } from '@ptt/ui';
 import Link from 'next/link';
-import { storeApi, STOREFRONT_ID } from '../lib/api';
+import { StoreShell } from '../components/StoreShell';
+import { formatVnd, getProducts, getRuntime } from '../lib/api';
+import { AddToCartButton } from '../components/AddToCartButton';
 
-type Product = {
-  id: string;
-  title: string;
-  description: string;
-  skus: Array<{ id: string; code: string; unit_price: string | null; available: number }>;
-};
+export const dynamic = 'force-dynamic';
 
-type Cart = {
-  id: string;
-  lines: Array<{ id: string; title: string; qty: number; line_total: string }>;
-  total: string;
-};
-
-type Order = { order_id: string; total: string; status: string };
-
-export default function StorefrontHome() {
-  const [products, setProducts] = useState<Product[]>([]);
-  const [cart, setCart] = useState<Cart | null>(null);
-  const [order, setOrder] = useState<Order | null>(null);
-  const [error, setError] = useState('');
-  const [pending, start] = useTransition();
-  const [ship, setShip] = useState({
-    name: 'Nguyen Van A',
-    phone: '0901234567',
-    address: '12 Nguyen Hue, Q1',
-    city: 'HCM',
-  });
-
-  const qty = useMemo(() => cart?.lines.reduce((s, l) => s + l.qty, 0) ?? 0, [cart]);
-
-  useEffect(() => {
-    storeApi<Product[]>('/v1/catalog/products')
-      .then(setProducts)
-      .catch((e) => setError(e.message));
-  }, []);
-
-  function ensureCart(cb: (cartId: string) => Promise<void>) {
-    start(async () => {
-      try {
-        setError('');
-        let id = cart?.id;
-        if (!id) {
-          const created = await storeApi<Cart>('/v1/carts', {
-            method: 'POST',
-            body: JSON.stringify({ storefront_id: STOREFRONT_ID }),
-          });
-          setCart(created);
-          id = created.id;
-        }
-        await cb(id);
-        const priced = await storeApi<Cart>(`/v1/carts/${id}`);
-        setCart(priced);
-      } catch (e) {
-        setError(e instanceof Error ? e.message : 'Error');
-      }
-    });
-  }
-
-  function addToCart(skuId: string) {
-    ensureCart(async (cartId) => {
-      await storeApi(`/v1/carts/${cartId}/items`, {
-        method: 'POST',
-        body: JSON.stringify({ sku_id: skuId, qty: 1 }),
-      });
-    });
-  }
-
-  function checkout() {
-    if (!cart) return;
-    start(async () => {
-      try {
-        setError('');
-        const key = `demo-${cart.id}-${Date.now()}`;
-        const result = await storeApi<Order>('/v1/checkout', {
-          method: 'POST',
-          idempotencyKey: key,
-          body: JSON.stringify({
-            cart_id: cart.id,
-            payment_method: 'COD',
-            shipping_name: ship.name,
-            shipping_phone: ship.phone,
-            shipping_address: ship.address,
-            shipping_city: ship.city,
-            client_total: 1,
-          }),
-        });
-        setOrder(result);
-        setCart(null);
-      } catch (e) {
-        setError(e instanceof Error ? e.message : 'Checkout failed');
-      }
-    });
-  }
+export default async function HomePage() {
+  const [runtime, products] = await Promise.all([getRuntime(), getProducts()]);
+  const hero = (runtime.home?.content as { hero?: Record<string, string> })?.hero;
+  const trust = (runtime.home?.content as { trust?: string[] })?.trust ?? [
+    'COD toàn quốc',
+    'Đổi trả 7 ngày',
+    'Hàng chính hãng',
+  ];
+  const collections =
+    ((runtime.theme.config as { collections?: Array<{ slug: string; title: string }> })
+      ?.collections) ?? [];
 
   return (
-    <div style={{ maxWidth: 430, margin: '0 auto', minHeight: '100vh' }}>
-      <header
-        style={{
-          height: 56,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          padding: '0 16px',
-          borderBottom: '1px solid var(--ptt-line)',
-          background: 'rgba(250,248,246,0.92)',
-          position: 'sticky',
-          top: 0,
-          zIndex: 2,
-        }}
-      >
-        <Badge tone="accent">W1</Badge>
-        <strong style={{ fontFamily: 'var(--ptt-font-display)', fontSize: 20 }}>AURA</strong>
-        <span style={{ fontSize: 13, fontWeight: 600 }}>Giỏ ({qty})</span>
-      </header>
-
+    <StoreShell
+      gtm={runtime.storefront.gtm_container_id}
+      pixel={runtime.storefront.meta_pixel_id}
+    >
       <section
         style={{
           minHeight: '42vh',
@@ -132,124 +34,115 @@ export default function StorefrontHome() {
           justifyContent: 'flex-end',
         }}
       >
-        <div style={{ fontFamily: 'var(--ptt-font-display)', fontSize: 42, letterSpacing: '-0.04em' }}>
-          AURA
+        <div style={{ fontSize: 12, opacity: 0.8, letterSpacing: '0.04em' }}>
+          {hero?.eyebrow || 'AURA Beauty'}
         </div>
-        <p style={{ opacity: 0.85, fontSize: 14, maxWidth: '30ch', margin: '8px 0 0' }}>
-          Commerce core W1 — browse → cart → checkout COD (server price).
-        </p>
+        <h1
+          style={{
+            fontFamily: 'var(--ptt-font-display)',
+            fontSize: 36,
+            letterSpacing: '-0.04em',
+            margin: '6px 0 10px',
+            fontWeight: 800,
+          }}
+        >
+          {hero?.headline || 'Serum tái tạo da đêm'}
+        </h1>
+        <Link
+          href={hero?.cta_href || '/products/glow-serum-30ml'}
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            height: 44,
+            padding: '0 18px',
+            background: '#c45a6a',
+            color: '#fff',
+            borderRadius: 8,
+            fontWeight: 700,
+            textDecoration: 'none',
+            width: 'fit-content',
+          }}
+        >
+          {hero?.cta || 'Mua ngay'}
+        </Link>
       </section>
 
-      <section style={{ padding: 20, display: 'grid', gap: 16 }}>
-        {error ? <p style={{ color: 'crimson', fontSize: 13 }}>{error}</p> : null}
-        {order ? (
-          <div
+      <div style={{ padding: '14px 14px 8px', display: 'flex', gap: 8, overflowX: 'auto' }}>
+        {collections.map((c) => (
+          <Link
+            key={c.slug}
+            href={`/collections/${c.slug}`}
             style={{
-              padding: 16,
-              border: '1px solid var(--ptt-line)',
-              borderRadius: 12,
-              background: 'var(--ptt-surface)',
+              whiteSpace: 'nowrap',
+              padding: '8px 12px',
+              borderRadius: 999,
+              border: '1px solid rgba(26,18,20,0.1)',
+              background: '#fff',
+              color: '#1a1214',
+              fontSize: 13,
+              textDecoration: 'none',
+              fontWeight: 600,
             }}
           >
-            <Badge tone="accent">Đặt hàng thành công</Badge>
-            <p style={{ marginTop: 8, fontSize: 14 }}>
-              Order <code>{order.order_id}</code> · {order.status} · {order.total} VND
-            </p>
-            <p style={{ fontSize: 12, color: 'var(--ptt-ink-3)' }}>
-              client_total bị bỏ qua (BR-021).
-            </p>
-          </div>
-        ) : null}
+            {c.title}
+          </Link>
+        ))}
+      </div>
 
+      <section style={{ padding: 14, display: 'grid', gap: 12 }}>
         {products.map((p) => {
           const sku = p.skus[0];
           return (
             <article
               key={p.id}
               style={{
-                border: '1px solid var(--ptt-line)',
-                borderRadius: 12,
-                padding: 16,
-                background: 'var(--ptt-surface)',
+                background: '#fff',
+                borderRadius: 14,
+                border: '1px solid rgba(26,18,20,0.06)',
+                overflow: 'hidden',
               }}
             >
-              <h2 style={{ fontFamily: 'var(--ptt-font-display)', fontSize: 22, margin: 0 }}>
-                {p.title}
-              </h2>
-              <p style={{ fontSize: 13, color: 'var(--ptt-ink-3)', margin: '8px 0' }}>
-                {p.description}
-              </p>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <div>
-                  <strong>{sku?.unit_price} VND</strong>
-                  <div style={{ fontSize: 12, color: 'var(--ptt-ink-3)' }}>
-                    Còn {sku?.available ?? 0} · {sku?.code}
-                  </div>
+              <Link href={`/products/${p.slug}`} style={{ textDecoration: 'none', color: 'inherit' }}>
+                <div
+                  style={{
+                    height: 160,
+                    background: `linear-gradient(145deg,#2a1c1e,#c4a090), url(${p.media[0]?.url || ''}) center/cover`,
+                  }}
+                />
+                <div style={{ padding: 14 }}>
+                  <h2 style={{ margin: 0, fontSize: 18, fontFamily: 'var(--ptt-font-display)' }}>
+                    {p.title}
+                  </h2>
+                  <p style={{ margin: '6px 0 0', fontSize: 13, color: '#6b5559' }}>
+                    Còn {sku?.available ?? 0} · {formatVnd(sku?.unit_price)}
+                  </p>
                 </div>
-                <Button
-                  variant="primary"
-                  size="sm"
-                  disabled={!sku || pending || (sku?.available ?? 0) < 1}
-                  onClick={() => sku && addToCart(sku.id)}
-                >
-                  Thêm giỏ
-                </Button>
+              </Link>
+              <div style={{ padding: '0 14px 14px' }}>
+                {sku ? <AddToCartButton skuId={sku.id} disabled={(sku.available ?? 0) < 1} /> : null}
               </div>
             </article>
           );
         })}
+      </section>
 
-        {cart && cart.lines.length > 0 ? (
-          <div
+      <section style={{ padding: '8px 14px 24px', display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+        {trust.map((t) => (
+          <span
+            key={t}
             style={{
-              border: '1px solid var(--ptt-line)',
-              borderRadius: 12,
-              padding: 16,
-              display: 'grid',
-              gap: 10,
+              fontSize: 12,
+              padding: '6px 10px',
+              borderRadius: 8,
+              background: 'rgba(196,90,106,0.1)',
+              color: '#c45a6a',
+              fontWeight: 600,
             }}
           >
-            <strong>Giỏ hàng</strong>
-            {cart.lines.map((l) => (
-              <div key={l.id} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 14 }}>
-                <span>
-                  {l.title} × {l.qty}
-                </span>
-                <span>{l.line_total}</span>
-              </div>
-            ))}
-            <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 700 }}>
-              <span>Tổng (server)</span>
-              <span>{cart.total}</span>
-            </div>
-            <Input
-              value={ship.name}
-              onChange={(e) => setShip((s) => ({ ...s, name: e.target.value }))}
-              placeholder="Họ tên"
-            />
-            <Input
-              value={ship.phone}
-              onChange={(e) => setShip((s) => ({ ...s, phone: e.target.value }))}
-              placeholder="SĐT"
-            />
-            <Input
-              value={ship.address}
-              onChange={(e) => setShip((s) => ({ ...s, address: e.target.value }))}
-              placeholder="Địa chỉ"
-            />
-            <Button variant="ink" disabled={pending} onClick={checkout}>
-              Thanh toán COD
-            </Button>
-          </div>
-        ) : null}
-
-        <div style={{ fontSize: 12, color: 'var(--ptt-ink-3)' }}>
-          <PttMark /> <span style={{ marginLeft: 8 }}>Powered by PTT Storefront</span>
-        </div>
-        <Link href="http://localhost:3000" style={{ color: 'var(--ptt-accent)', fontWeight: 600, fontSize: 12 }}>
-          ← Admin
-        </Link>
+            {t}
+          </span>
+        ))}
       </section>
-    </div>
+    </StoreShell>
   );
 }

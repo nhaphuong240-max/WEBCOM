@@ -9,6 +9,7 @@ import { CheckoutModule } from './checkout/checkout.module';
 import { OrdersModule } from './orders/orders.module';
 import { CustomerModule } from './customer/customer.module';
 import { OrganizationModule } from './organization/organization.module';
+import { WebsiteModule } from './website/website.module';
 import { HealthController } from './health/health.controller';
 import { MeController } from './iam/me.controller';
 import { AuthController } from './iam/auth.controller';
@@ -26,6 +27,7 @@ import { TenancyController } from './tenancy/tenancy.controller';
     OrdersModule,
     CustomerModule,
     OrganizationModule,
+    WebsiteModule,
   ],
   controllers: [HealthController, MeController, AuthController, TenancyController],
 })

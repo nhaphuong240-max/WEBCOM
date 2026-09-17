@@ -1,0 +1,44 @@
+meta {
+  name: WebCom W2
+}
+
+vars {
+  baseUrl: http://127.0.0.1:3001/api
+  tenantId: ten_aura
+  storefrontId: sf_aura
+}
+
+get {
+  url: {{baseUrl}}/v1/storefronts/{{storefrontId}}/runtime
+  headers: {
+    x-tenant-id: {{tenantId}}
+  }
+}
+
+get {
+  url: {{baseUrl}}/v1/catalog/products?q=serum&sort=price_asc
+  headers: {
+    x-tenant-id: {{tenantId}}
+  }
+}
+
+post {
+  url: {{baseUrl}}/v1/events
+  headers: {
+    content-type: application/json
+    x-tenant-id: {{tenantId}}
+  }
+  body: json
+  {
+    "storefront_id": "{{storefrontId}}",
+    "name": "view_item",
+    "payload": { "product_id": "prd_glow_serum" }
+  }
+}
+
+get {
+  url: {{baseUrl}}/v1/shipping/quotes?city=HCM
+  headers: {
+    x-tenant-id: {{tenantId}}
+  }
+}

@@ -45,9 +45,18 @@ async function main() {
       brandId,
       name: 'AURA Storefront',
       slug: 'aura-shop',
-      status: 'draft',
+      status: 'staging',
+      primaryDomain: 'webecom.ngoinhahomnay.vn',
+      seoTitle: 'AURA Beauty · Serum tái tạo da đêm',
+      seoDescription: 'Storefront AURA Beauty — Powered by PTT',
     },
-    update: { name: 'AURA Storefront', status: 'draft' },
+    update: {
+      name: 'AURA Storefront',
+      status: 'staging',
+      primaryDomain: 'webecom.ngoinhahomnay.vn',
+      seoTitle: 'AURA Beauty · Serum tái tạo da đêm',
+      seoDescription: 'Storefront AURA Beauty — Powered by PTT',
+    },
   });
 
   await prisma.product.upsert({
@@ -127,6 +136,114 @@ async function main() {
     update: { onHand: 100, reserved: 0 },
   });
 
+  // W2: Aura Commerce Lite theme + nav + home + voucher
+  const themeId = 'thm_aura_lite';
+  const themeVersionId = 'thv_aura_lite_1';
+  await prisma.theme.upsert({
+    where: { storefrontId_code: { storefrontId, code: 'aura-commerce-lite' } },
+    create: {
+      id: themeId,
+      tenantId,
+      storefrontId,
+      code: 'aura-commerce-lite',
+      name: 'Aura Commerce Lite',
+      status: 'installed',
+    },
+    update: { name: 'Aura Commerce Lite' },
+  });
+  await prisma.themeVersion.upsert({
+    where: { themeId_version: { themeId, version: 1 } },
+    create: {
+      id: themeVersionId,
+      tenantId,
+      themeId,
+      version: 1,
+      status: 'published',
+      config: {
+        code: 'aura-commerce-lite',
+        tokens: { rose: '#c45a6a', ink: '#1a1214', cream: '#faf6f4' },
+        collections: [
+          { slug: 'serum-dem', title: 'Serum đêm' },
+          { slug: 'lam-sang', title: 'Làm sáng' },
+          { slug: 'duong-am', title: 'Dưỡng ẩm' },
+          { slug: 'chong-lao-hoa', title: 'Chống lão hóa' },
+        ],
+      },
+    },
+    update: { status: 'published' },
+  });
+  await prisma.storefront.update({
+    where: { id: storefrontId },
+    data: { publishedThemeVersionId: themeVersionId },
+  });
+  await prisma.navigationMenu.upsert({
+    where: { storefrontId_handle: { storefrontId, handle: 'bottom' } },
+    create: {
+      id: 'nav_aura_bottom',
+      tenantId,
+      storefrontId,
+      handle: 'bottom',
+      items: [
+        { label: 'Home', href: '/' },
+        { label: 'Search', href: '/search' },
+        { label: 'Account', href: '/account' },
+        { label: 'Cart', href: '/cart' },
+      ],
+    },
+    update: {},
+  });
+  const pageId = 'pg_aura_home';
+  await prisma.page.upsert({
+    where: { storefrontId_slug: { storefrontId, slug: 'home' } },
+    create: {
+      id: pageId,
+      tenantId,
+      storefrontId,
+      slug: 'home',
+      title: 'AURA Home',
+      templateKey: 'home',
+      status: 'published',
+    },
+    update: { status: 'published' },
+  });
+  await prisma.pageVersion.upsert({
+    where: { pageId_version: { pageId, version: 1 } },
+    create: {
+      id: 'pgv_aura_home_1',
+      tenantId,
+      pageId,
+      version: 1,
+      status: 'published',
+      content: {
+        hero: {
+          eyebrow: 'AURA Beauty',
+          headline: 'Serum tái tạo da đêm',
+          cta: 'Mua ngay',
+          cta_href: '/products/glow-serum-30ml',
+        },
+        trust: ['COD toàn quốc', 'Đổi trả 7 ngày', 'Hàng chính hãng'],
+      },
+      seo: {
+        title: 'AURA Beauty — Serum tái tạo da đêm | Powered by PTT',
+        description: 'Mua serum AURA trên storefront PTT — COD, giao nhanh.',
+      },
+    },
+    update: { status: 'published' },
+  });
+  await prisma.voucher.upsert({
+    where: { storefrontId_code: { storefrontId, code: 'AURA10' } },
+    create: {
+      id: 'vch_aura10',
+      tenantId,
+      storefrontId,
+      code: 'AURA10',
+      type: 'percent',
+      value: 10,
+      active: true,
+    },
+    update: { active: true },
+  });
+
   // eslint-disable-next-line no-console
   console.log(
     JSON.stringify(
@@ -137,6 +254,8 @@ async function main() {
         product_id: productId,
         sku_id: skuId,
         sku_code: 'AURA-GLOW-30',
+        theme: 'aura-commerce-lite',
+        storefront_status: 'staging',
         list_price: 459000,
         discount_percent: 10,
         unit_price_after_discount: 413100,

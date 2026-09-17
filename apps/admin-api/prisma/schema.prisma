@@ -24,6 +24,9 @@ model Tenant {
   orders      Order[]
   auditLogs   AuditLog[]
   idempotency IdempotencyRecord[]
+  themes      Theme[]
+  mediaAssets MediaAsset[]
+  leads       Lead[]
 
   @@map("tenants")
 }
@@ -60,21 +63,33 @@ model User {
 }
 
 model Storefront {
-  id        String   @id @default(uuid())
-  tenantId  String   @map("tenant_id")
-  brandId   String   @map("brand_id")
-  name      String
-  slug      String
-  status    String   @default("draft")
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
-  tenant    Tenant   @relation(fields: [tenantId], references: [id])
-  brand     Brand    @relation(fields: [brandId], references: [id])
-  carts     Cart[]
-  orders    Order[]
+  id               String            @id @default(uuid())
+  tenantId         String            @map("tenant_id")
+  brandId          String            @map("brand_id")
+  name             String
+  slug             String
+  status           String            @default("draft") // draft|staging|published|maintenance
+  primaryDomain    String?           @map("primary_domain")
+  seoTitle         String?           @map("seo_title")
+  seoDescription   String?           @map("seo_description")
+  gtmContainerId   String?           @map("gtm_container_id")
+  metaPixelId      String?           @map("meta_pixel_id")
+  publishedThemeVersionId String?    @map("published_theme_version_id")
+  createdAt        DateTime          @default(now()) @map("created_at")
+  updatedAt        DateTime          @updatedAt @map("updated_at")
+  tenant           Tenant            @relation(fields: [tenantId], references: [id])
+  brand            Brand             @relation(fields: [brandId], references: [id])
+  carts            Cart[]
+  orders           Order[]
+  themes           Theme[]
+  pages            Page[]
+  navigationMenus  NavigationMenu[]
+  events           StorefrontEvent[]
+  vouchers         Voucher[]
 
   @@unique([tenantId, slug])
   @@index([tenantId])
+  @@index([primaryDomain])
   @@map("storefronts")
 }
 
@@ -354,4 +369,153 @@ model AuditLog {
 
   @@index([tenantId, entity, entityId])
   @@map("audit_logs")
+}
+
+/// Built-in / installed theme (W2: Aura Commerce Lite)
+model Theme {
+  id          String         @id @default(uuid())
+  tenantId    String         @map("tenant_id")
+  storefrontId String        @map("storefront_id")
+  code        String
+  name        String
+  status      String         @default("installed") // installed|archived
+  createdAt   DateTime       @default(now()) @map("created_at")
+  tenant      Tenant         @relation(fields: [tenantId], references: [id])
+  storefront  Storefront     @relation(fields: [storefrontId], references: [id], onDelete: Cascade)
+  versions    ThemeVersion[]
+
+  @@unique([storefrontId, code])
+  @@index([tenantId])
+  @@map("themes")
+}
+
+model ThemeVersion {
+  id        String   @id @default(uuid())
+  tenantId  String   @map("tenant_id")
+  themeId   String   @map("theme_id")
+  version   Int
+  status    String   @default("draft") // draft|staging|published
+  /// JSON: tokens, sections layout for Aura Commerce Lite
+  config    Json     @default("{}")
+  createdAt DateTime @default(now()) @map("created_at")
+  theme     Theme    @relation(fields: [themeId], references: [id], onDelete: Cascade)
+
+  @@unique([themeId, version])
+  @@index([tenantId])
+  @@map("theme_versions")
+}
+
+model Page {
+  id           String        @id @default(uuid())
+  tenantId     String        @map("tenant_id")
+  storefrontId String        @map("storefront_id")
+  slug         String
+  title        String
+  templateKey  String        @default("home") @map("template_key") // home|collection|system
+  status       String        @default("draft")
+  createdAt    DateTime      @default(now()) @map("created_at")
+  updatedAt    DateTime      @updatedAt @map("updated_at")
+  storefront   Storefront    @relation(fields: [storefrontId], references: [id], onDelete: Cascade)
+  versions     PageVersion[]
+
+  @@unique([storefrontId, slug])
+  @@index([tenantId])
+  @@map("pages")
+}
+
+model PageVersion {
+  id        String   @id @default(uuid())
+  tenantId  String   @map("tenant_id")
+  pageId    String   @map("page_id")
+  version   Int
+  status    String   @default("draft")
+  /// Section blocks JSON
+  content   Json     @default("{}")
+  seo       Json     @default("{}")
+  createdAt DateTime @default(now()) @map("created_at")
+  page      Page     @relation(fields: [pageId], references: [id], onDelete: Cascade)
+
+  @@unique([pageId, version])
+  @@index([tenantId])
+  @@map("page_versions")
+}
+
+model MediaAsset {
+  id        String   @id @default(uuid())
+  tenantId  String   @map("tenant_id")
+  url       String
+  alt       String   @default("")
+  mimeType  String   @default("image/jpeg") @map("mime_type")
+  width     Int?
+  height    Int?
+  createdAt DateTime @default(now()) @map("created_at")
+  tenant    Tenant   @relation(fields: [tenantId], references: [id])
+
+  @@index([tenantId])
+  @@map("media_assets")
+}
+
+model NavigationMenu {
+  id           String     @id @default(uuid())
+  tenantId     String     @map("tenant_id")
+  storefrontId String     @map("storefront_id")
+  handle       String     // header|footer|bottom
+  items        Json       @default("[]")
+  createdAt    DateTime   @default(now()) @map("created_at")
+  updatedAt    DateTime   @updatedAt @map("updated_at")
+  storefront   Storefront @relation(fields: [storefrontId], references: [id], onDelete: Cascade)
+
+  @@unique([storefrontId, handle])
+  @@index([tenantId])
+  @@map("navigation_menus")
+}
+
+model StorefrontEvent {
+  id           String     @id @default(uuid())
+  tenantId     String     @map("tenant_id")
+  storefrontId String     @map("storefront_id")
+  name         String
+  sessionId    String?    @map("session_id")
+  customerId   String?    @map("customer_id")
+  payload      Json       @default("{}")
+  createdAt    DateTime   @default(now()) @map("created_at")
+  storefront   Storefront @relation(fields: [storefrontId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, storefrontId, name])
+  @@index([createdAt])
+  @@map("storefront_events")
+}
+
+model Voucher {
+  id           String     @id @default(uuid())
+  tenantId     String     @map("tenant_id")
+  storefrontId String     @map("storefront_id")
+  code         String
+  type         String     @default("percent") // percent|fixed
+  value        Decimal    @db.Decimal(18, 2)
+  active       Boolean    @default(true)
+  createdAt    DateTime   @default(now()) @map("created_at")
+  storefront   Storefront @relation(fields: [storefrontId], references: [id], onDelete: Cascade)
+
+  @@unique([storefrontId, code])
+  @@index([tenantId])
+  @@map("vouchers")
+}
+
+/// Corporate GTM leads (E-W2-07)
+model Lead {
+  id        String   @id @default(uuid())
+  tenantId  String   @map("tenant_id")
+  name      String
+  email     String
+  phone     String?
+  company   String?
+  channel   String   @default("website")
+  message   String   @default("")
+  status    String   @default("new")
+  createdAt DateTime @default(now()) @map("created_at")
+  tenant    Tenant   @relation(fields: [tenantId], references: [id])
+
+  @@index([tenantId, status])
+  @@map("leads")
 }
