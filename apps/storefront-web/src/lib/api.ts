@@ -1,3 +1,5 @@
+import { headers } from 'next/headers';
+
 const API_BASE =
   (typeof window === 'undefined'
     ? process.env.INTERNAL_API_URL || process.env.ADMIN_API_URL
@@ -5,9 +7,30 @@ const API_BASE =
   process.env.NEXT_PUBLIC_ADMIN_API_URL?.replace(/\/$/, '') ||
   'http://127.0.0.1:3001';
 
-export const TENANT_ID = process.env.NEXT_PUBLIC_TENANT_ID || 'ten_aura';
-export const BRAND_ID = process.env.NEXT_PUBLIC_BRAND_ID || 'brd_aura';
-export const STOREFRONT_ID = process.env.NEXT_PUBLIC_STOREFRONT_ID || 'sf_aura';
+const ENV_TENANT = process.env.NEXT_PUBLIC_TENANT_ID || 'ten_aura';
+const ENV_BRAND = process.env.NEXT_PUBLIC_BRAND_ID || 'brd_aura';
+const ENV_STOREFRONT = process.env.NEXT_PUBLIC_STOREFRONT_ID || 'sf_aura';
+
+/** @deprecated prefer getStoreContext() for host-aware multi-tenant */
+export const TENANT_ID = ENV_TENANT;
+export const BRAND_ID = ENV_BRAND;
+export const STOREFRONT_ID = ENV_STOREFRONT;
+
+export async function getStoreContext() {
+  if (typeof window === 'undefined') {
+    try {
+      const h = await headers();
+      return {
+        tenantId: h.get('x-ptt-tenant-id') || ENV_TENANT,
+        brandId: h.get('x-ptt-brand-id') || ENV_BRAND,
+        storefrontId: h.get('x-ptt-storefront-id') || ENV_STOREFRONT,
+      };
+    } catch {
+      /* outside request */
+    }
+  }
+  return { tenantId: ENV_TENANT, brandId: ENV_BRAND, storefrontId: ENV_STOREFRONT };
+}
 
 export type Product = {
   id: string;
@@ -54,18 +77,19 @@ export async function storeApi<T>(
   path: string,
   init?: RequestInit & { idempotencyKey?: string },
 ): Promise<T> {
-  const headers: Record<string, string> = {
+  const ctx = await getStoreContext();
+  const headersMap: Record<string, string> = {
     'content-type': 'application/json',
-    'x-tenant-id': TENANT_ID,
-    'x-brand-id': BRAND_ID,
+    'x-tenant-id': ctx.tenantId,
+    'x-brand-id': ctx.brandId,
     'x-actor-id': 'storefront',
     ...(init?.headers as Record<string, string>),
   };
-  if (init?.idempotencyKey) headers['idempotency-key'] = init.idempotencyKey;
+  if (init?.idempotencyKey) headersMap['idempotency-key'] = init.idempotencyKey;
 
   const res = await fetch(`${API_BASE}/api${path}`, {
     ...init,
-    headers,
+    headers: headersMap,
     next: init?.cache === 'no-store' ? undefined : { revalidate: 30 },
     cache: init?.cache ?? 'force-cache',
   });
@@ -75,17 +99,19 @@ export async function storeApi<T>(
 }
 
 export async function getRuntime(preview?: string) {
+  const { storefrontId } = await getStoreContext();
   const q = preview ? `?preview=${encodeURIComponent(preview)}` : '';
-  return storeApi<Runtime>(`/v1/storefronts/${STOREFRONT_ID}/runtime${q}`, { cache: 'no-store' });
+  return storeApi<Runtime>(`/v1/storefronts/${storefrontId}/runtime${q}`, { cache: 'no-store' });
 }
 
 export async function getPage(slug: string) {
+  const { storefrontId } = await getStoreContext();
   return storeApi<{
     slug: string;
     title: string;
     content: Record<string, unknown>;
     seo: Record<string, unknown>;
-  }>(`/v1/storefronts/${STOREFRONT_ID}/pages/${slug}`, { cache: 'no-store' });
+  }>(`/v1/storefronts/${storefrontId}/pages/${slug}`, { cache: 'no-store' });
 }
 
 export async function getProducts(query?: {

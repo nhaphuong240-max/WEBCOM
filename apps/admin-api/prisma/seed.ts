@@ -282,141 +282,10 @@ async function main() {
     update: { status: 'published' },
   });
 
-  const templates: Array<{
-    id: string;
-    code: string;
-    name: string;
-    industry: string;
-    goal: string;
-    license: string;
-    scores: { cvr: number; mobile: number; seo: number };
-    features: string[];
-    accent: string;
-    headline: string;
-  }> = [
-    {
-      id: 'tpl_aura_beauty',
-      code: 'aura-commerce-lite',
-      name: 'Aura Commerce Lite',
-      industry: 'beauty',
-      goal: 'conversion',
-      license: 'free',
-      scores: { cvr: 88, mobile: 92, seo: 84 },
-      features: ['sticky-atc', 'trust-badges', 'collections'],
-      accent: '#c45a6a',
-      headline: 'Serum tái tạo da đêm',
-    },
-    {
-      id: 'tpl_lumen_fashion',
-      code: 'lumen-fashion',
-      name: 'Lumen Fashion',
-      industry: 'fashion',
-      goal: 'conversion',
-      license: 'free',
-      scores: { cvr: 82, mobile: 90, seo: 80 },
-      features: ['lookbook', 'size-guide', 'megamenu'],
-      accent: '#1a1a1a',
-      headline: 'New season essentials',
-    },
-    {
-      id: 'tpl_harvest_fnb',
-      code: 'harvest-fnb',
-      name: 'Harvest F&B',
-      industry: 'fnb',
-      goal: 'local',
-      license: 'free',
-      scores: { cvr: 79, mobile: 88, seo: 76 },
-      features: ['menu-grid', 'delivery-eta'],
-      accent: '#c45c26',
-      headline: 'Đặt món hôm nay',
-    },
-    {
-      id: 'tpl_forge_b2b',
-      code: 'forge-b2b',
-      name: 'Forge B2B',
-      industry: 'b2b',
-      goal: 'lead',
-      license: 'one_time',
-      scores: { cvr: 74, mobile: 85, seo: 90 },
-      features: ['rfq', 'catalog-pdf', 'megamenu'],
-      accent: '#0f3d68',
-      headline: 'Giải pháp bán sỉ',
-    },
-    {
-      id: 'tpl_nest_home',
-      code: 'nest-home',
-      name: 'Nest Home',
-      industry: 'home',
-      goal: 'conversion',
-      license: 'free',
-      scores: { cvr: 81, mobile: 87, seo: 82 },
-      features: ['room-sets', 'trust-badges'],
-      accent: '#5c7a5a',
-      headline: 'Không gian sống ấm',
-    },
-    {
-      id: 'tpl_pulse_gadget',
-      code: 'pulse-gadget',
-      name: 'Pulse Gadget',
-      industry: 'electronics',
-      goal: 'conversion',
-      license: 'free',
-      scores: { cvr: 77, mobile: 91, seo: 85 },
-      features: ['spec-table', 'sticky-atc'],
-      accent: '#2563eb',
-      headline: 'Công nghệ mỗi ngày',
-    },
-    {
-      id: 'tpl_bloom_kids',
-      code: 'bloom-kids',
-      name: 'Bloom Kids',
-      industry: 'kids',
-      goal: 'conversion',
-      license: 'free',
-      scores: { cvr: 80, mobile: 89, seo: 78 },
-      features: ['age-filter', 'trust-badges'],
-      accent: '#e8a0bf',
-      headline: 'Đồ chơi & mẹ và bé',
-    },
-    {
-      id: 'tpl_zen_wellness',
-      code: 'zen-wellness',
-      name: 'Zen Wellness',
-      industry: 'beauty',
-      goal: 'brand',
-      license: 'free',
-      scores: { cvr: 75, mobile: 86, seo: 88 },
-      features: ['editorial', 'collections'],
-      accent: '#7d8f69',
-      headline: 'Chăm sóc từ gốc',
-    },
-    {
-      id: 'tpl_spark_promo',
-      code: 'spark-promo',
-      name: 'Spark Promo Landing',
-      industry: 'general',
-      goal: 'campaign',
-      license: 'free',
-      scores: { cvr: 90, mobile: 93, seo: 70 },
-      features: ['countdown', 'cta-banner'],
-      accent: '#dc2626',
-      headline: 'Flash sale cuối tuần',
-    },
-    {
-      id: 'tpl_ledger_services',
-      code: 'ledger-services',
-      name: 'Ledger Services',
-      industry: 'services',
-      goal: 'lead',
-      license: 'one_time',
-      scores: { cvr: 72, mobile: 84, seo: 91 },
-      features: ['booking', 'trust-badges'],
-      accent: '#334155',
-      headline: 'Đặt lịch tư vấn',
-    },
-  ];
+  const { TEMPLATE_CATALOG } = await import('./data/templates-catalog');
+  console.log(`Seeding ${TEMPLATE_CATALOG.length} marketplace playbooks…`);
 
-  for (const t of templates) {
+  for (const t of TEMPLATE_CATALOG) {
     await prisma.templateCatalog.upsert({
       where: { code: t.code },
       create: {
@@ -454,22 +323,47 @@ async function main() {
           },
           trust: ['COD', 'Đổi trả', 'Chính hãng'],
         },
-        playbook: [
-          'Publish Brand Kit với màu accent template',
-          'Install template vào Theme Library',
-          'Sửa hero trong Site Builder',
-          'Promote staging → Pass Go-live → Publish',
-        ],
+        playbook: t.playbook,
         active: true,
       },
       update: {
         name: t.name,
+        industry: t.industry,
+        goal: t.goal,
+        license: t.license,
         scores: t.scores,
         features: t.features,
+        playbook: t.playbook,
         active: true,
       },
     });
   }
+
+  // A1 — primary domain for AURA (verified + TLS active for go-live)
+  await prisma.storefrontDomain.upsert({
+    where: { hostname: 'aura.ptt.shop' },
+    create: {
+      id: 'dom_aura_sub',
+      tenantId,
+      storefrontId,
+      hostname: 'aura.ptt.shop',
+      kind: 'subdomain',
+      dnsStatus: 'verified',
+      tlsStatus: 'active',
+      verificationToken: 'ptt-verify-aura-seed',
+      isPrimary: true,
+      lastCheckedAt: new Date(),
+    },
+    update: {
+      dnsStatus: 'verified',
+      tlsStatus: 'active',
+      isPrimary: true,
+    },
+  });
+  await prisma.storefront.update({
+    where: { id: storefrontId },
+    data: { primaryDomain: 'aura.ptt.shop' },
+  });
 
   await prisma.onboardingProgress.upsert({
     where: { storefrontId },
@@ -567,10 +461,12 @@ async function main() {
         sku_code: 'AURA-GLOW-30',
         theme: 'aura-commerce-lite',
         storefront_status: 'staging',
-        templates_seeded: templates.length,
+        templates_seeded: TEMPLATE_CATALOG.length,
         brand_kit: 'bkit_aura_sf_1',
         experiment: 'hero_cta_v1',
         phase: 'W5',
+        wave: 'A1',
+        primary_domain: 'aura.ptt.shop',
         list_price: 459000,
         discount_percent: 10,
         unit_price_after_discount: 413100,

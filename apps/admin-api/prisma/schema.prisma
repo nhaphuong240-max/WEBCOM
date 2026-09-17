@@ -39,6 +39,7 @@ model Tenant {
   analyticsIncidents AnalyticsIncident[]
   apiKeys     ApiKey[]
   agencyDeliveries AgencyDelivery[]
+  domains     StorefrontDomain[]
 
   @@map("tenants")
 }
@@ -110,6 +111,7 @@ model Storefront {
   analyticsIncidents AnalyticsIncident[]
   apiKeys          ApiKey[]
   agencyDeliveries AgencyDelivery[]
+  domains          StorefrontDomain[]
 
   @@unique([tenantId, slug])
   @@index([tenantId])
@@ -825,4 +827,30 @@ model AgencyDelivery {
 
   @@index([tenantId, storefrontId, status])
   @@map("agency_deliveries")
+}
+
+/// A1 — Custom / subdomain connect + TLS staging
+model StorefrontDomain {
+  id                 String     @id @default(uuid())
+  tenantId           String     @map("tenant_id")
+  storefrontId       String     @map("storefront_id")
+  hostname           String
+  /// subdomain | custom
+  kind               String     @default("custom")
+  /// pending | verified | failed
+  dnsStatus          String     @default("pending") @map("dns_status")
+  /// pending | issuing | active | failed
+  tlsStatus          String     @default("pending") @map("tls_status")
+  verificationToken  String     @map("verification_token")
+  isPrimary          Boolean    @default(false) @map("is_primary")
+  lastCheckedAt      DateTime?  @map("last_checked_at")
+  createdAt          DateTime   @default(now()) @map("created_at")
+  updatedAt          DateTime   @updatedAt @map("updated_at")
+  tenant             Tenant     @relation(fields: [tenantId], references: [id])
+  storefront         Storefront @relation(fields: [storefrontId], references: [id], onDelete: Cascade)
+
+  @@unique([hostname])
+  @@index([tenantId, storefrontId])
+  @@index([storefrontId, isPrimary])
+  @@map("storefront_domains")
 }

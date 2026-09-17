@@ -1,0 +1,114 @@
+openapi: 3.0.3
+info:
+  title: WebCom A1 — Playbooks & Domain
+  version: 1.0.0
+paths:
+  /api/health:
+    get:
+      summary: Health includes wave A1
+      responses:
+        '200':
+          description: ok
+  /api/v1/admin/templates:
+    get:
+      summary: List marketplace templates (expect ≥30)
+      parameters:
+        - in: query
+          name: industry
+          schema: { type: string }
+        - in: query
+          name: goal
+          schema: { type: string }
+        - in: query
+          name: sort
+          schema: { type: string, enum: [cvr, mobile, seo] }
+      responses:
+        '200':
+          description: TemplateCatalog[]
+  /api/v1/admin/storefronts/{id}/templates/{templateId}/install:
+    post:
+      summary: Install returns Conversion Playbook checklist
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+        - in: path
+          name: templateId
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: install_id, theme_version, playbook[]
+  /api/v1/admin/storefronts/{id}/domains:
+    get:
+      summary: List storefront domains
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: '{ domains: Domain[] }'
+    post:
+      summary: Add subdomain or custom domain
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [hostname]
+              properties:
+                hostname: { type: string }
+                kind: { type: string, enum: [subdomain, custom] }
+      responses:
+        '200':
+          description: Domain
+  /api/v1/admin/storefronts/{id}/domains/{domainId}/verify:
+    post:
+      summary: Verify DNS (+ issue TLS when FEATURE_DOMAIN_TLS)
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+        - in: path
+          name: domainId
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Domain with dns_status/tls_status
+  /api/v1/admin/storefronts/{id}/domains/{domainId}/primary:
+    post:
+      summary: Set primary domain (updates Storefront.primaryDomain)
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+        - in: path
+          name: domainId
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Domain
+  /api/v1/public/host-resolve:
+    get:
+      summary: Resolve Host → tenant/storefront (no auth)
+      parameters:
+        - in: query
+          name: host
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: tenant_id, brand_id, storefront_id, slug, source

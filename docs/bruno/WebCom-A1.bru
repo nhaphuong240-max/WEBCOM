@@ -1,0 +1,32 @@
+meta {
+  name: WebCom A1
+  type: collection
+}
+
+script:pre-request {
+  req.setHeader("x-tenant-id", bru.getEnvVar("TENANT_ID") || "ten_aura");
+  req.setHeader("x-brand-id", bru.getEnvVar("BRAND_ID") || "brd_aura");
+  req.setHeader("x-actor-id", "bruno-a1");
+  req.setHeader("content-type", "application/json");
+}
+
+get {
+  url: {{BASE}}/api/health
+}
+
+get {
+  url: {{BASE}}/api/v1/admin/templates?sort=cvr
+}
+
+post {
+  url: {{BASE}}/api/v1/admin/storefronts/{{SF}}/domains
+  body: json
+  json: {
+    "hostname": "demo.brand.test",
+    "kind": "custom"
+  }
+}
+
+get {
+  url: {{BASE}}/api/v1/public/host-resolve?host=aura.ptt.shop
+}

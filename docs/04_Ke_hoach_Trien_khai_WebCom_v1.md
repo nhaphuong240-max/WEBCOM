@@ -479,6 +479,20 @@ Repo chạy được, design system từ mockup, auth tenant, admin/storefront s
 
 ---
 
+# 9b. Wave A1 — Playbooks & Domain (Branch A deepen)
+
+> Sau W5 MVP · Mục tiêu: ≥30 Conversion Playbook + Domain/SSL wizard + host multi-tenant.
+
+## Exit criteria
+- [x] Template catalog ≥ 30 playbooks (seed `prisma/data/templates-catalog.ts`).
+- [x] Install trả Conversion Playbook; Marketplace lọc/sort CVR·Mobile·SEO.
+- [x] Domain connect: subdomain `*.ptt.shop` + custom; verify DNS; TLS staging (`FEATURE_DOMAIN_TLS`).
+- [x] Go-live `domain_ssl` pass khi DNS verified + TLS active.
+- [x] `GET /v1/public/host-resolve` + storefront middleware Host→tenant.
+- [x] Health `wave: A1` · OpenAPI/Bruno/E2E: `docs/openapi-a1.yaml`, `docs/bruno/WebCom-A1.bru`, `scripts/e2e-a1.sh`.
+
+---
+
 # 10. Backlog ưu tiên MoSCoW (WebCom)
 
 ## Must (trước GA Platform)

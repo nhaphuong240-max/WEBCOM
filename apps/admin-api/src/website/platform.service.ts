@@ -225,7 +225,7 @@ export class PlatformService {
 
   // ─── Template Marketplace ──────────────────────────────────
 
-  async listTemplates(query?: { industry?: string; goal?: string; q?: string }) {
+  async listTemplates(query?: { industry?: string; goal?: string; q?: string; sort?: string }) {
     const rows = await this.prisma.db.templateCatalog.findMany({
       where: {
         active: true,
@@ -243,7 +243,16 @@ export class PlatformService {
       },
       orderBy: { name: 'asc' },
     });
-    return rows.map((t) => this.mapTemplate(t));
+    const mapped = rows.map((t) => this.mapTemplate(t));
+    if (query?.sort === 'cvr' || query?.sort === 'mobile' || query?.sort === 'seo') {
+      const key = query.sort as 'cvr' | 'mobile' | 'seo';
+      mapped.sort((a, b) => {
+        const sa = (a.scores as { cvr?: number; mobile?: number; seo?: number })?.[key] || 0;
+        const sb = (b.scores as { cvr?: number; mobile?: number; seo?: number })?.[key] || 0;
+        return sb - sa;
+      });
+    }
+    return mapped;
   }
 
   async matchTemplates(input: {
@@ -757,10 +766,7 @@ export class PlatformService {
         status: brandKit || Object.keys(resolved.tokens).length > 0 ? 'pass' : 'fail',
         evidence: { brand_kit_id: brandKit?.id ?? null },
       },
-      domain_ssl: {
-        status: sf.primaryDomain ? 'pass' : 'fail',
-        evidence: { primary_domain: sf.primaryDomain },
-      },
+      domain_ssl: await this.domainSslStatus(tenantId, storefrontId, sf.primaryDomain),
       seo_defaults: {
         status: sf.seoTitle && sf.seoDescription ? 'pass' : 'fail',
         evidence: { seo_title: sf.seoTitle, seo_description: sf.seoDescription },
@@ -818,6 +824,35 @@ export class PlatformService {
       blocking_fails: blockingFails.map((i) => i.code),
       items: updated,
       feature: this.feature('golive.gate'),
+    };
+  }
+
+  private async domainSslStatus(
+    tenantId: string,
+    storefrontId: string,
+    primaryDomain: string | null,
+  ): Promise<{ status: 'pass' | 'fail'; evidence: Record<string, unknown> }> {
+    const primary = await this.prisma.db.storefrontDomain.findFirst({
+      where: { tenantId, storefrontId, isPrimary: true },
+    });
+    const active = await this.prisma.db.storefrontDomain.findFirst({
+      where: {
+        tenantId,
+        storefrontId,
+        dnsStatus: 'verified',
+        tlsStatus: 'active',
+      },
+    });
+    const ok = !!(active && (primary?.dnsStatus === 'verified' || !primary) && (primaryDomain || active.hostname));
+    return {
+      status: ok ? 'pass' : 'fail',
+      evidence: {
+        primary_domain: primaryDomain,
+        domain_id: active?.id ?? primary?.id ?? null,
+        dns_status: active?.dnsStatus ?? primary?.dnsStatus ?? null,
+        tls_status: active?.tlsStatus ?? primary?.tlsStatus ?? null,
+        hostname: active?.hostname ?? primary?.hostname ?? null,
+      },
     };
   }
 
@@ -1073,6 +1108,7 @@ export class PlatformService {
         { key: 'brand_kit', label: 'Brand Kit', href: '/website/onboarding' },
         { key: 'catalog', label: 'Import catalog', href: '/products' },
         { key: 'theme_match', label: 'Theme Match', href: '/website/templates' },
+        { key: 'domain', label: 'Domain / SSL', href: '/website/domains' },
         { key: 'payment', label: 'Payment / Shipping', href: '/website/golive' },
         { key: 'golive', label: 'Go-live', href: '/website/golive' },
       ],
@@ -1086,7 +1122,7 @@ export class PlatformService {
     done: boolean,
     actorId?: string,
   ) {
-    const order = ['brand_kit', 'catalog', 'theme_match', 'payment', 'golive', 'done'];
+    const order = ['brand_kit', 'catalog', 'theme_match', 'domain', 'payment', 'golive', 'done'];
     if (!order.includes(step)) throw AppError.validation('Invalid step');
     const current = await this.getOnboarding(tenantId, storefrontId);
     const completed = { ...(current.completed as Record<string, boolean>), [step]: done };

@@ -385,4 +385,290 @@ export class WebsiteService {
     console.log('[lead.notify]', { id: lead.id, email: lead.email, channel: lead.channel });
     return { id: lead.id, status: lead.status };
   }
+
+  // ─── A1 Domain connect ─────────────────────────────────────
+
+  private featureDomainTls() {
+    const v = process.env.FEATURE_DOMAIN_TLS;
+    if (v === undefined || v === '') return true;
+    return v === '1' || v.toLowerCase() === 'true';
+  }
+
+  private mapDomain(d: {
+    id: string;
+    hostname: string;
+    kind: string;
+    dnsStatus: string;
+    tlsStatus: string;
+    verificationToken: string;
+    isPrimary: boolean;
+    lastCheckedAt: Date | null;
+    storefrontId: string;
+  }) {
+    const apex = process.env.PLATFORM_APEX_DOMAIN || 'ptt.shop';
+    return {
+      id: d.id,
+      hostname: d.hostname,
+      kind: d.kind,
+      dns_status: d.dnsStatus,
+      tls_status: d.tlsStatus,
+      verification_token: d.verificationToken,
+      is_primary: d.isPrimary,
+      last_checked_at: d.lastCheckedAt?.toISOString() ?? null,
+      storefront_id: d.storefrontId,
+      dns_instructions:
+        d.kind === 'subdomain'
+          ? { type: 'CNAME', host: d.hostname, value: `edge.${apex}`, note: 'Managed platform subdomain' }
+          : {
+              type: 'TXT',
+              host: `_ptt-verify.${d.hostname}`,
+              value: d.verificationToken,
+              cname: { host: d.hostname, value: `edge.${apex}` },
+            },
+      feature_domain_tls: this.featureDomainTls(),
+    };
+  }
+
+  async listDomains(tenantId: string, storefrontId: string) {
+    await this.requireSf(tenantId, storefrontId);
+    const rows = await this.prisma.db.storefrontDomain.findMany({
+      where: { tenantId, storefrontId },
+      orderBy: [{ isPrimary: 'desc' }, { createdAt: 'asc' }],
+    });
+    return { domains: rows.map((d) => this.mapDomain(d)) };
+  }
+
+  async addDomain(
+    tenantId: string,
+    storefrontId: string,
+    input: { hostname: string; kind?: 'subdomain' | 'custom' },
+    actorId?: string,
+  ) {
+    const sf = await this.requireSf(tenantId, storefrontId);
+    const apex = process.env.PLATFORM_APEX_DOMAIN || 'ptt.shop';
+    let hostname = input.hostname.trim().toLowerCase().replace(/^https?:\/\//, '').split('/')[0];
+    let kind = input.kind || 'custom';
+
+    if (kind === 'subdomain' || hostname.endsWith(`.${apex}`)) {
+      kind = 'subdomain';
+      if (!hostname.includes('.')) {
+        hostname = `${sf.slug}.${apex}`;
+      }
+      if (!hostname.endsWith(`.${apex}`)) {
+        throw AppError.validation(`Subdomain must end with .${apex}`);
+      }
+    }
+
+    if (!/^[a-z0-9]([a-z0-9-]*[a-z0-9])?(\.[a-z0-9]([a-z0-9-]*[a-z0-9])?)+$/.test(hostname)) {
+      throw AppError.validation('Invalid hostname');
+    }
+
+    const existing = await this.prisma.db.storefrontDomain.findUnique({ where: { hostname } });
+    if (existing && existing.storefrontId !== storefrontId) {
+      throw AppError.validation('Hostname already connected to another storefront');
+    }
+
+    const token = `ptt-verify-${createId('dom').slice(0, 12)}`;
+    const isFirst =
+      (await this.prisma.db.storefrontDomain.count({ where: { storefrontId } })) === 0;
+
+    let row =
+      existing ??
+      (await this.prisma.db.storefrontDomain.create({
+        data: {
+          id: createId('dom'),
+          tenantId,
+          storefrontId,
+          hostname,
+          kind,
+          dnsStatus: kind === 'subdomain' ? 'verified' : 'pending',
+          tlsStatus: kind === 'subdomain' && this.featureDomainTls() ? 'active' : 'pending',
+          verificationToken: token,
+          isPrimary: isFirst,
+          lastCheckedAt: kind === 'subdomain' ? new Date() : null,
+        },
+      }));
+
+    if (existing) {
+      row = await this.prisma.db.storefrontDomain.update({
+        where: { id: existing.id },
+        data: {
+          kind,
+          dnsStatus: kind === 'subdomain' ? 'verified' : existing.dnsStatus,
+          tlsStatus:
+            kind === 'subdomain' && this.featureDomainTls() ? 'active' : existing.tlsStatus,
+          lastCheckedAt: kind === 'subdomain' ? new Date() : existing.lastCheckedAt,
+        },
+      });
+    }
+
+    if (row.isPrimary || isFirst) {
+      await this.prisma.db.storefront.update({
+        where: { id: storefrontId },
+        data: { primaryDomain: row.hostname },
+      });
+      if (!row.isPrimary) {
+        row = await this.prisma.db.storefrontDomain.update({
+          where: { id: row.id },
+          data: { isPrimary: true },
+        });
+      }
+    }
+
+    await this.audit.write({
+      tenantId,
+      actorId,
+      action: 'domain.add',
+      entity: 'storefront_domain',
+      entityId: row.id,
+      payload: { hostname: row.hostname, kind: row.kind },
+    });
+
+    return this.mapDomain(row);
+  }
+
+  async verifyDomain(tenantId: string, storefrontId: string, domainId: string, actorId?: string) {
+    const row = await this.prisma.db.storefrontDomain.findFirst({
+      where: { id: domainId, tenantId, storefrontId },
+    });
+    if (!row) throw AppError.notFound('Domain not found');
+
+    // Staging automation: accept verify when FEATURE_DOMAIN_TLS on (stub DNS).
+    // Force fail with DOMAIN_FORCE_FAIL_DNS=1 for go-live tests.
+    const forceFail = process.env.DOMAIN_FORCE_FAIL_DNS === '1';
+    const dnsOk = !forceFail;
+    const tlsOn = this.featureDomainTls();
+
+    const updated = await this.prisma.db.storefrontDomain.update({
+      where: { id: row.id },
+      data: {
+        dnsStatus: dnsOk ? 'verified' : 'failed',
+        tlsStatus: dnsOk && tlsOn ? 'active' : dnsOk ? 'pending' : 'failed',
+        lastCheckedAt: new Date(),
+      },
+    });
+
+    if (updated.dnsStatus === 'verified' && updated.isPrimary) {
+      await this.prisma.db.storefront.update({
+        where: { id: storefrontId },
+        data: { primaryDomain: updated.hostname },
+      });
+    }
+
+    await this.audit.write({
+      tenantId,
+      actorId,
+      action: 'domain.verify',
+      entity: 'storefront_domain',
+      entityId: updated.id,
+      payload: { dns_status: updated.dnsStatus, tls_status: updated.tlsStatus },
+    });
+
+    return this.mapDomain(updated);
+  }
+
+  async setPrimaryDomain(tenantId: string, storefrontId: string, domainId: string, actorId?: string) {
+    const row = await this.prisma.db.storefrontDomain.findFirst({
+      where: { id: domainId, tenantId, storefrontId },
+    });
+    if (!row) throw AppError.notFound('Domain not found');
+    if (row.dnsStatus !== 'verified') {
+      throw AppError.validation('Domain DNS must be verified before primary');
+    }
+
+    await this.prisma.db.storefrontDomain.updateMany({
+      where: { storefrontId },
+      data: { isPrimary: false },
+    });
+    const updated = await this.prisma.db.storefrontDomain.update({
+      where: { id: row.id },
+      data: { isPrimary: true },
+    });
+    await this.prisma.db.storefront.update({
+      where: { id: storefrontId },
+      data: { primaryDomain: updated.hostname },
+    });
+
+    await this.audit.write({
+      tenantId,
+      actorId,
+      action: 'domain.set_primary',
+      entity: 'storefront_domain',
+      entityId: updated.id,
+      payload: { hostname: updated.hostname },
+    });
+
+    return this.mapDomain(updated);
+  }
+
+  /** Public host → tenant/storefront resolution for multi-tenant storefront. */
+  async resolveHost(hostnameRaw: string) {
+    const hostname = hostnameRaw.trim().toLowerCase().split(':')[0];
+    const apex = process.env.PLATFORM_APEX_DOMAIN || 'ptt.shop';
+
+    const byDomain = await this.prisma.db.storefrontDomain.findFirst({
+      where: {
+        hostname,
+        dnsStatus: 'verified',
+      },
+      include: { storefront: true },
+    });
+    if (byDomain) {
+      return {
+        tenant_id: byDomain.tenantId,
+        brand_id: byDomain.storefront.brandId,
+        storefront_id: byDomain.storefrontId,
+        slug: byDomain.storefront.slug,
+        hostname: byDomain.hostname,
+        primary_domain: byDomain.storefront.primaryDomain,
+        status: byDomain.storefront.status,
+        source: 'domain' as const,
+      };
+    }
+
+    const byPrimary = await this.prisma.db.storefront.findFirst({
+      where: { primaryDomain: hostname },
+    });
+    if (byPrimary) {
+      return {
+        tenant_id: byPrimary.tenantId,
+        brand_id: byPrimary.brandId,
+        storefront_id: byPrimary.id,
+        slug: byPrimary.slug,
+        hostname,
+        primary_domain: byPrimary.primaryDomain,
+        status: byPrimary.status,
+        source: 'primary_domain' as const,
+      };
+    }
+
+    if (hostname.endsWith(`.${apex}`)) {
+      const slug = hostname.slice(0, -(apex.length + 1));
+      const sf = await this.prisma.db.storefront.findFirst({
+        where: { slug },
+      });
+      if (sf) {
+        return {
+          tenant_id: sf.tenantId,
+          brand_id: sf.brandId,
+          storefront_id: sf.id,
+          slug: sf.slug,
+          hostname,
+          primary_domain: sf.primaryDomain,
+          status: sf.status,
+          source: 'subdomain_slug' as const,
+        };
+      }
+    }
+
+    throw AppError.notFound(`No storefront for host ${hostname}`);
+  }
+
+  private async requireSf(tenantId: string, storefrontId: string) {
+    const sf = await this.prisma.db.storefront.findFirst({
+      where: { id: storefrontId, tenantId },
+    });
+    if (!sf) throw AppError.notFound('Storefront not found');
+    return sf;
+  }
 }

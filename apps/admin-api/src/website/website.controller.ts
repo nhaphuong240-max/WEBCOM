@@ -167,8 +167,9 @@ export class WebsiteController {
     @Query('industry') industry?: string,
     @Query('goal') goal?: string,
     @Query('q') q?: string,
+    @Query('sort') sort?: string,
   ) {
-    return this.platform.listTemplates({ industry, goal, q });
+    return this.platform.listTemplates({ industry, goal, q, sort });
   }
 
   @Post('v1/admin/templates/match')
@@ -355,7 +356,15 @@ export class WebsiteController {
   ) {
     const parsed = z
       .object({
-        step: z.enum(['brand_kit', 'catalog', 'theme_match', 'payment', 'golive', 'done']),
+        step: z.enum([
+          'brand_kit',
+          'catalog',
+          'theme_match',
+          'domain',
+          'payment',
+          'golive',
+          'done',
+        ]),
         done: z.boolean().default(true),
       })
       .safeParse(body);
@@ -367,5 +376,52 @@ export class WebsiteController {
       parsed.data.done,
       ctx.actorId,
     );
+  }
+
+  // ─── A1 Domain connect ─────────────────────────────────────
+
+  @Get('v1/admin/storefronts/:id/domains')
+  @UseGuards(TenantAuthGuard)
+  domains(@ReqContext() ctx: RequestContext, @Param('id') id: string) {
+    return this.website.listDomains(ctx.tenantId, id);
+  }
+
+  @Post('v1/admin/storefronts/:id/domains')
+  @UseGuards(TenantAuthGuard)
+  addDomain(@ReqContext() ctx: RequestContext, @Param('id') id: string, @Body() body: unknown) {
+    const parsed = z
+      .object({
+        hostname: z.string().min(3),
+        kind: z.enum(['subdomain', 'custom']).optional(),
+      })
+      .safeParse(body);
+    if (!parsed.success) throw AppError.validation('Invalid domain', parsed.error.flatten());
+    return this.website.addDomain(ctx.tenantId, id, parsed.data, ctx.actorId);
+  }
+
+  @Post('v1/admin/storefronts/:id/domains/:domainId/verify')
+  @UseGuards(TenantAuthGuard)
+  verifyDomain(
+    @ReqContext() ctx: RequestContext,
+    @Param('id') id: string,
+    @Param('domainId') domainId: string,
+  ) {
+    return this.website.verifyDomain(ctx.tenantId, id, domainId, ctx.actorId);
+  }
+
+  @Post('v1/admin/storefronts/:id/domains/:domainId/primary')
+  @UseGuards(TenantAuthGuard)
+  primaryDomain(
+    @ReqContext() ctx: RequestContext,
+    @Param('id') id: string,
+    @Param('domainId') domainId: string,
+  ) {
+    return this.website.setPrimaryDomain(ctx.tenantId, id, domainId, ctx.actorId);
+  }
+
+  @Get('v1/public/host-resolve')
+  hostResolve(@Query('host') host?: string) {
+    if (!host) throw AppError.validation('host query required');
+    return this.website.resolveHost(host);
   }
 }

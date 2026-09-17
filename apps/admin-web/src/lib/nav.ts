@@ -3,6 +3,7 @@ export const websiteNav = [
   { href: '/website/templates', label: 'Template Store', mockup: '04' },
   { href: '/website/themes', label: 'Theme Library', mockup: '05' },
   { href: '/website/builder', label: 'Site Builder', mockup: '06' },
+  { href: '/website/domains', label: 'Domain / SSL', mockup: 'A1' },
   { href: '/website/golive', label: 'Go-live', mockup: '07' },
   { href: '/website/analytics', label: 'Web Analytics', mockup: '09' },
   { href: '/website/agency', label: 'Agency / Headless', mockup: 'W5' },
