@@ -11,6 +11,7 @@ import {
   packageToPageContent,
   packageToThemeConfig,
   toLegacyFlat,
+  validateContentV1,
 } from '@ptt/themes';
 import { Prisma } from '@prisma/client';
 import { randomBytes } from 'crypto';
@@ -44,6 +45,12 @@ const GOLIVE_DEFS: Array<{
   { groupKey: 'perf', code: 'cwv_lcp', title: 'CWV synthetic LCP < 2.5s', severity: 'blocking' },
   { groupKey: 'governance', code: 'staging_review', title: 'Staging đã review', severity: 'blocking' },
   { groupKey: 'governance', code: 'backup_theme', title: 'Theme version backup trước publish', severity: 'warning' },
+  {
+    groupKey: 'cms',
+    code: 'content_schema',
+    title: 'Home page ContentV1 schema hợp lệ',
+    severity: 'warning',
+  },
 ];
 
 type BrandTokens = {
@@ -717,6 +724,8 @@ export class PlatformService {
     });
     if (!page) throw AppError.notFound('Page not found');
     const v = page.versions[0];
+    const raw = (v?.content as Record<string, unknown>) || {};
+    const contentV1 = normalizeContent(raw);
     return {
       page_id: page.id,
       slug: page.slug,
@@ -725,9 +734,136 @@ export class PlatformService {
       version_id: v?.id,
       version: v?.version,
       status: v?.status,
-      content: v?.content ?? {},
+      schema_version: 1,
+      content_v1: contentV1,
+      /** Legacy flat for current builder forms / storefront dual-read */
+      content: toLegacyFlat(contentV1),
       seo: v?.seo ?? {},
       updated_hint: v?.createdAt.toISOString(),
+    };
+  }
+
+  /** Persist ContentV1 + legacy flat mirror (CMS-1 dual-write). */
+  private dualWriteContent(raw: Record<string, unknown>): Record<string, unknown> {
+    const v1 = normalizeContent(raw);
+    if (this.feature('cms.registry.v1')) {
+      const issues = validateContentV1(v1);
+      if (issues.length) {
+        throw AppError.validation(
+          `Invalid content schema: ${issues.map((i) => `${i.path} ${i.message}`).join('; ')}`,
+        );
+      }
+    }
+    const legacy = toLegacyFlat(v1);
+    return {
+      ...legacy,
+      schema_version: 1,
+      section_order: v1.section_order,
+      sections: v1.sections,
+    };
+  }
+
+  async createPage(
+    tenantId: string,
+    storefrontId: string,
+    input: { slug: string; title?: string; template_key?: string },
+    actorId?: string,
+  ) {
+    if (!this.feature('builder.v1')) throw AppError.validation('Feature builder.v1 disabled');
+    await this.sf(tenantId, storefrontId);
+    const slug = input.slug.replace(/^\/+/, '').trim();
+    if (!slug || !/^[a-z0-9][a-z0-9-/]*$/i.test(slug)) {
+      throw AppError.validation('Invalid slug');
+    }
+    const existing = await this.prisma.db.page.findUnique({
+      where: { storefrontId_slug: { storefrontId, slug } },
+    });
+    if (existing) throw AppError.conflict('Page slug already exists');
+
+    const templateKey = input.template_key || (slug === 'home' ? 'home' : 'static');
+    const starter =
+      templateKey === 'static' || templateKey === 'landing'
+        ? this.dualWriteContent({
+            section_order: ['rich_text'],
+            sections: {
+              rich_text: {
+                type: 'rich_text',
+                id: 'sec_rich',
+                props: { title: input.title || slug, body: '' },
+                style: {},
+              },
+            },
+          })
+        : this.dualWriteContent({ section_order: ['hero'], hero: { headline: input.title || slug } });
+
+    const page = await this.prisma.db.page.create({
+      data: {
+        id: createId('pg'),
+        tenantId,
+        storefrontId,
+        slug,
+        title: input.title || slug,
+        templateKey,
+        status: 'draft',
+      },
+    });
+    await this.prisma.db.pageVersion.create({
+      data: {
+        id: createId('pgv'),
+        tenantId,
+        pageId: page.id,
+        version: 1,
+        status: 'draft',
+        content: starter as Prisma.InputJsonValue,
+        seo: { title: input.title || slug, description: '' },
+      },
+    });
+    await this.audit.write({
+      tenantId,
+      actorId,
+      action: 'cms.page_create',
+      entity: 'page',
+      entityId: page.id,
+    });
+    return this.getPageDraft(tenantId, storefrontId, slug);
+  }
+
+  async compatibilityCheck(tenantId: string, storefrontId: string, templateCode: string) {
+    await this.sf(tenantId, storefrontId);
+    if (!hasPackage(templateCode)) {
+      return {
+        ok: true,
+        template_code: templateCode,
+        package: false,
+        warnings: ['No ThemePackage on disk — catalog JSON only'],
+        legacy_sections: [] as string[],
+        supports: [] as string[],
+      };
+    }
+    const pkg = getPackage(templateCode);
+    const supports = new Set(pkg.manifest.supports);
+    const home = await this.prisma.db.page.findFirst({
+      where: { tenantId, storefrontId, slug: 'home' },
+      include: { versions: { orderBy: { version: 'desc' }, take: 1 } },
+    });
+    const content = normalizeContent((home?.versions[0]?.content as object) || {});
+    const legacy: string[] = [];
+    const warnings: string[] = [];
+    for (const key of content.section_order) {
+      const type = content.sections[key]?.type || key;
+      if (!supports.has(type)) {
+        legacy.push(type);
+        warnings.push(`Section "${type}" không nằm trong supports[] của ${templateCode}`);
+      }
+    }
+    return {
+      ok: legacy.length === 0,
+      template_code: templateCode,
+      package: true,
+      package_version: pkg.manifest.version,
+      supports: pkg.manifest.supports,
+      warnings,
+      legacy_sections: legacy,
     };
   }
 
@@ -748,6 +884,7 @@ export class PlatformService {
     if (!this.feature('builder.v1')) throw AppError.validation('Feature builder.v1 disabled');
     await this.sf(tenantId, storefrontId);
     this.validateSections(input.content);
+    const persisted = this.dualWriteContent(input.content);
 
     let page = await this.prisma.db.page.findUnique({
       where: { storefrontId_slug: { storefrontId, slug } },
@@ -792,7 +929,7 @@ export class PlatformService {
       const updated = await this.prisma.db.pageVersion.update({
         where: { id: latest.id },
         data: {
-          content: input.content as Prisma.InputJsonValue,
+          content: persisted as Prisma.InputJsonValue,
           seo: (input.seo ?? latest.seo) as Prisma.InputJsonValue,
         },
       });
@@ -803,12 +940,15 @@ export class PlatformService {
         entity: 'page_version',
         entityId: updated.id,
       });
+      const contentV1 = normalizeContent(updated.content as object);
       return {
         page_id: page.id,
         version_id: updated.id,
         version: updated.version,
         status: updated.status,
-        content: updated.content,
+        schema_version: 1,
+        content_v1: contentV1,
+        content: toLegacyFlat(contentV1),
         seo: updated.seo,
       };
     }
@@ -820,7 +960,7 @@ export class PlatformService {
         pageId: page.id,
         version: (latest?.version ?? 0) + 1,
         status: 'draft',
-        content: input.content as Prisma.InputJsonValue,
+        content: persisted as Prisma.InputJsonValue,
         seo: (input.seo ?? {}) as Prisma.InputJsonValue,
       },
     });
@@ -831,12 +971,15 @@ export class PlatformService {
       entity: 'page_version',
       entityId: created.id,
     });
+    const contentV1 = normalizeContent(created.content as object);
     return {
       page_id: page.id,
       version_id: created.id,
       version: created.version,
       status: created.status,
-      content: created.content,
+      schema_version: 1,
+      content_v1: contentV1,
+      content: toLegacyFlat(contentV1),
       seo: created.seo,
     };
   }
@@ -903,6 +1046,25 @@ export class PlatformService {
     const forceFailLcp = process.env.GOLIVE_FORCE_FAIL_LCP === '1';
     const lcpOk = !forceFailLcp;
 
+    let contentSchemaOk = true;
+    let contentSchemaEvidence: Record<string, unknown> = { checked: false };
+    if (this.feature('cms.registry.v1')) {
+      const homePage = await this.prisma.db.page.findFirst({
+        where: { tenantId, storefrontId, slug: 'home' },
+        include: { versions: { orderBy: { version: 'desc' }, take: 1 } },
+      });
+      const raw = (homePage?.versions[0]?.content as object) || {};
+      const v1 = normalizeContent(raw);
+      const issues = validateContentV1(v1);
+      contentSchemaOk = issues.length === 0;
+      contentSchemaEvidence = {
+        checked: true,
+        schema_version: v1.schema_version,
+        issue_count: issues.length,
+        issues: issues.slice(0, 5),
+      };
+    }
+
     const results: Record<string, { status: 'pass' | 'fail'; evidence: Record<string, unknown> }> = {
       catalog_sync: {
         status: productCount > 0 ? 'pass' : 'fail',
@@ -938,6 +1100,10 @@ export class PlatformService {
       backup_theme: {
         status: publishedTheme || stagingTheme ? 'pass' : 'fail',
         evidence: { published_theme_version_id: sf.publishedThemeVersionId },
+      },
+      content_schema: {
+        status: contentSchemaOk ? 'pass' : 'fail',
+        evidence: contentSchemaEvidence,
       },
     };
 

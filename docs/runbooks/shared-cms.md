@@ -29,9 +29,15 @@ curl -sS -H "x-tenant-id: ten_aura" -H "x-actor-id: op" \
   "$BASE/api/v1/admin/builder/sections"
 ```
 
-## e2e
+## CMS-1 notes
+- PUT page → dual-write ContentV1 + legacy flat
+- `POST …/pages` tạo static page
+- `POST …/themes/compatibility-check`
+- GoLive item `content_schema` (warning)
+- Demo: `FEATURE_CMS_DEMO_PACKAGE` + storefront `?demo=<code>` load package starter
+
 ```bash
-BASE_URL=http://127.0.0.1:3101/api bash scripts/e2e-cms-0.sh
+BASE_URL=http://127.0.0.1:3101/api bash scripts/e2e-cms-1.sh
 ```
 
 ## Spec

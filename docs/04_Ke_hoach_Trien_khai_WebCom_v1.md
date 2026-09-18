@@ -1098,7 +1098,7 @@ Một **Visual Builder + Page/CMS** dùng chung mọi template; template = **The
 | Wave | Scope | Exit |
 |---|---|---|
 | **CMS-0** | ContentV1 + dual-read; `packages/themes` × 3; `GET …/theme-packages/:code`; seed sync | **shipped** — `@ptt/themes` · e2e-cms-0 · runbook `shared-cms.md` |
-| **CMS-1** | Normalize · static/SEO · preview token · demo theo code · compatibility-check | 3 demo khác nhau; e2e-cms-1 |
+| **CMS-1** | Normalize · static/SEO · preview token · demo theo code · compatibility-check | **shipped** — dual-write · SectionStack · e2e-cms-1 |
 | **CMS-2** | Canvas mockup 06 · nav/media · ≥5 packages · legacy warning | GA CMS chung; e2e-cms-2 |
 | **CMS-3** | Section SRS thêm · blog stub · saved blocks · AI drawer | Backlog |
 

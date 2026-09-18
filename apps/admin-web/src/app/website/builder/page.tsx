@@ -17,6 +17,8 @@ async function saveHome(formData: FormData) {
     .split('|')
     .map((s) => s.trim())
     .filter(Boolean);
+  const seoTitle = String(formData.get('seo_title') || headline);
+  const seoDescription = String(formData.get('seo_description') || `${eyebrow} — ${headline}`);
   await apiJson(`/v1/admin/storefronts/${SF}/pages/home`, 'PUT', {
     expected_version: expected || undefined,
     create_if_missing: true,
@@ -26,9 +28,25 @@ async function saveHome(formData: FormData) {
       trust,
     },
     seo: {
-      title: headline,
-      description: `${eyebrow} — ${headline}`,
+      title: seoTitle,
+      description: seoDescription,
     },
+  });
+  revalidatePath('/website/builder');
+}
+
+async function createStaticPage(formData: FormData) {
+  'use server';
+  const slug = String(formData.get('slug') || '')
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, '-');
+  const title = String(formData.get('title') || slug);
+  if (!slug) return;
+  await apiJson(`/v1/admin/storefronts/${SF}/pages`, 'POST', {
+    slug,
+    title,
+    template_key: 'static',
   });
   revalidatePath('/website/builder');
 }
@@ -41,9 +59,11 @@ export default async function BuilderPage() {
       trust?: string[];
       section_order?: string[];
     };
+    content_v1?: { schema_version?: number };
+    seo?: { title?: string; description?: string };
   } | null = null;
   let sections: { sections: Array<{ key: string; label: string }> } | null = null;
-  let pages: Array<{ slug: string; title: string; status: string }> = [];
+  let pages: Array<{ slug: string; title: string; status: string; template_key?: string }> = [];
   let error = '';
   try {
     sections = await apiGet('/v1/admin/builder/sections');
@@ -55,13 +75,14 @@ export default async function BuilderPage() {
 
   const hero = draft?.content?.hero || {};
   const trust = (draft?.content?.trust || []).join(' | ');
+  const seo = draft?.seo || {};
 
   return (
     <>
       <PageHeader
         title="Visual Site Builder"
-        description="Section allowlist · autosave draft · optimistic concurrency"
-        actions={<Badge tone="accent">W3 · mockup 06</Badge>}
+        description="CMS-1 · ContentV1 dual-write · SEO · static pages"
+        actions={<Badge tone="accent">CMS-1 · mockup 06</Badge>}
       />
       {error ? (
         <Panel title="API">
@@ -75,16 +96,28 @@ export default async function BuilderPage() {
             <Badge key={s.key}>{s.label}</Badge>
           ))}
         </div>
+        {draft?.content_v1?.schema_version ? (
+          <p style={{ fontSize: 12, opacity: 0.7, marginTop: 8 }}>
+            Draft schema_version={draft.content_v1.schema_version}
+          </p>
+        ) : null}
       </Panel>
 
       <Panel title="Pages">
         <ul style={{ fontSize: 13 }}>
           {pages.map((p) => (
             <li key={p.slug}>
-              /{p.slug} — {p.title} · {p.status}
+              /{p.slug} — {p.title} · {p.template_key || '—'} · {p.status}
             </li>
           ))}
         </ul>
+        <form action={createStaticPage} style={{ display: 'flex', gap: 8, marginTop: 12, flexWrap: 'wrap' }}>
+          <input name="slug" placeholder="slug (vd. about)" style={{ padding: 8 }} required />
+          <input name="title" placeholder="Tiêu đề" style={{ padding: 8 }} />
+          <Button type="submit" variant="ghost">
+            Tạo static page
+          </Button>
+        </form>
       </Panel>
 
       <Panel title={`Edit home (draft v${draft?.version ?? '—'})`}>
@@ -118,12 +151,41 @@ export default async function BuilderPage() {
             Trust (phân tách |)
             <input name="trust" defaultValue={trust} style={{ width: '100%', padding: 8 }} />
           </label>
+          <label style={{ fontSize: 13 }}>
+            SEO title
+            <input
+              name="seo_title"
+              defaultValue={seo.title || ''}
+              style={{ width: '100%', padding: 8 }}
+            />
+          </label>
+          <label style={{ fontSize: 13 }}>
+            SEO description
+            <input
+              name="seo_description"
+              defaultValue={seo.description || ''}
+              style={{ width: '100%', padding: 8 }}
+            />
+          </label>
           <Button type="submit" variant="primary">
-            Autosave draft
+            Autosave draft (ContentV1)
+          </Button>
+        </form>
+        <form
+          action={async () => {
+            'use server';
+            await apiJson(`/v1/admin/storefronts/${SF}/preview-token`, 'POST', { hours: 24 });
+            revalidatePath('/website/builder');
+          }}
+          style={{ marginTop: 12 }}
+        >
+          <Button type="submit" variant="ghost">
+            Tạo preview token (24h)
           </Button>
         </form>
         <p style={{ fontSize: 12, opacity: 0.7 }}>
-          Publish qua Go-live checklist — Builder không auto-publish.
+          Publish qua Go-live checklist — Builder không auto-publish. Demo package:{' '}
+          <code>?demo=lumen-fashion</code> trên themes host.
         </p>
       </Panel>
     </>

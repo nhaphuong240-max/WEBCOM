@@ -252,6 +252,20 @@ export class WebsiteController {
     return this.platform.listPages(ctx.tenantId, id);
   }
 
+  @Post('v1/admin/storefronts/:id/pages')
+  @UseGuards(TenantAuthGuard)
+  createPage(@ReqContext() ctx: RequestContext, @Param('id') id: string, @Body() body: unknown) {
+    const parsed = z
+      .object({
+        slug: z.string().min(1),
+        title: z.string().optional(),
+        template_key: z.string().optional(),
+      })
+      .safeParse(body);
+    if (!parsed.success) throw AppError.validation('Invalid page', parsed.error.flatten());
+    return this.platform.createPage(ctx.tenantId, id, parsed.data, ctx.actorId);
+  }
+
   @Get('v1/admin/storefronts/:id/pages/:slug')
   @UseGuards(TenantAuthGuard)
   pageDraft(
@@ -260,6 +274,18 @@ export class WebsiteController {
     @Param('slug') slug: string,
   ) {
     return this.platform.getPageDraft(ctx.tenantId, id, slug);
+  }
+
+  @Post('v1/admin/storefronts/:id/themes/compatibility-check')
+  @UseGuards(TenantAuthGuard)
+  compatibilityCheck(
+    @ReqContext() ctx: RequestContext,
+    @Param('id') id: string,
+    @Body() body: unknown,
+  ) {
+    const parsed = z.object({ template_code: z.string().min(1) }).safeParse(body);
+    if (!parsed.success) throw AppError.validation('Invalid body', parsed.error.flatten());
+    return this.platform.compatibilityCheck(ctx.tenantId, id, parsed.data.template_code);
   }
 
   @Put('v1/admin/storefronts/:id/pages/:slug')
