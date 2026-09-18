@@ -53,6 +53,17 @@ async function createStaticPage(formData: FormData) {
   revalidatePath('/website/builder');
 }
 
+async function promotePage(formData: FormData) {
+  'use server';
+  const slug = String(formData.get('slug') || '');
+  const target = String(formData.get('target') || 'published') as 'staging' | 'published';
+  if (!slug) return;
+  await apiJson(`/v1/admin/storefronts/${SF}/pages/${encodeURIComponent(slug)}/promote`, 'POST', {
+    target,
+  });
+  revalidatePath('/website/builder');
+}
+
 async function saveCanvasAction(payload: {
   content: ContentV1;
   seo: { title?: string; description?: string };
@@ -215,8 +226,30 @@ export default async function BuilderPage() {
       <Panel title="Pages">
         <ul style={{ fontSize: 13 }}>
           {pages.map((p) => (
-            <li key={p.slug}>
-              /{p.slug} — {p.title} · {p.template_key || '—'} · {p.status}
+            <li
+              key={p.slug}
+              style={{
+                display: 'flex',
+                flexWrap: 'wrap',
+                gap: 8,
+                alignItems: 'center',
+                marginBottom: 8,
+              }}
+            >
+              <span>
+                /{p.slug} — {p.title} · {p.template_key || '—'} · {p.status}
+              </span>
+              {p.status !== 'published' ? (
+                <form action={promotePage} style={{ display: 'inline' }}>
+                  <input type="hidden" name="slug" value={p.slug} />
+                  <input type="hidden" name="target" value="published" />
+                  <Button type="submit" variant="ghost">
+                    Publish page
+                  </Button>
+                </form>
+              ) : p.template_key === 'blog_post' ? (
+                <span style={{ fontSize: 12, opacity: 0.7 }}>/blog/{p.slug}</span>
+              ) : null}
             </li>
           ))}
         </ul>

@@ -174,8 +174,9 @@ export class WebsiteController {
     @Query('goal') goal?: string,
     @Query('q') q?: string,
     @Query('sort') sort?: string,
+    @Query('license') license?: string,
   ) {
-    return this.platform.listTemplates({ industry, goal, q, sort });
+    return this.platform.listTemplates({ industry, goal, q, sort, license });
   }
 
   @Post('v1/admin/templates/match')
@@ -331,6 +332,27 @@ export class WebsiteController {
         create_if_missing: parsed.data.create_if_missing,
         template_key: parsed.data.template_key,
       },
+      ctx.actorId,
+    );
+  }
+
+  @Post('v1/admin/storefronts/:id/pages/:slug/promote')
+  @UseGuards(TenantAuthGuard)
+  promotePage(
+    @ReqContext() ctx: RequestContext,
+    @Param('id') id: string,
+    @Param('slug') slug: string,
+    @Body() body: unknown,
+  ) {
+    const parsed = z
+      .object({ target: z.enum(['staging', 'published']).default('published') })
+      .safeParse(body ?? {});
+    if (!parsed.success) throw AppError.validation('Invalid promote body', parsed.error.flatten());
+    return this.platform.promotePage(
+      ctx.tenantId,
+      id,
+      slug,
+      parsed.data.target,
       ctx.actorId,
     );
   }
@@ -563,15 +585,21 @@ export class WebsiteController {
     return this.website.resolveHost(host);
   }
 
-  /** P1 — public template gallery (no auth). */
+  /** P1 / MKT-1 — public template gallery (no auth). */
   @Get('v1/public/templates')
   publicTemplates(
     @Query('industry') industry?: string,
     @Query('goal') goal?: string,
     @Query('q') q?: string,
     @Query('sort') sort?: string,
+    @Query('license') license?: string,
   ) {
-    return this.platform.listTemplates({ industry, goal, q, sort });
+    return this.platform.listTemplates({ industry, goal, q, sort, license });
+  }
+
+  @Get('v1/public/templates/facets')
+  publicTemplateFacets() {
+    return this.platform.listTemplateFacets();
   }
 
   @Get('v1/public/templates/:codeOrId')

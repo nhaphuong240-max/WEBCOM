@@ -1,0 +1,113 @@
+openapi: 3.0.3
+info:
+  title: WebCom Shared CMS GA (CMS-0…3 + MKT-1)
+  version: 1.0.0
+  description: Hardened public/admin surfaces for Shared CMS GA.
+paths:
+  /api/v1/public/theme-packages:
+    get:
+      summary: List ThemePackages
+      tags: [CMS-0]
+  /api/v1/public/theme-packages/{code}:
+    get:
+      summary: ThemePackage detail + starter
+      tags: [CMS-0]
+      parameters:
+        - in: path
+          name: code
+          required: true
+          schema: { type: string }
+  /api/v1/public/templates:
+    get:
+      summary: Marketplace browse (facets via query)
+      tags: [MKT-1]
+      parameters:
+        - in: query
+          name: industry
+          schema: { type: string }
+        - in: query
+          name: goal
+          schema: { type: string }
+        - in: query
+          name: license
+          schema: { type: string }
+        - in: query
+          name: sort
+          schema: { type: string, enum: [cvr, mobile, seo, name] }
+  /api/v1/public/templates/facets:
+    get:
+      summary: Facet values for browse
+      tags: [MKT-1]
+  /api/v1/public/templates/{codeOrId}:
+    get:
+      summary: Template detail + supports + CTA URLs
+      tags: [MKT-1]
+  /api/v1/admin/builder/sections:
+    get:
+      summary: Section registry + CMS feature flags
+      tags: [CMS-0]
+  /api/v1/admin/storefronts/{id}/pages:
+    get:
+      summary: List pages (optional template_key)
+      tags: [CMS-1]
+    post:
+      summary: Create page (static|blog_post|landing)
+      tags: [CMS-1]
+  /api/v1/admin/storefronts/{id}/pages/{slug}:
+    get:
+      summary: Get draft ContentV1 dual-write
+      tags: [CMS-1]
+    put:
+      summary: Save draft (normalize + dual-write)
+      tags: [CMS-1]
+  /api/v1/admin/storefronts/{id}/pages/{slug}/promote:
+    post:
+      summary: Promote page version to staging|published (page-scoped)
+      tags: [CMS-GA]
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                target:
+                  type: string
+                  enum: [staging, published]
+  /api/v1/admin/storefronts/{id}/navigation:
+    get:
+      summary: List navigation menus
+      tags: [CMS-2]
+  /api/v1/admin/storefronts/{id}/navigation/{handle}:
+    put:
+      summary: Upsert navigation items
+      tags: [CMS-2]
+  /api/v1/admin/media:
+    get:
+      summary: List media assets
+      tags: [CMS-2]
+    post:
+      summary: Create media stub (URL)
+      tags: [CMS-2]
+  /api/v1/admin/storefronts/{id}/saved-blocks:
+    get:
+      summary: List saved blocks
+      tags: [CMS-3]
+    post:
+      summary: Create saved block
+      tags: [CMS-3]
+  /api/v1/admin/storefronts/{id}/builder/ai-copy:
+    post:
+      summary: AI copy suggestions (draft only, no publish)
+      tags: [CMS-3]
+  /api/v1/admin/storefronts/{id}/themes/compatibility-check:
+    post:
+      summary: Theme switch compatibility
+      tags: [CMS-1]
+  /api/v1/admin/storefronts/{id}/golive:
+    get:
+      summary: GoLive checklist (includes content_schema)
+      tags: [CMS-GA]
+  /api/v1/storefronts/{idOrSlug}/blog:
+    get:
+      summary: Published blog posts
+      tags: [CMS-3]

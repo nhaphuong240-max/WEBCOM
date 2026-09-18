@@ -229,7 +229,7 @@ Chia **CMS-1a** (BE/CMS) và **CMS-1b** (demo/storefront) song song sau C0.
 - [x] ≥5 packages; demo 5 codes phân biệt
 - [x] Nav + media stub
 - [x] e2e-cms-2 pass
-- [ ] Không regression P2/P3/GoLive (smoke khi deploy)
+- [x] Không regression P2/P3/GoLive (`scripts/e2e-cms-ga.sh`)
 
 ---
 
@@ -255,12 +255,18 @@ Chia **CMS-1a** (BE/CMS) và **CMS-1b** (demo/storefront) song song sau C0.
 
 Không thuộc CMS engine nhưng dùng `supports` từ CMS-0.
 
-| ID | Task | AC |
-|---|---|---|
-| M1-1 | `GET /public/templates/:code` trả supports, scores, media, license tier | Detail đủ |
-| M1-2 | corporate `/templates/[code]` | CTA Demo/Trial/Buy |
-| M1-3 | Browse facets: industry, goal, tier, sort cvr/mobile | § IA file Desktop |
-| M1-4 | Deep-link demo `themes.?demo=` + chrome | Đã có chrome |
+| ID | Task | AC | Status |
+|---|---|---|---|
+| M1-1 | `GET /public/templates/:code` trả supports, scores, media, license tier | Detail đủ | **shipped** |
+| M1-2 | corporate `/templates/[code]` | CTA Demo/Trial/Buy | **shipped** |
+| M1-3 | Browse facets: industry, goal, tier, sort cvr/mobile | § IA | **shipped** |
+| M1-4 | Deep-link demo `themes.?demo=` + chrome | Đã có chrome | **shipped** |
+
+API thêm: `GET /v1/public/templates/facets` · list `?license=` · enrich `supports`/`has_package`.
+
+```bash
+BASE_URL=http://127.0.0.1:3101/api bash scripts/e2e-mkt-1.sh
+```
 
 Lịch: bắt đầu sau C0-6; hoàn thành trong cửa sổ CMS-1.
 

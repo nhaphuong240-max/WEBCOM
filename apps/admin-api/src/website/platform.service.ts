@@ -263,12 +263,19 @@ export class PlatformService {
 
   // ─── Template Marketplace ──────────────────────────────────
 
-  async listTemplates(query?: { industry?: string; goal?: string; q?: string; sort?: string }) {
+  async listTemplates(query?: {
+    industry?: string;
+    goal?: string;
+    q?: string;
+    sort?: string;
+    license?: string;
+  }) {
     const rows = await this.prisma.db.templateCatalog.findMany({
       where: {
         active: true,
         ...(query?.industry ? { industry: query.industry } : {}),
         ...(query?.goal ? { goal: query.goal } : {}),
+        ...(query?.license ? { license: query.license } : {}),
         ...(query?.q
           ? {
               OR: [
@@ -281,7 +288,7 @@ export class PlatformService {
       },
       orderBy: { name: 'asc' },
     });
-    const mapped = rows.map((t) => this.mapTemplate(t));
+    const mapped = rows.map((t) => this.enrichTemplateForMarketplace(this.mapTemplate(t)));
     if (query?.sort === 'cvr' || query?.sort === 'mobile' || query?.sort === 'seo') {
       const key = query.sort as 'cvr' | 'mobile' | 'seo';
       mapped.sort((a, b) => {
@@ -291,6 +298,21 @@ export class PlatformService {
       });
     }
     return mapped;
+  }
+
+  /** Facet values for marketplace browse (MKT-1). */
+  async listTemplateFacets() {
+    const rows = await this.prisma.db.templateCatalog.findMany({
+      where: { active: true },
+      select: { industry: true, goal: true, license: true },
+    });
+    const uniq = (xs: string[]) => Array.from(new Set(xs.filter(Boolean))).sort();
+    return {
+      industries: uniq(rows.map((r) => r.industry)),
+      goals: uniq(rows.map((r) => r.goal)),
+      licenses: uniq(rows.map((r) => r.license)),
+      sorts: ['cvr', 'mobile', 'seo', 'name'],
+    };
   }
 
   async getPublicTemplate(codeOrId: string) {
@@ -303,29 +325,84 @@ export class PlatformService {
     if (!row) throw AppError.notFound('Template not found');
     const demoBase =
       process.env.DEMO_PUBLIC_URL?.replace(/\/$/, '') || 'https://themes.ngoinhahomnay.vn';
-    const mapped = this.mapTemplate(row);
-    let packageMeta: Record<string, unknown> | undefined;
+    const consoleBase =
+      process.env.ADMIN_WEB_PUBLIC_URL?.replace(/\/$/, '') ||
+      process.env.NEXT_PUBLIC_CONSOLE_URL?.replace(/\/$/, '') ||
+      'https://webecom.ngoinhahomnay.vn/console';
+    const mapped = this.enrichTemplateForMarketplace(this.mapTemplate(row));
+    let packageMeta: Record<string, unknown> = {
+      has_package: false,
+      package_version: null,
+      supports: [] as string[],
+      layouts: null,
+      tokens: null,
+      starter_headline: null,
+    };
     if (this.feature('cms.package_resolve') && hasPackage(row.code)) {
       try {
         const pkg = getPackage(row.code);
+        const hero = pkg.starter.home.sections.hero?.props as { headline?: string } | undefined;
         packageMeta = {
+          has_package: true,
           package_version: pkg.manifest.version,
           supports: pkg.manifest.supports,
           layouts: pkg.manifest.layouts,
+          tokens: pkg.starter.tokens,
+          starter_headline: hero?.headline || null,
+          compatible_app_blocks: pkg.manifest.compatible_app_blocks || [],
+          demo_fixtures: pkg.manifest.demo_fixtures || {},
         };
       } catch {
-        packageMeta = undefined;
+        /* keep empty packageMeta */
       }
     }
+    const preview = mapped.preview_url || null;
     return {
       ...mapped,
       ...packageMeta,
+      license_tier: mapped.license,
+      media: [
+        ...(preview ? [{ type: 'preview', url: preview }] : []),
+        {
+          type: 'demo',
+          url: `${demoBase}/?demo=${encodeURIComponent(row.code)}`,
+        },
+      ],
       demo_url: `${demoBase}/?demo=${encodeURIComponent(row.code)}`,
-      trial_url: '/trial',
-      buy_theme_url: `/console/website/templates?focus=${encodeURIComponent(row.code)}`,
+      trial_url: `/trial?template=${encodeURIComponent(row.code)}`,
+      buy_theme_url: `${consoleBase}/website/templates?focus=${encodeURIComponent(row.code)}`,
       monetize: 'theme_license',
       trial_before_paywall: true,
+      cta: {
+        demo: `${demoBase}/?demo=${encodeURIComponent(row.code)}`,
+        trial: `/trial?template=${encodeURIComponent(row.code)}`,
+        buy: `${consoleBase}/website/templates?focus=${encodeURIComponent(row.code)}`,
+      },
     };
+  }
+
+  private enrichTemplateForMarketplace<
+    T extends { code: string; license: string; features: unknown },
+  >(t: T) {
+    const base = {
+      ...t,
+      license_tier: t.license,
+      has_package: false as boolean,
+      supports: [] as string[],
+      package_version: null as string | null,
+    };
+    if (!this.feature('cms.package_resolve') || !hasPackage(t.code)) return base;
+    try {
+      const pkg = getPackage(t.code);
+      return {
+        ...base,
+        has_package: true,
+        supports: [...pkg.manifest.supports],
+        package_version: pkg.manifest.version,
+      };
+    } catch {
+      return base;
+    }
   }
 
   async matchTemplates(input: {
@@ -1093,6 +1170,74 @@ export class PlatformService {
       entityId: page.id,
     });
     return this.getPageDraft(tenantId, storefrontId, slug);
+  }
+
+  /**
+   * Promote latest page version to staging|published (CMS GA — blog / static).
+   * Does not run full storefront GoLive publish; page-scoped only.
+   */
+  async promotePage(
+    tenantId: string,
+    storefrontId: string,
+    slug: string,
+    target: 'staging' | 'published',
+    actorId?: string,
+  ) {
+    if (!this.feature('builder.v1')) throw AppError.validation('Feature builder.v1 disabled');
+    await this.sf(tenantId, storefrontId);
+    const page = await this.prisma.db.page.findFirst({
+      where: { tenantId, storefrontId, slug },
+      include: { versions: { orderBy: { version: 'desc' }, take: 1 } },
+    });
+    if (!page) throw AppError.notFound('Page not found');
+    const latest = page.versions[0];
+    if (!latest) throw AppError.validation('Page has no versions');
+
+    if (target === 'published' && page.templateKey === 'blog_post' && !this.feature('cms.blog')) {
+      throw AppError.validation('Feature cms.blog disabled');
+    }
+
+    if (target === 'published') {
+      await this.prisma.db.pageVersion.updateMany({
+        where: { pageId: page.id, status: 'published', id: { not: latest.id } },
+        data: { status: 'archived' },
+      });
+      await this.prisma.db.pageVersion.update({
+        where: { id: latest.id },
+        data: { status: 'published' },
+      });
+      await this.prisma.db.page.update({
+        where: { id: page.id },
+        data: { status: 'published' },
+      });
+    } else {
+      await this.prisma.db.pageVersion.update({
+        where: { id: latest.id },
+        data: { status: 'staging' },
+      });
+      await this.prisma.db.page.update({
+        where: { id: page.id },
+        data: { status: 'staging' },
+      });
+    }
+
+    await this.audit.write({
+      tenantId,
+      actorId: actorId || 'system',
+      action: 'cms.page_promote',
+      entity: 'page',
+      entityId: page.id,
+      payload: { slug, target, version: latest.version, template_key: page.templateKey },
+    });
+
+    return {
+      slug: page.slug,
+      title: page.title,
+      template_key: page.templateKey,
+      status: target,
+      version: latest.version,
+      href: page.templateKey === 'blog_post' ? `/blog/${page.slug}` : `/p/${page.slug}`,
+    };
   }
 
   async compatibilityCheck(tenantId: string, storefrontId: string, templateCode: string) {

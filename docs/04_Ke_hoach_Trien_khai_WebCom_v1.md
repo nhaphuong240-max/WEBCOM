@@ -1083,7 +1083,7 @@ Một **Visual Builder + Page/CMS** dùng chung mọi template; template = **The
 | 2–3 | **CMS-1** | Normalize · pages/SEO/preview · demo resolve khác nhau · compatibility-check |
 | 4–6 | **CMS-2** | Builder canvas mockup 06 · nav/media · ≥5 packages · **GA Shared CMS** |
 | 7+ | **CMS-3** | Blog / saved blocks / AI drawer — backlog |
-| Song song 2–3 | **MKT-1** | `/templates/[code]` + facets dùng `supports[]` |
+| Song song 2–3 | **MKT-1** | `/templates/[code]` + facets · **shipped** |
 
 ## Hiện trạng (baseline)
 | Thành phần | Status |
@@ -1101,6 +1101,8 @@ Một **Visual Builder + Page/CMS** dùng chung mọi template; template = **The
 | **CMS-1** | Normalize · static/SEO · preview token · demo theo code · compatibility-check | **shipped** — dual-write · SectionStack · e2e-cms-1 |
 | **CMS-2** | Canvas mockup 06 · nav/media · ≥5 packages · legacy warning | **shipped** — builder canvas · e2e-cms-2 |
 | **CMS-3** | Section SRS thêm · blog stub · saved blocks · AI drawer | **shipped** — e2e-cms-3 |
+| **MKT-1** | Corporate gallery facets + `/templates/[code]` · supports · demo CTA | **shipped** — e2e-mkt-1 |
+| **CMS-GA** | Blog promote · OpenAPI/Bruno · e2e-cms-ga (P2/P3/golive) | **shipped** — cứng hóa GA |
 
 ## Section MVP (CMS-0/1)
 `hero` · `collections` · `featured` · `trust` · (+ CMS-1: `rich_text`, `faq`, `cta_banner`)

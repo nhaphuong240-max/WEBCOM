@@ -1,0 +1,68 @@
+meta {
+  name: WebCom-CMS-GA
+}
+
+get {
+  url: {{baseUrl}}/v1/public/theme-packages
+}
+
+get {
+  url: {{baseUrl}}/v1/public/templates/facets
+}
+
+get {
+  url: {{baseUrl}}/v1/public/templates/aura-commerce-lite
+}
+
+get {
+  url: {{baseUrl}}/v1/admin/builder/sections
+  headers {
+    x-tenant-id: ten_aura
+    x-actor-id: bruno
+  }
+}
+
+get {
+  url: {{baseUrl}}/v1/admin/storefronts/sf_aura/golive
+  headers {
+    x-tenant-id: ten_aura
+    x-actor-id: bruno
+  }
+}
+
+post {
+  url: {{baseUrl}}/v1/admin/storefronts/sf_aura/pages/home
+  headers {
+    x-tenant-id: ten_aura
+    x-actor-id: bruno
+    content-type: application/json
+  }
+  body: {
+    create_if_missing: true
+    content: {
+      schema_version: 1
+      section_order: ["hero"]
+      sections: {
+        hero: {
+          type: hero
+          id: sec_hero
+          props: { headline: "GA smoke" }
+          style: {}
+        }
+      }
+    }
+  }
+}
+
+post {
+  url: {{baseUrl}}/v1/admin/storefronts/sf_aura/builder/ai-copy
+  headers {
+    x-tenant-id: ten_aura
+    x-actor-id: bruno
+    content-type: application/json
+  }
+  body: {
+    headline: "GA headline"
+    field: headline
+  }
+}

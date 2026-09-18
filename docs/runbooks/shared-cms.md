@@ -62,6 +62,32 @@ BASE_URL=http://127.0.0.1:3101/api bash scripts/e2e-cms-2.sh
 BASE_URL=http://127.0.0.1:3101/api bash scripts/e2e-cms-3.sh
 ```
 
+## MKT-1 notes
+- `GET /v1/public/templates/facets` · list `?industry&goal&license&sort`
+- Detail `GET /v1/public/templates/:code` → supports · demo_url · trial/buy CTA
+- Corporate: `/templates` facets · `/templates/[code]` Demo / Trial / Buy
+
+```bash
+BASE_URL=http://127.0.0.1:3101/api bash scripts/e2e-mkt-1.sh
+```
+
+## Shared CMS GA hardening
+- Page promote: `POST …/pages/:slug/promote` `{ "target": "published" }` — blog hiện trên `/blog`
+- Builder: nút **Publish page** trên list
+- OpenAPI: `docs/openapi-cms-ga.yaml` · Bruno: `docs/bruno/WebCom-CMS-GA.bru`
+- Regression bundle:
+
+```bash
+BASE_URL=http://127.0.0.1:3101/api bash scripts/e2e-cms-ga.sh
+# bỏ P2/P3: CMS_GA_P2P3=0 BASE_URL=… bash scripts/e2e-cms-ga.sh
+```
+
+Checklist GA:
+- [x] CMS-0…3 e2e scripts
+- [x] Blog draft → promote → storefront list
+- [x] GoLive `content_schema`
+- [x] P2 trial + P3 license smoke (trong e2e-cms-ga)
+
 ## Spec
 - `docs/specs/shared-cms-themepackage.md`
-- `docs/specs/shared-cms-implementation-plan.md` · wave CMS-0…CMS-3
+- `docs/specs/shared-cms-implementation-plan.md` · wave CMS-0…CMS-3 · MKT-1

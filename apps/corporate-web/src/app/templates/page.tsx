@@ -1,104 +1,192 @@
 import Link from 'next/link';
+import {
+  buyUrl,
+  demoUrl,
+  facetHref,
+  fetchTemplateFacets,
+  fetchTemplates,
+  trialUrl,
+} from '../../lib/marketplace';
 
 export const dynamic = 'force-dynamic';
-
-const API =
-  process.env.NEXT_PUBLIC_ADMIN_API_URL?.replace(/\/$/, '') ||
-  process.env.INTERNAL_API_URL?.replace(/\/$/, '') ||
-  'http://127.0.0.1:3001';
-
-const DEMO =
-  process.env.NEXT_PUBLIC_DEMO_URL?.replace(/\/$/, '') || 'https://themes.ngoinhahomnay.vn';
-const CONSOLE =
-  process.env.NEXT_PUBLIC_CONSOLE_URL?.replace(/\/$/, '') ||
-  'https://webecom.ngoinhahomnay.vn/console';
-
-type Template = {
-  id: string;
-  code: string;
-  name: string;
-  industry: string;
-  goal: string;
-  license: string;
-  scores?: { cvr?: number; mobile?: number; seo?: number };
-};
-
-async function loadTemplates(): Promise<Template[]> {
-  try {
-    const res = await fetch(`${API}/api/v1/public/templates?sort=cvr`, {
-      next: { revalidate: 60 },
-    });
-    if (!res.ok) return [];
-    return (await res.json()) as Template[];
-  } catch {
-    return [];
-  }
-}
 
 export default async function TemplatesPage({
   searchParams,
 }: {
-  searchParams?: Promise<{ industry?: string }>;
+  searchParams?: Promise<{
+    industry?: string;
+    goal?: string;
+    license?: string;
+    sort?: string;
+    q?: string;
+  }>;
 }) {
-  const sp = searchParams ? await searchParams : {};
-  let templates = await loadTemplates();
-  if (sp.industry) {
-    templates = templates.filter((t) => t.industry === sp.industry);
-  }
-  const industries = Array.from(new Set((await loadTemplates()).map((t) => t.industry))).sort();
+  const sp = (await searchParams) || {};
+  const sort = sp.sort || 'cvr';
+  const filters = {
+    industry: sp.industry,
+    goal: sp.goal,
+    license: sp.license,
+    sort,
+    q: sp.q,
+  };
+  const [templates, facets] = await Promise.all([
+    fetchTemplates(filters),
+    fetchTemplateFacets(),
+  ]);
+  const base = {
+    industry: sp.industry,
+    goal: sp.goal,
+    license: sp.license,
+    sort,
+    q: sp.q,
+  };
 
   return (
     <main className="corp-page">
       <div className="corp-page-h">
         <div className="corp-eyebrow">Marketplace</div>
         <h1>Template Marketplace</h1>
-        <p>Chọn template → xem demo live → dùng thử miễn phí → mua theme khi sẵn sàng.</p>
+        <p>
+          Lọc theo ngành · mục tiêu · license · sort CVR/Mobile/SEO. Mỗi template có demo live và
+          trial — ThemePackage chung một CMS.
+        </p>
       </div>
 
-      <div className="corp-chip-row">
-        <Link href="/templates" className={`corp-chip${!sp.industry ? ' active' : ''}`}>
-          All
-        </Link>
-        {industries.map((i) => (
-          <Link
-            key={i}
-            href={`/templates?industry=${encodeURIComponent(i)}`}
-            className={`corp-chip${sp.industry === i ? ' active' : ''}`}
-          >
-            {i}
-          </Link>
-        ))}
-      </div>
+      <section className="mkt-facets" aria-label="Bộ lọc">
+        <div className="mkt-facet-group">
+          <span className="mkt-facet-label">Ngành</span>
+          <div className="corp-chip-row" style={{ marginBottom: 0 }}>
+            <Link
+              href={facetHref(base, { industry: undefined })}
+              className={`corp-chip${!sp.industry ? ' active' : ''}`}
+            >
+              All
+            </Link>
+            {facets.industries.map((i) => (
+              <Link
+                key={i}
+                href={facetHref(base, { industry: i })}
+                className={`corp-chip${sp.industry === i ? ' active' : ''}`}
+              >
+                {i}
+              </Link>
+            ))}
+          </div>
+        </div>
+
+        <div className="mkt-facet-group">
+          <span className="mkt-facet-label">Mục tiêu</span>
+          <div className="corp-chip-row" style={{ marginBottom: 0 }}>
+            <Link
+              href={facetHref(base, { goal: undefined })}
+              className={`corp-chip${!sp.goal ? ' active' : ''}`}
+            >
+              All
+            </Link>
+            {facets.goals.map((g) => (
+              <Link
+                key={g}
+                href={facetHref(base, { goal: g })}
+                className={`corp-chip${sp.goal === g ? ' active' : ''}`}
+              >
+                {g}
+              </Link>
+            ))}
+          </div>
+        </div>
+
+        <div className="mkt-facet-group">
+          <span className="mkt-facet-label">License</span>
+          <div className="corp-chip-row" style={{ marginBottom: 0 }}>
+            <Link
+              href={facetHref(base, { license: undefined })}
+              className={`corp-chip${!sp.license ? ' active' : ''}`}
+            >
+              All
+            </Link>
+            {facets.licenses.map((l) => (
+              <Link
+                key={l}
+                href={facetHref(base, { license: l })}
+                className={`corp-chip${sp.license === l ? ' active' : ''}`}
+              >
+                {l}
+              </Link>
+            ))}
+          </div>
+        </div>
+
+        <div className="mkt-facet-group">
+          <span className="mkt-facet-label">Sort</span>
+          <div className="corp-chip-row" style={{ marginBottom: 0 }}>
+            {(['cvr', 'mobile', 'seo'] as const).map((s) => (
+              <Link
+                key={s}
+                href={facetHref(base, { sort: s })}
+                className={`corp-chip${sort === s ? ' active' : ''}`}
+              >
+                {s.toUpperCase()}
+              </Link>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <p className="mkt-count">
+        {templates.length} template{templates.length === 1 ? '' : 's'}
+        {sp.industry || sp.goal || sp.license ? ' · đã lọc' : ''}
+      </p>
 
       <div className="corp-card-grid">
         {templates.map((t) => {
-          const demoHref = `${DEMO}/?demo=${encodeURIComponent(t.code)}`;
-          const trialHref = `/trial${t.code ? `?template=${encodeURIComponent(t.code)}` : ''}`;
-          const buyHref = `${CONSOLE}/website/templates?focus=${encodeURIComponent(t.code)}`;
+          const href = `/templates/${encodeURIComponent(t.code)}`;
           return (
             <article key={t.id} className="corp-card">
               <div className="meta">
                 <span className="tag">{t.industry}</span>
                 <span className="tag tag-accent">{t.goal}</span>
                 <span className="tag">{t.license}</span>
+                {t.has_package ? <span className="tag">package</span> : null}
               </div>
-              <h3>{t.name}</h3>
+              <h3>
+                <Link href={href}>{t.name}</Link>
+              </h3>
               <p style={{ fontSize: 12, color: 'var(--ink-3)', margin: 0 }}>
                 CVR {t.scores?.cvr ?? '—'} · Mobile {t.scores?.mobile ?? '—'} · SEO{' '}
                 {t.scores?.seo ?? '—'}
               </p>
+              {t.supports && t.supports.length > 0 ? (
+                <p style={{ fontSize: 11, color: 'var(--ink-3)', margin: 0, lineHeight: 1.45 }}>
+                  supports: {t.supports.slice(0, 5).join(', ')}
+                  {t.supports.length > 5 ? '…' : ''}
+                </p>
+              ) : null}
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 'auto' }}>
-                <a href={demoHref} target="_blank" rel="noreferrer" className="corp-btn corp-btn-ghost">
-                  Xem demo
+                <Link href={href} className="corp-btn corp-btn-ink">
+                  Xem chi tiết
+                </Link>
+                <a
+                  href={demoUrl(t.code)}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="corp-btn corp-btn-ghost"
+                >
+                  Demo live
                 </a>
-                <a href={trialHref} className="corp-btn corp-btn-primary">
+                <a href={trialUrl(t.code)} className="corp-btn corp-btn-primary">
                   Dùng thử miễn phí
                 </a>
                 <a
-                  href={buyHref}
-                  style={{ fontSize: 12, color: 'var(--ink-3)', textAlign: 'center', fontWeight: 500 }}
+                  href={buyUrl(t.code)}
+                  style={{
+                    fontSize: 12,
+                    color: 'var(--ink-3)',
+                    textAlign: 'center',
+                    fontWeight: 500,
+                  }}
                 >
-                  Mua theme (sau trial) →
+                  Mua theme →
                 </a>
               </div>
             </article>
@@ -107,8 +195,8 @@ export default async function TemplatesPage({
       </div>
 
       {!templates.length ? (
-        <p style={{ color: 'var(--ink-3)' }}>
-          Chưa tải được catalog — kiểm tra API public templates.
+        <p style={{ color: 'var(--ink-3)', marginTop: 24 }}>
+          Không có template khớp bộ lọc — thử bỏ bớt facet.
         </p>
       ) : null}
     </main>
