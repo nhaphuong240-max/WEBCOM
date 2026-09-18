@@ -784,6 +784,7 @@ export class PlatformService {
     const starter =
       templateKey === 'static' || templateKey === 'landing'
         ? this.dualWriteContent({
+            schema_version: 1,
             section_order: ['rich_text'],
             sections: {
               rich_text: {
@@ -794,7 +795,18 @@ export class PlatformService {
               },
             },
           })
-        : this.dualWriteContent({ section_order: ['hero'], hero: { headline: input.title || slug } });
+        : this.dualWriteContent({
+            schema_version: 1,
+            section_order: ['hero'],
+            sections: {
+              hero: {
+                type: 'hero',
+                id: 'sec_hero',
+                props: { headline: input.title || slug },
+                style: {},
+              },
+            },
+          });
 
     const page = await this.prisma.db.page.create({
       data: {

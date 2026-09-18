@@ -12,7 +12,10 @@ export function normalizeContent(raw: unknown): ContentV1 {
     return { schema_version: 1, section_order: [], sections: {} };
   }
 
-  if (raw.schema_version === 1 && isPlainObject(raw.sections)) {
+  if (
+    (raw.schema_version === 1 || isPlainObject(raw.sections)) &&
+    isPlainObject(raw.sections)
+  ) {
     const order = Array.isArray(raw.section_order)
       ? (raw.section_order as unknown[]).map(String)
       : Object.keys(raw.sections);
