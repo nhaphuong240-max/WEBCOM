@@ -18,6 +18,7 @@ export {
   packageToPageContent,
   packageToLegacyPageContent,
 } from './load';
+export { validatePackageBundle } from './validate-bundle';
 export type {
   ContentV1,
   SectionNode,

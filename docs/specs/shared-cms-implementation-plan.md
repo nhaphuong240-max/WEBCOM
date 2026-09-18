@@ -241,11 +241,13 @@ Chia **CMS-1a** (BE/CMS) và **CMS-1b** (demo/storefront) song song sau C0.
 | C3-2 | Blog post `templateKey=blog_post` + list | Should | **shipped** |
 | C3-3 | Saved blocks / global header section | Should | **shipped** (saved blocks) |
 | C3-4 | AI copy drawer → draft only, BR-018 | Should | **shipped** |
-| C3-5 | Creator Portal upload zip package | Could | backlog |
-| C3-6 | Reviews trên marketplace detail | Could | backlog |
-| C3-7 | A/B experiment flag trên page | Could | backlog |
+| C3-5 | Creator Portal upload zip package | Could | **shipped** (files-map stub; zip binary later) |
+| C3-6 | Reviews trên marketplace detail | Could | **shipped** |
+| C3-7 | A/B experiment flag trên page | Could | **shipped** |
 
 **Exit CMS-3 (Should):** e2e-cms-3 · flags `FEATURE_CMS_BLOG` / `FEATURE_CMS_SAVED_BLOCKS` / `FEATURE_CMS_AI_COPY`.
+
+**Exit CMS-3 Could:** `scripts/e2e-cms-3c.sh` · flags `FEATURE_CMS_CREATOR` / `FEATURE_CMS_REVIEWS` / `FEATURE_CMS_PAGE_AB`.
 
 **GA “Shared CMS”** = xong CMS-2 exit + docs + flags on production.
 

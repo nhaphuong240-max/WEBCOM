@@ -14,6 +14,7 @@ async function saveHome(formData: FormData) {
   const eyebrow = String(formData.get('eyebrow') || '');
   const cta = String(formData.get('cta') || 'Mua ngay');
   const ctaHref = String(formData.get('cta_href') || '/search');
+  const experimentCode = String(formData.get('experiment_code') || '').trim();
   const trust = String(formData.get('trust') || '')
     .split('|')
     .map((s) => s.trim())
@@ -23,6 +24,7 @@ async function saveHome(formData: FormData) {
   await apiJson(`/v1/admin/storefronts/${SF}/pages/home`, 'PUT', {
     expected_version: expected || undefined,
     create_if_missing: true,
+    experiment_code: experimentCode || null,
     content: {
       section_order: ['hero', 'trust', 'featured'],
       hero: { eyebrow, headline, cta, cta_href: ctaHref },
@@ -123,6 +125,25 @@ async function saveBlockAction(input: {
   return res;
 }
 
+async function saveExperimentCode(formData: FormData) {
+  'use server';
+  const expected = Number(formData.get('expected_version') || 0);
+  const experimentCode = String(formData.get('experiment_code') || '').trim();
+  const draft = await apiGet<{
+    content_v1?: ContentV1;
+    content?: Record<string, unknown>;
+    seo?: Record<string, unknown>;
+  }>(`/v1/admin/storefronts/${SF}/pages/home`);
+  await apiJson(`/v1/admin/storefronts/${SF}/pages/home`, 'PUT', {
+    expected_version: expected || undefined,
+    create_if_missing: true,
+    experiment_code: experimentCode || null,
+    content: draft.content_v1 || draft.content || { section_order: ['hero'], sections: {} },
+    seo: draft.seo || {},
+  });
+  revalidatePath('/website/builder');
+}
+
 async function suggestCopyAction(headline: string) {
   'use server';
   return apiJson<{ variants: string[]; draft_only: boolean }>(
@@ -135,6 +156,7 @@ async function suggestCopyAction(headline: string) {
 export default async function BuilderPage() {
   let draft: {
     version?: number;
+    experiment_code?: string | null;
     content?: {
       hero?: Record<string, string>;
       trust?: string[];
@@ -267,6 +289,27 @@ export default async function BuilderPage() {
         </form>
       </Panel>
 
+      <Panel title="Page A/B experiment (CMS-3 Could)">
+        <form action={saveExperimentCode} style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'end' }}>
+          <input type="hidden" name="expected_version" value={draft?.version ?? 0} />
+          <label style={{ fontSize: 13, display: 'grid', gap: 4 }}>
+            experiment_code (Experiment.code)
+            <input
+              name="experiment_code"
+              defaultValue={draft?.experiment_code || ''}
+              placeholder="hero_cta_v1"
+              style={{ padding: 8, minWidth: 220 }}
+            />
+          </label>
+          <Button type="submit" variant="ghost">
+            Lưu flag
+          </Button>
+        </form>
+        <p style={{ fontSize: 12, color: '#6b5559', marginTop: 8 }}>
+          Storefront hero gọi assign theo code này. Tạo experiment ở Analytics trước (status=running).
+        </p>
+      </Panel>
+
       {canvasOn && !error ? (
         <Panel title="Builder canvas">
           <BuilderCanvas
@@ -333,6 +376,15 @@ export default async function BuilderPage() {
               <label style={{ fontSize: 13 }}>
                 Trust (phân tách |)
                 <input name="trust" defaultValue={trust} style={{ width: '100%', padding: 8 }} />
+              </label>
+              <label style={{ fontSize: 13 }}>
+                A/B experiment_code
+                <input
+                  name="experiment_code"
+                  defaultValue={draft?.experiment_code || ''}
+                  placeholder="hero_cta_v1"
+                  style={{ width: '100%', padding: 8 }}
+                />
               </label>
               <label style={{ fontSize: 13 }}>
                 SEO title

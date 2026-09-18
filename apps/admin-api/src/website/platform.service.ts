@@ -12,6 +12,7 @@ import {
   packageToThemeConfig,
   toLegacyFlat,
   validateContentV1,
+  validatePackageBundle,
 } from '@ptt/themes';
 import { Prisma } from '@prisma/client';
 import { randomBytes } from 'crypto';
@@ -357,7 +358,7 @@ export class PlatformService {
       }
     }
     const preview = mapped.preview_url || null;
-    return {
+    const base = {
       ...mapped,
       ...packageMeta,
       license_tier: mapped.license,
@@ -379,6 +380,33 @@ export class PlatformService {
         buy: `${consoleBase}/website/templates?focus=${encodeURIComponent(row.code)}`,
       },
     };
+
+    if (this.feature('cms.reviews')) {
+      const reviews = await this.prisma.db.templateReview.findMany({
+        where: { templateId: row.id, status: 'published' },
+        orderBy: { createdAt: 'desc' },
+        take: 20,
+      });
+      const avg =
+        reviews.length > 0
+          ? reviews.reduce((s, r) => s + r.rating, 0) / reviews.length
+          : null;
+      return {
+        ...base,
+        reviews: {
+          count: reviews.length,
+          avg_rating: avg != null ? Number(avg.toFixed(2)) : null,
+          items: reviews.map((r) => ({
+            id: r.id,
+            author_name: r.authorName,
+            rating: r.rating,
+            body: r.body,
+            created_at: r.createdAt.toISOString(),
+          })),
+        },
+      };
+    }
+    return base;
   }
 
   private enrichTemplateForMarketplace<
@@ -736,6 +764,9 @@ export class PlatformService {
       cms_blog: this.feature('cms.blog'),
       cms_saved_blocks: this.feature('cms.saved_blocks'),
       cms_ai_copy: this.feature('cms.ai_copy'),
+      cms_creator: this.feature('cms.creator'),
+      cms_reviews: this.feature('cms.reviews'),
+      cms_page_ab: this.feature('cms.page_ab'),
     };
   }
 
@@ -805,6 +836,7 @@ export class PlatformService {
       title: p.title,
       template_key: p.templateKey,
       status: p.status,
+      experiment_code: p.experimentCode,
       versions: p.versions.map((v) => ({
         id: v.id,
         version: v.version,
@@ -1044,6 +1076,7 @@ export class PlatformService {
       slug: page.slug,
       title: page.title,
       template_key: page.templateKey,
+      experiment_code: page.experimentCode,
       version_id: v?.id,
       version: v?.version,
       status: v?.status,
@@ -1290,6 +1323,8 @@ export class PlatformService {
       expected_version?: number;
       create_if_missing?: boolean;
       template_key?: string;
+      /** CMS-3 Could — link Experiment.code; null clears */
+      experiment_code?: string | null;
     },
     actorId?: string,
   ) {
@@ -1297,6 +1332,18 @@ export class PlatformService {
     await this.sf(tenantId, storefrontId);
     this.validateSections(input.content);
     const persisted = this.dualWriteContent(input.content);
+
+    const experimentPatch =
+      input.experiment_code !== undefined
+        ? {
+            experimentCode: this.feature('cms.page_ab')
+              ? input.experiment_code?.trim() || null
+              : undefined,
+          }
+        : {};
+    if (input.experiment_code !== undefined && !this.feature('cms.page_ab')) {
+      throw AppError.validation('Feature cms.page_ab disabled');
+    }
 
     let page = await this.prisma.db.page.findUnique({
       where: { storefrontId_slug: { storefrontId, slug } },
@@ -1312,12 +1359,20 @@ export class PlatformService {
           title: input.title || slug,
           templateKey: input.template_key || (slug === 'home' ? 'home' : 'landing'),
           status: 'draft',
+          ...(experimentPatch.experimentCode !== undefined
+            ? { experimentCode: experimentPatch.experimentCode }
+            : {}),
         },
       });
-    } else if (input.title) {
+    } else if (input.title || experimentPatch.experimentCode !== undefined) {
       page = await this.prisma.db.page.update({
         where: { id: page.id },
-        data: { title: input.title },
+        data: {
+          ...(input.title ? { title: input.title } : {}),
+          ...(experimentPatch.experimentCode !== undefined
+            ? { experimentCode: experimentPatch.experimentCode }
+            : {}),
+        },
       });
     }
 
@@ -1358,6 +1413,7 @@ export class PlatformService {
         version_id: updated.id,
         version: updated.version,
         status: updated.status,
+        experiment_code: page.experimentCode,
         schema_version: 1,
         content_v1: contentV1,
         content: toLegacyFlat(contentV1),
@@ -1389,6 +1445,7 @@ export class PlatformService {
       version_id: created.id,
       version: created.version,
       status: created.status,
+      experiment_code: page.experimentCode,
       schema_version: 1,
       content_v1: contentV1,
       content: toLegacyFlat(contentV1),
@@ -1912,6 +1969,167 @@ export class PlatformService {
       payload: { step, done, next },
     });
     return this.getOnboarding(tenantId, storefrontId);
+  }
+
+  // ─── CMS-3 Could — Creator / Reviews / Page A/B ─────────────
+
+  validateCreatorPackage(input: { files: Record<string, string> }) {
+    if (!this.feature('cms.creator')) {
+      throw AppError.validation('Feature cms.creator disabled');
+    }
+    const result = validatePackageBundle(input.files || {});
+    return {
+      ok: result.ok,
+      issues: result.issues,
+      package: result.package
+        ? {
+            code: result.package.manifest.code,
+            name: result.package.manifest.name,
+            version: result.package.manifest.version,
+            supports: result.package.manifest.supports,
+            layouts: result.package.manifest.layouts,
+            tokens: result.package.starter.tokens,
+          }
+        : null,
+      stub: true,
+      note: 'Zip parse stub — gửi files map (package.manifest.json + starter/*). Binary zip sẽ bổ sung sau.',
+    };
+  }
+
+  async submitCreatorPackage(
+    tenantId: string | undefined,
+    input: { files: Record<string, string> },
+    actorId?: string,
+  ) {
+    if (!this.feature('cms.creator')) {
+      throw AppError.validation('Feature cms.creator disabled');
+    }
+    const result = validatePackageBundle(input.files || {});
+    const status = result.ok ? 'validated' : 'rejected';
+    const manifest = result.package?.manifest || {
+      code: 'unknown',
+      name: 'unknown',
+      version: '0.0.0',
+      supports: [] as string[],
+    };
+    const row = await this.prisma.db.creatorPackageSubmission.create({
+      data: {
+        id: createId('cps'),
+        tenantId: tenantId || null,
+        code: manifest.code,
+        name: manifest.name,
+        version: manifest.version,
+        status,
+        manifest: (result.package?.manifest || {}) as Prisma.InputJsonValue,
+        starterHome: (result.package?.starter.home || {}) as Prisma.InputJsonValue,
+        tokens: (result.package?.starter.tokens || {}) as Prisma.InputJsonValue,
+        issues: result.issues as Prisma.InputJsonValue,
+        actorId: actorId || null,
+      },
+    });
+    await this.audit.write({
+      tenantId: tenantId || 'platform',
+      actorId,
+      action: 'creator.package_submit',
+      entity: 'creator_package_submission',
+      entityId: row.id,
+      payload: { code: row.code, status: row.status, issue_count: result.issues.length },
+    });
+    return {
+      id: row.id,
+      code: row.code,
+      name: row.name,
+      version: row.version,
+      status: row.status,
+      issues: result.issues,
+      ok: result.ok,
+      stub: true,
+      created_at: row.createdAt.toISOString(),
+    };
+  }
+
+  async listCreatorSubmissions(tenantId?: string) {
+    if (!this.feature('cms.creator')) {
+      throw AppError.validation('Feature cms.creator disabled');
+    }
+    const rows = await this.prisma.db.creatorPackageSubmission.findMany({
+      where: tenantId ? { tenantId } : {},
+      orderBy: { createdAt: 'desc' },
+      take: 50,
+    });
+    return rows.map((r) => ({
+      id: r.id,
+      code: r.code,
+      name: r.name,
+      version: r.version,
+      status: r.status,
+      issues: r.issues,
+      created_at: r.createdAt.toISOString(),
+    }));
+  }
+
+  async listTemplateReviews(codeOrId: string) {
+    if (!this.feature('cms.reviews')) {
+      throw AppError.validation('Feature cms.reviews disabled');
+    }
+    const tpl = await this.prisma.db.templateCatalog.findFirst({
+      where: { OR: [{ id: codeOrId }, { code: codeOrId }], active: true },
+    });
+    if (!tpl) throw AppError.notFound('Template not found');
+    const rows = await this.prisma.db.templateReview.findMany({
+      where: { templateId: tpl.id, status: 'published' },
+      orderBy: { createdAt: 'desc' },
+      take: 50,
+    });
+    const avg =
+      rows.length > 0 ? rows.reduce((s, r) => s + r.rating, 0) / rows.length : null;
+    return {
+      template_id: tpl.id,
+      template_code: tpl.code,
+      count: rows.length,
+      avg_rating: avg != null ? Number(avg.toFixed(2)) : null,
+      items: rows.map((r) => ({
+        id: r.id,
+        author_name: r.authorName,
+        rating: r.rating,
+        body: r.body,
+        created_at: r.createdAt.toISOString(),
+      })),
+    };
+  }
+
+  async createTemplateReview(
+    codeOrId: string,
+    input: { author_name: string; author_email?: string; rating: number; body?: string },
+  ) {
+    if (!this.feature('cms.reviews')) {
+      throw AppError.validation('Feature cms.reviews disabled');
+    }
+    const tpl = await this.prisma.db.templateCatalog.findFirst({
+      where: { OR: [{ id: codeOrId }, { code: codeOrId }], active: true },
+    });
+    if (!tpl) throw AppError.notFound('Template not found');
+    const rating = Math.round(input.rating);
+    if (rating < 1 || rating > 5) throw AppError.validation('rating must be 1–5');
+    const row = await this.prisma.db.templateReview.create({
+      data: {
+        id: createId('trev'),
+        templateId: tpl.id,
+        authorName: input.author_name.trim().slice(0, 80) || 'Anonymous',
+        authorEmail: input.author_email?.trim().slice(0, 120) || null,
+        rating,
+        body: (input.body || '').trim().slice(0, 2000),
+        status: 'published',
+      },
+    });
+    return {
+      id: row.id,
+      template_code: tpl.code,
+      author_name: row.authorName,
+      rating: row.rating,
+      body: row.body,
+      created_at: row.createdAt.toISOString(),
+    };
   }
 
   // ─── mappers ───────────────────────────────────────────────

@@ -18,6 +18,9 @@
 |---|---|
 | `FEATURE_CMS_REGISTRY_V1` | true |
 | `FEATURE_CMS_PACKAGE_RESOLVE` | true |
+| `FEATURE_CMS_CREATOR` | true |
+| `FEATURE_CMS_REVIEWS` | true |
+| `FEATURE_CMS_PAGE_AB` | true |
 
 Tắt resolve: `FEATURE_CMS_PACKAGE_RESOLVE=false` → `GET /theme-packages` trả validation error.
 
@@ -60,6 +63,15 @@ BASE_URL=http://127.0.0.1:3101/api bash scripts/e2e-cms-2.sh
 
 ```bash
 BASE_URL=http://127.0.0.1:3101/api bash scripts/e2e-cms-3.sh
+```
+
+## CMS-3 Could notes
+- Creator Portal stub: `POST /v1/admin/creator/packages/validate` · `POST /v1/admin/creator/packages` (body `{ files: { "package.manifest.json": "...", "starter/home.json": "...", "starter/tokens.json": "..." } }`) — zip binary chưa; flag `FEATURE_CMS_CREATOR`
+- Reviews: `GET/POST /v1/public/templates/:code/reviews` · corporate `/templates/[code]` — `FEATURE_CMS_REVIEWS`
+- Page A/B: `PUT …/pages/:slug` field `experiment_code` · runtime `home.experiment_code` · storefront Hero assign — `FEATURE_CMS_PAGE_AB`
+
+```bash
+BASE_URL=http://127.0.0.1:3101/api bash scripts/e2e-cms-3c.sh
 ```
 
 ## MKT-1 notes

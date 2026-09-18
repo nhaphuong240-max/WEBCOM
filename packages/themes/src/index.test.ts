@@ -34,6 +34,31 @@ describe('normalizeContent', () => {
   });
 });
 
+describe('validatePackageBundle', () => {
+  it('accepts a minimal valid bundle', async () => {
+    const { validatePackageBundle } = await import('./validate-bundle');
+    const res = validatePackageBundle({
+      'package.manifest.json': JSON.stringify({
+        code: 'test-pkg',
+        name: 'Test',
+        version: '0.0.1',
+        supports: ['hero'],
+        layouts: { home: ['hero'] },
+      }),
+      'starter/home.json': JSON.stringify({
+        schema_version: 1,
+        section_order: ['hero'],
+        sections: {
+          hero: { type: 'hero', id: '1', props: { headline: 'Hi' }, style: {} },
+        },
+      }),
+      'starter/tokens.json': JSON.stringify({ accent: '#111' }),
+    });
+    expect(res.ok).toBe(true);
+    expect(res.package?.manifest.code).toBe('test-pkg');
+  });
+});
+
 describe('theme packages', () => {
   it('lists ≥5 package codes', () => {
     const codes = listPackageCodes();

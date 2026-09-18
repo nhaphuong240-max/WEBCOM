@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
+import { TemplateReviews } from '../../../components/TemplateReviews';
 import { buyUrl, demoUrl, fetchTemplateDetail, trialUrl } from '../../../lib/marketplace';
 
 export const dynamic = 'force-dynamic';
@@ -130,6 +131,17 @@ export default async function TemplateDetailPage({
           </div>
         </section>
       ) : null}
+
+      <TemplateReviews
+        code={t.code}
+        initial={
+          t.reviews || {
+            count: 0,
+            avg_rating: null,
+            items: [],
+          }
+        }
+      />
     </main>
   );
 }

@@ -1100,7 +1100,7 @@ Một **Visual Builder + Page/CMS** dùng chung mọi template; template = **The
 | **CMS-0** | ContentV1 + dual-read; `packages/themes` × 3; `GET …/theme-packages/:code`; seed sync | **shipped** — `@ptt/themes` · e2e-cms-0 · runbook `shared-cms.md` |
 | **CMS-1** | Normalize · static/SEO · preview token · demo theo code · compatibility-check | **shipped** — dual-write · SectionStack · e2e-cms-1 |
 | **CMS-2** | Canvas mockup 06 · nav/media · ≥5 packages · legacy warning | **shipped** — builder canvas · e2e-cms-2 |
-| **CMS-3** | Section SRS thêm · blog stub · saved blocks · AI drawer | **shipped** — e2e-cms-3 |
+| **CMS-3** | Section SRS · blog · saved blocks · AI · **Could:** Creator stub · reviews · page A/B | **shipped** — e2e-cms-3 · e2e-cms-3c |
 | **MKT-1** | Corporate gallery facets + `/templates/[code]` · supports · demo CTA | **shipped** — e2e-mkt-1 |
 | **CMS-GA** | Blog promote · OpenAPI/Bruno · e2e-cms-ga (P2/P3/golive) | **shipped** — cứng hóa GA |
 

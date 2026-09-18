@@ -10,14 +10,18 @@ export function HeroBlock({
   cta,
   ctaHref,
   accent,
+  experimentCode,
 }: {
   eyebrow: string;
   headline: string;
   cta: string;
   ctaHref: string;
   accent: string;
+  /** CMS-3 Could — page.experiment_code; falls back to hero_cta_v1 when unset */
+  experimentCode?: string | null;
 }) {
-  const { variant } = useExperiment('hero_cta_v1');
+  const code = experimentCode?.trim() || 'hero_cta_v1';
+  const { variant } = useExperiment(code);
   const preview = useThemePreview();
   const desktop = preview.active && preview.mode === 'desktop';
   const h = variant?.headline || headline;

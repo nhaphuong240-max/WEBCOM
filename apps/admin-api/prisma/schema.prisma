@@ -931,17 +931,19 @@ model ThemeVersion {
 }
 
 model Page {
-  id           String        @id @default(uuid())
-  tenantId     String        @map("tenant_id")
-  storefrontId String        @map("storefront_id")
-  slug         String
-  title        String
-  templateKey  String        @default("home") @map("template_key") // home|collection|system
-  status       String        @default("draft")
-  createdAt    DateTime      @default(now()) @map("created_at")
-  updatedAt    DateTime      @updatedAt @map("updated_at")
-  storefront   Storefront    @relation(fields: [storefrontId], references: [id], onDelete: Cascade)
-  versions     PageVersion[]
+  id             String        @id @default(uuid())
+  tenantId       String        @map("tenant_id")
+  storefrontId   String        @map("storefront_id")
+  slug           String
+  title          String
+  templateKey    String        @default("home") @map("template_key") // home|collection|system
+  status         String        @default("draft")
+  /// CMS-3 Could — link to Experiment.code for A/B on this page
+  experimentCode String?       @map("experiment_code")
+  createdAt      DateTime      @default(now()) @map("created_at")
+  updatedAt      DateTime      @updatedAt @map("updated_at")
+  storefront     Storefront    @relation(fields: [storefrontId], references: [id], onDelete: Cascade)
+  versions       PageVersion[]
 
   @@unique([storefrontId, slug])
   @@index([tenantId])
@@ -1111,9 +1113,49 @@ model TemplateCatalog {
   installs    TemplateInstall[]
   invoices    PlatformInvoice[]
   licenses    ThemeLicense[]
+  reviews     TemplateReview[]
 
   @@index([industry, goal])
   @@map("template_catalog")
+}
+
+/// CMS-3 Could — marketplace template reviews
+model TemplateReview {
+  id         String          @id
+  templateId String          @map("template_id")
+  authorName String          @map("author_name")
+  authorEmail String?        @map("author_email")
+  rating     Int
+  body       String          @default("")
+  /// published | hidden
+  status     String          @default("published")
+  createdAt  DateTime        @default(now()) @map("created_at")
+  template   TemplateCatalog @relation(fields: [templateId], references: [id], onDelete: Cascade)
+
+  @@index([templateId, status])
+  @@map("template_reviews")
+}
+
+/// CMS-3 Could — Creator Portal package submissions (validated stub)
+model CreatorPackageSubmission {
+  id          String   @id
+  tenantId    String?  @map("tenant_id")
+  code        String
+  name        String
+  version     String
+  /// received | validated | rejected | staged
+  status      String   @default("received")
+  manifest    Json     @default("{}")
+  starterHome Json     @default("{}") @map("starter_home")
+  tokens      Json     @default("{}")
+  issues      Json     @default("[]")
+  actorId     String?  @map("actor_id")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@index([code, status])
+  @@index([tenantId])
+  @@map("creator_package_submissions")
 }
 
 model TemplateInstall {

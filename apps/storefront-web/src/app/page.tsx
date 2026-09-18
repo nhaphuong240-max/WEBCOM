@@ -93,6 +93,10 @@ export default async function HomePage({
   );
 
   const hasSections = pageContent.section_order.length > 0;
+  const experimentCode =
+    !demoCode && runtime.home && 'experiment_code' in (runtime.home as object)
+      ? ((runtime.home as { experiment_code?: string | null }).experiment_code ?? null)
+      : null;
   const headerLinks = Array.isArray(runtime.navigation?.header)
     ? (runtime.navigation.header as Array<{ label: string; href: string }>)
     : [];
@@ -132,6 +136,7 @@ export default async function HomePage({
           accent={accent}
           collections={collections}
           productsSlot={productsSlot}
+          experimentCode={experimentCode}
         />
       ) : (
         <>
@@ -141,6 +146,7 @@ export default async function HomePage({
             cta="Mua ngay"
             ctaHref="/products/glow-serum-30ml"
             accent={accent}
+            experimentCode={experimentCode}
           />
           {productsSlot}
         </>

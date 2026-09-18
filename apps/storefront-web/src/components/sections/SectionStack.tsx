@@ -7,11 +7,13 @@ export function SectionStack({
   accent,
   collections,
   productsSlot,
+  experimentCode,
 }: {
   content: DemoContentV1 | null;
   accent: string;
   collections?: Array<{ slug: string; title: string }>;
   productsSlot?: React.ReactNode;
+  experimentCode?: string | null;
 }) {
   if (!content?.section_order?.length) return null;
 
@@ -31,6 +33,7 @@ export function SectionStack({
               cta={String(props.cta || 'Mua ngay')}
               ctaHref={String(props.cta_href || '/search')}
               accent={accent}
+              experimentCode={experimentCode}
             />
           );
         }

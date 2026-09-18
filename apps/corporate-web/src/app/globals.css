@@ -334,6 +334,28 @@ p { margin: 0; }
 }
 .corp-lead-form input::placeholder { color: rgba(255,255,255,0.45); }
 
+.mkt-review-list {
+  list-style: none; padding: 0; margin: 16px 0 28px; display: grid; gap: 14px;
+}
+.mkt-review-list li {
+  padding: 14px 0; border-bottom: 1px solid var(--line);
+}
+.mkt-review-meta {
+  display: flex; gap: 12px; align-items: baseline; font-size: 14px; margin-bottom: 6px;
+}
+.mkt-review-list p { margin: 0; color: var(--ink-2); font-size: 15px; line-height: 1.5; }
+.mkt-review-form {
+  display: grid; gap: 12px; max-width: 420px; margin-top: 8px;
+}
+.mkt-review-form label {
+  display: grid; gap: 6px; font-size: 13px; color: var(--ink-3);
+}
+.mkt-review-form input, .mkt-review-form select, .mkt-review-form textarea {
+  padding: 10px 12px; border-radius: 6px; border: 1px solid var(--line);
+  background: var(--paper); color: var(--ink); font: inherit;
+}
+.mkt-review-form h3 { margin: 0 0 4px; font-size: 18px; }
+
 @keyframes corp-rise {
   from { opacity: 0; transform: translateY(18px); }
   to { opacity: 1; transform: none; }

@@ -88,7 +88,12 @@ export class WebsiteService {
         : { code: 'aura-commerce-lite', name: 'Aura Commerce Lite', version: 0, config: AURA_LITE_CONFIG },
       navigation: Object.fromEntries(menus.map((m) => [m.handle, m.items])),
       home: home?.versions[0]
-        ? { title: home.title, content: home.versions[0].content, seo: home.versions[0].seo }
+        ? {
+            title: home.title,
+            content: home.versions[0].content,
+            seo: home.versions[0].seo,
+            experiment_code: home.experimentCode,
+          }
         : null,
     };
   }
@@ -112,6 +117,7 @@ export class WebsiteService {
       slug: page.slug,
       title: page.title,
       template_key: page.templateKey,
+      experiment_code: page.experimentCode,
       content: page.versions[0].content,
       seo: page.versions[0].seo,
     };

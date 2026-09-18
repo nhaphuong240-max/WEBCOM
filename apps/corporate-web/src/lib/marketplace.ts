@@ -37,6 +37,17 @@ export type TemplateDetail = TemplateCard & {
   cta?: { demo: string; trial: string; buy: string };
   monetize?: string;
   trial_before_paywall?: boolean;
+  reviews?: {
+    count: number;
+    avg_rating: number | null;
+    items: Array<{
+      id: string;
+      author_name: string;
+      rating: number;
+      body: string;
+      created_at: string;
+    }>;
+  };
 };
 
 export type TemplateFacets = {

@@ -317,6 +317,7 @@ export class WebsiteController {
         expected_version: z.number().optional(),
         create_if_missing: z.boolean().optional(),
         template_key: z.string().optional(),
+        experiment_code: z.string().nullable().optional(),
       })
       .safeParse(body);
     if (!parsed.success) throw AppError.validation('Invalid page draft', parsed.error.flatten());
@@ -331,6 +332,7 @@ export class WebsiteController {
         expected_version: parsed.data.expected_version,
         create_if_missing: parsed.data.create_if_missing,
         template_key: parsed.data.template_key,
+        experiment_code: parsed.data.experiment_code,
       },
       ctx.actorId,
     );
@@ -453,6 +455,34 @@ export class WebsiteController {
       .safeParse(body ?? {});
     if (!parsed.success) throw AppError.validation('Invalid ai-copy body', parsed.error.flatten());
     return this.platform.suggestBuilderCopy(ctx.tenantId, id, parsed.data, ctx.actorId);
+  }
+
+  // ─── CMS-3 Could — Creator Portal stub ─────────────────────
+
+  @Post('v1/admin/creator/packages/validate')
+  @UseGuards(TenantAuthGuard)
+  validateCreatorPackage(@Body() body: unknown) {
+    const parsed = z
+      .object({ files: z.record(z.string()) })
+      .safeParse(body);
+    if (!parsed.success) throw AppError.validation('Invalid package body', parsed.error.flatten());
+    return this.platform.validateCreatorPackage(parsed.data);
+  }
+
+  @Post('v1/admin/creator/packages')
+  @UseGuards(TenantAuthGuard)
+  submitCreatorPackage(@ReqContext() ctx: RequestContext, @Body() body: unknown) {
+    const parsed = z
+      .object({ files: z.record(z.string()) })
+      .safeParse(body);
+    if (!parsed.success) throw AppError.validation('Invalid package body', parsed.error.flatten());
+    return this.platform.submitCreatorPackage(ctx.tenantId, parsed.data, ctx.actorId);
+  }
+
+  @Get('v1/admin/creator/packages')
+  @UseGuards(TenantAuthGuard)
+  listCreatorPackages(@ReqContext() ctx: RequestContext) {
+    return this.platform.listCreatorSubmissions(ctx.tenantId);
   }
 
   // ─── W3 Go-live / Publish ──────────────────────────────────
@@ -605,6 +635,25 @@ export class WebsiteController {
   @Get('v1/public/templates/:codeOrId')
   publicTemplate(@Param('codeOrId') codeOrId: string) {
     return this.platform.getPublicTemplate(codeOrId);
+  }
+
+  @Get('v1/public/templates/:codeOrId/reviews')
+  publicTemplateReviews(@Param('codeOrId') codeOrId: string) {
+    return this.platform.listTemplateReviews(codeOrId);
+  }
+
+  @Post('v1/public/templates/:codeOrId/reviews')
+  createPublicTemplateReview(@Param('codeOrId') codeOrId: string, @Body() body: unknown) {
+    const parsed = z
+      .object({
+        author_name: z.string().min(1).max(80),
+        author_email: z.string().email().optional(),
+        rating: z.number().min(1).max(5),
+        body: z.string().max(2000).optional(),
+      })
+      .safeParse(body);
+    if (!parsed.success) throw AppError.validation('Invalid review', parsed.error.flatten());
+    return this.platform.createTemplateReview(codeOrId, parsed.data);
   }
 
   /** CMS-0 — ThemePackage filesystem catalog */
