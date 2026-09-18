@@ -46,14 +46,14 @@ async function main() {
       name: 'AURA Storefront',
       slug: 'aura-shop',
       status: 'staging',
-      primaryDomain: 'webecom.ngoinhahomnay.vn',
+      primaryDomain: 'demo.webecom.ngoinhahomnay.vn',
       seoTitle: 'AURA Beauty · Serum tái tạo da đêm',
       seoDescription: 'Storefront AURA Beauty — Powered by PTT',
     },
     update: {
       name: 'AURA Storefront',
       status: 'staging',
-      primaryDomain: 'webecom.ngoinhahomnay.vn',
+      primaryDomain: 'demo.webecom.ngoinhahomnay.vn',
       seoTitle: 'AURA Beauty · Serum tái tạo da đêm',
       seoDescription: 'Storefront AURA Beauty — Powered by PTT',
     },
@@ -657,8 +657,8 @@ async function main() {
         license: t.license,
         scores: t.scores,
         features: t.features,
-        previewUrl: `https://webecom.ngoinhahomnay.vn/?demo=${t.code}`,
-        demoUrl: `https://webecom.ngoinhahomnay.vn/`,
+        previewUrl: `https://demo.webecom.ngoinhahomnay.vn/?demo=${t.code}`,
+        demoUrl: `https://demo.webecom.ngoinhahomnay.vn/`,
         themeConfig: {
           code: t.code,
           tokens: {

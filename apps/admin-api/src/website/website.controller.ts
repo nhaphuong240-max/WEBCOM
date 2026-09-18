@@ -426,4 +426,20 @@ export class WebsiteController {
     if (!host) throw AppError.validation('host query required');
     return this.website.resolveHost(host);
   }
+
+  /** P1 — public template gallery (no auth). */
+  @Get('v1/public/templates')
+  publicTemplates(
+    @Query('industry') industry?: string,
+    @Query('goal') goal?: string,
+    @Query('q') q?: string,
+    @Query('sort') sort?: string,
+  ) {
+    return this.platform.listTemplates({ industry, goal, q, sort });
+  }
+
+  @Get('v1/public/templates/:codeOrId')
+  publicTemplate(@Param('codeOrId') codeOrId: string) {
+    return this.platform.getPublicTemplate(codeOrId);
+  }
 }

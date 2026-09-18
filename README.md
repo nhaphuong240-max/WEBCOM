@@ -8,8 +8,8 @@ Monorepo theo **SRS v5.1** / **Architecture v3** — Phase **W2 Website Foundati
 |---|---|---|
 | `admin-api` | 3001 | Commerce + website runtime APIs |
 | `admin-web` | 3000 | Admin products/orders/theme/analytics |
-| `storefront-web` | 3002 | AURA storefront (home/PDP/cart/checkout) |
-| `corporate-web` | 3003 | GTM corporate lead form (mockup 01) |
+| `corporate-web` | 3003 | Platform GTM + template gallery (apex) |
+| `storefront-web` | 3002 | Demo sandbox / merchant shop |
 
 ## W2 quick start
 

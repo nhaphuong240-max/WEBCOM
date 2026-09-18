@@ -272,6 +272,27 @@ export class PlatformService {
     return mapped;
   }
 
+  async getPublicTemplate(codeOrId: string) {
+    const row = await this.prisma.db.templateCatalog.findFirst({
+      where: {
+        active: true,
+        OR: [{ id: codeOrId }, { code: codeOrId }],
+      },
+    });
+    if (!row) throw AppError.notFound('Template not found');
+    const demoBase =
+      process.env.DEMO_PUBLIC_URL?.replace(/\/$/, '') || 'https://demo.webecom.ngoinhahomnay.vn';
+    const mapped = this.mapTemplate(row);
+    return {
+      ...mapped,
+      demo_url: `${demoBase}/?demo=${encodeURIComponent(row.code)}`,
+      trial_url: '/console/website/onboarding',
+      buy_theme_url: `/console/website/templates?focus=${encodeURIComponent(row.code)}`,
+      monetize: 'theme_license',
+      trial_before_paywall: true,
+    };
+  }
+
   async matchTemplates(input: {
     industry?: string;
     goal?: string;

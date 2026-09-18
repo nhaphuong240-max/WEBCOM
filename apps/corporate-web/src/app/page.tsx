@@ -73,6 +73,9 @@ export default function CorporateHome() {
           Website Commerce + CRM + Revenue Intelligence — Corporate GTM (W5).
         </p>
         <div style={{ display: 'flex', gap: 14, marginBottom: 28, flexWrap: 'wrap', fontSize: 14 }}>
+          <a href="/templates" style={{ color: '#7dd3fc' }}>
+            Templates
+          </a>
           <a href="/case-studies" style={{ color: '#7dd3fc' }}>
             Case / ROI
           </a>
@@ -81,6 +84,42 @@ export default function CorporateHome() {
           </a>
           <a href="/pricing" style={{ color: '#7dd3fc' }}>
             Pricing
+          </a>
+        </div>
+        <div style={{ display: 'flex', gap: 10, marginBottom: 28, flexWrap: 'wrap' }}>
+          <a
+            href="/templates"
+            style={{
+              padding: '12px 18px',
+              borderRadius: 10,
+              background: '#38bdf8',
+              color: '#0b1420',
+              fontWeight: 700,
+            }}
+          >
+            Chọn template
+          </a>
+          <a
+            href="https://demo.webecom.ngoinhahomnay.vn/"
+            style={{
+              padding: '12px 18px',
+              borderRadius: 10,
+              border: '1px solid rgba(255,255,255,0.35)',
+              color: '#fff',
+            }}
+          >
+            Xem demo shop
+          </a>
+          <a
+            href="https://webecom.ngoinhahomnay.vn/console/website/onboarding"
+            style={{
+              padding: '12px 18px',
+              borderRadius: 10,
+              border: '1px solid rgba(255,255,255,0.35)',
+              color: '#fff',
+            }}
+          >
+            Dùng thử miễn phí
           </a>
         </div>
         <div style={{ display: 'flex', gap: 10, marginBottom: 40, flexWrap: 'wrap' }}>

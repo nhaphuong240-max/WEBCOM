@@ -602,6 +602,30 @@ export class WebsiteService {
   async resolveHost(hostnameRaw: string) {
     const hostname = hostnameRaw.trim().toLowerCase().split(':')[0];
     const apex = process.env.PLATFORM_APEX_DOMAIN || 'ptt.shop';
+    const demoHosts = (process.env.DEMO_HOSTS || 'demo.webecom.ngoinhahomnay.vn')
+      .split(',')
+      .map((h) => h.trim().toLowerCase())
+      .filter(Boolean);
+
+    // Platform demo sandbox → default AURA storefront
+    if (demoHosts.includes(hostname)) {
+      const demoId = process.env.DEMO_STOREFRONT_ID || 'sf_aura';
+      const sf =
+        (await this.prisma.db.storefront.findFirst({ where: { id: demoId } })) ||
+        (await this.prisma.db.storefront.findFirst({ where: { slug: 'aura' } }));
+      if (sf) {
+        return {
+          tenant_id: sf.tenantId,
+          brand_id: sf.brandId,
+          storefront_id: sf.id,
+          slug: sf.slug,
+          hostname,
+          primary_domain: sf.primaryDomain,
+          status: sf.status,
+          source: 'demo_host' as const,
+        };
+      }
+    }
 
     const byDomain = await this.prisma.db.storefrontDomain.findFirst({
       where: {

@@ -1003,6 +1003,46 @@ P6: Theme update compatibility warning blocks blind publish
 
 ---
 
+# 9p. Platform apex Haravan-like (chốt 2026-09-18)
+
+> Đổi `webecom.ngoinhahomnay.vn` từ shop AURA → **site bán nền tảng** (chọn template → demo → trial → mua theme).
+
+## Quyết định đã chốt
+| # | Quyết định | Giá trị |
+|---|---|---|
+| 1 | Apex | **Platform** (`corporate-web` trên `webecom.ngoinhahomnay.vn`) |
+| 2 | Demo | **Subdomain** `demo.webecom.ngoinhahomnay.vn` → `storefront-web` |
+| 3 | Monetize phase 1 | **Mua theme** (chưa subscription plan) |
+| 4 | Paywall | **Self-serve trial trước** paywall mua theme |
+
+## Surface map
+| Host / path | App | Vai trò |
+|---|---|---|
+| `webecom.ngoinhahomnay.vn/` | corporate-web :3103 | GTM + gallery template + CTA trial/mua |
+| `webecom.ngoinhahomnay.vn/console` | admin-web :3100 | Onboarding, install, Brand Kit, builder, go-live |
+| `webecom.ngoinhahomnay.vn/api` | admin-api :3101 | Public templates + leads + platform APIs |
+| `demo.webecom.ngoinhahomnay.vn` | storefront-web :3102 | Live demo sandbox (`?demo=<code>`) |
+
+## Funnel
+```text
+Browse /templates → Demo (demo. host) → Dùng thử (/console onboarding)
+  → Customize (Brand Kit / builder) → Mua theme (P3 billing) → Publish
+```
+
+## Waves
+| Wave | Scope | Exit |
+|---|---|---|
+| **P0** | Remount nginx apex→corporate; demo.→storefront; enable systemd corporate; SSL demo | Apex = Platform; shop AURA trên demo. |
+| **P1** | Public `GET /api/v1/public/templates` (+ detail); UI `/templates`; demo banner `?demo=` | Gallery public + demo link hoạt động |
+| **P2** | Self-serve trial tenant/storefront + deep-link onboarding | Trial không cần trả tiền trước |
+| **P3** | Theme license checkout (VietQR/TRANSFER) tách khỏi cart hàng hóa | Mua theme sau trial |
+
+**Won't (phase 1):** subscription Starter/Growth; CMS corporate đầy đủ FR-CORPWEB; marketplace 400 theme.
+
+**SRS:** FR-CORPWEB · FR-WCP-002 · mockup `01-corporate-gtm.html`.
+
+---
+
 # 17. Kế hoạch chuyển mockup → production UI
 
 1. **Freeze** mockup WebCom 01–09 làm baseline (đổi = version mockup).

@@ -30,9 +30,10 @@ pnpm --filter @ptt/admin-api exec prisma migrate deploy
 pnpm --filter @ptt/admin-api build
 NEXT_BASE_PATH=/console pnpm --filter @ptt/admin-web build
 pnpm --filter @ptt/storefront-web build
+pnpm --filter @ptt/corporate-web build
 
 echo "==> copy static assets into standalone"
-for app in admin-web storefront-web; do
+for app in admin-web storefront-web corporate-web; do
   STANDALONE="$ROOT/apps/$app/.next/standalone"
   APP_DIR="$STANDALONE/apps/$app"
   mkdir -p "$APP_DIR/.next"
@@ -48,8 +49,8 @@ chown -R deploy:www-data "$ROOT"
 echo "==> systemd units"
 cp "$ROOT/deploy/systemd/"*.service /etc/systemd/system/
 systemctl daemon-reload
-systemctl enable --now webecom-admin-api webecom-admin-web webecom-storefront
-systemctl restart webecom-admin-api webecom-admin-web webecom-storefront
+systemctl enable --now webecom-admin-api webecom-admin-web webecom-storefront webecom-corporate
+systemctl restart webecom-admin-api webecom-admin-web webecom-storefront webecom-corporate
 
 echo "==> nginx"
 cp "$ROOT/deploy/nginx-webecom.conf" /etc/nginx/sites-available/webecom
