@@ -1,28 +1,27 @@
-# Runbook — Platform apex + demo subdomain (P0)
+# Runbook — Platform apex + themes sandbox (P0)
 
 ## Quyết định
 - Apex `webecom.ngoinhahomnay.vn` = **Platform** (`corporate-web`)
-- `demo.webecom.ngoinhahomnay.vn` = **sandbox storefront**
+- `themes.ngoinhahomnay.vn` = **sandbox storefront** (template demo)
 - Trial trước paywall; phase 1 monetize = **mua theme**
+- Alias cũ (optional): `demo.webecom.ngoinhahomnay.vn` vẫn resolve nếu còn trong `DEMO_HOSTS`
 
 ## DNS
-Tạo A/AAAA (hoặc CNAME) `demo` → cùng IP VPS với apex.
+Tạo A/AAAA `themes.ngoinhahomnay.vn` → cùng IP VPS (zone `ngoinhahomnay.vn`).
 
 ## SSL
 ```bash
-certbot --nginx -d webecom.ngoinhahomnay.vn -d demo.webecom.ngoinhahomnay.vn --expand
+certbot --nginx -d themes.ngoinhahomnay.vn --non-interactive --agree-tos --redirect
+# apex (nếu cần renew/expand riêng)
+certbot --nginx -d webecom.ngoinhahomnay.vn --non-interactive --agree-tos --redirect
 nginx -t && systemctl reload nginx
 ```
 
-## Deploy checklist
+## Env (VPS `/var/www/webecom/.env`)
 ```bash
-cd /var/www/webecom
-git fetch && git reset --hard origin/main
-# … build gồm corporate-web …
-systemctl enable --now webecom-corporate
-systemctl restart webecom-admin-api webecom-admin-web webecom-storefront webecom-corporate
-cp deploy/nginx-webecom.conf /etc/nginx/sites-available/webecom
-nginx -t && systemctl reload nginx
+DEMO_HOSTS=themes.ngoinhahomnay.vn
+DEMO_PUBLIC_URL=https://themes.ngoinhahomnay.vn
+DEMO_STOREFRONT_ID=sf_aura
 ```
 
 ## Smoke
@@ -30,8 +29,8 @@ nginx -t && systemctl reload nginx
 curl -sS https://webecom.ngoinhahomnay.vn/api/health
 curl -sS https://webecom.ngoinhahomnay.vn/api/v1/public/templates | head
 curl -sS -o /dev/null -w "%{http_code}\n" https://webecom.ngoinhahomnay.vn/
-curl -sS -o /dev/null -w "%{http_code}\n" https://demo.webecom.ngoinhahomnay.vn/
-curl -sS -o /dev/null -w "%{http_code}\n" "https://demo.webecom.ngoinhahomnay.vn/?demo=beauty-glow"
+curl -sS -o /dev/null -w "%{http_code}\n" https://themes.ngoinhahomnay.vn/
+curl -sS -o /dev/null -w "%{http_code}\n" "https://themes.ngoinhahomnay.vn/?demo=beauty-glow"
 ```
 
 ## Rollback nhanh

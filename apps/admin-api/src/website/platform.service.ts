@@ -281,7 +281,7 @@ export class PlatformService {
     });
     if (!row) throw AppError.notFound('Template not found');
     const demoBase =
-      process.env.DEMO_PUBLIC_URL?.replace(/\/$/, '') || 'https://demo.webecom.ngoinhahomnay.vn';
+      process.env.DEMO_PUBLIC_URL?.replace(/\/$/, '') || 'https://themes.ngoinhahomnay.vn';
     const mapped = this.mapTemplate(row);
     return {
       ...mapped,

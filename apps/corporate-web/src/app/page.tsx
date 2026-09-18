@@ -100,7 +100,7 @@ export default function CorporateHome() {
             Chọn template
           </a>
           <a
-            href="https://demo.webecom.ngoinhahomnay.vn/"
+            href="https://themes.ngoinhahomnay.vn/"
             style={{
               padding: '12px 18px',
               borderRadius: 10,

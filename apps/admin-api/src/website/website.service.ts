@@ -602,7 +602,10 @@ export class WebsiteService {
   async resolveHost(hostnameRaw: string) {
     const hostname = hostnameRaw.trim().toLowerCase().split(':')[0];
     const apex = process.env.PLATFORM_APEX_DOMAIN || 'ptt.shop';
-    const demoHosts = (process.env.DEMO_HOSTS || 'demo.webecom.ngoinhahomnay.vn')
+    const demoHosts = (
+      process.env.DEMO_HOSTS ||
+      'themes.ngoinhahomnay.vn,demo.webecom.ngoinhahomnay.vn'
+    )
       .split(',')
       .map((h) => h.trim().toLowerCase())
       .filter(Boolean);

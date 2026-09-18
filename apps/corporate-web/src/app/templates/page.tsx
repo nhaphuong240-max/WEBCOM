@@ -9,7 +9,7 @@ const API =
   'http://127.0.0.1:3001';
 
 const DEMO =
-  process.env.NEXT_PUBLIC_DEMO_URL?.replace(/\/$/, '') || 'https://demo.webecom.ngoinhahomnay.vn';
+  process.env.NEXT_PUBLIC_DEMO_URL?.replace(/\/$/, '') || 'https://themes.ngoinhahomnay.vn';
 const CONSOLE =
   process.env.NEXT_PUBLIC_CONSOLE_URL?.replace(/\/$/, '') ||
   'https://webecom.ngoinhahomnay.vn/console';
