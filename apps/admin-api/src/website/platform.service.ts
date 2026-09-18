@@ -1,5 +1,17 @@
 import { Injectable, Inject, forwardRef } from '@nestjs/common';
 import { AppError, createId } from '@ptt/shared-kernel';
+import {
+  SECTION_REGISTRY,
+  getPackage,
+  hasPackage,
+  listPackageCodes,
+  listPackages,
+  normalizeContent,
+  packageToLegacyPageContent,
+  packageToPageContent,
+  packageToThemeConfig,
+  toLegacyFlat,
+} from '@ptt/themes';
 import { Prisma } from '@prisma/client';
 import { randomBytes } from 'crypto';
 import { PrismaService } from '../prisma/prisma.service';
@@ -8,15 +20,12 @@ import { TemporalService } from '../temporal/temporal.service';
 import { TemporalWorkflowsService } from '../temporal/temporal-workflows.service';
 import { BillingService } from '../billing/billing.service';
 
-export const SECTION_LIBRARY = [
-  { key: 'hero', label: 'Hero', fields: ['eyebrow', 'headline', 'cta', 'cta_href'] },
-  { key: 'collections', label: 'Collections strip', fields: ['from_theme'] },
-  { key: 'featured', label: 'Featured products', fields: ['limit'] },
-  { key: 'trust', label: 'Trust badges', fields: ['items'] },
-  { key: 'rich_text', label: 'Rich text', fields: ['title', 'body'] },
-  { key: 'cta_banner', label: 'CTA banner', fields: ['title', 'cta', 'cta_href'] },
-  { key: 'footer', label: 'Footer legal', fields: ['from_brand_kit'] },
-] as const;
+/** @deprecated prefer SECTION_REGISTRY from @ptt/themes — kept for local key typing */
+export const SECTION_LIBRARY = SECTION_REGISTRY.map((s) => ({
+  key: s.key,
+  label: s.label,
+  fields: [...s.fields],
+}));
 
 const GOLIVE_DEFS: Array<{
   groupKey: string;
@@ -286,8 +295,22 @@ export class PlatformService {
     const demoBase =
       process.env.DEMO_PUBLIC_URL?.replace(/\/$/, '') || 'https://themes.ngoinhahomnay.vn';
     const mapped = this.mapTemplate(row);
+    let packageMeta: Record<string, unknown> | undefined;
+    if (this.feature('cms.package_resolve') && hasPackage(row.code)) {
+      try {
+        const pkg = getPackage(row.code);
+        packageMeta = {
+          package_version: pkg.manifest.version,
+          supports: pkg.manifest.supports,
+          layouts: pkg.manifest.layouts,
+        };
+      } catch {
+        packageMeta = undefined;
+      }
+    }
     return {
       ...mapped,
+      ...packageMeta,
       demo_url: `${demoBase}/?demo=${encodeURIComponent(row.code)}`,
       trial_url: '/trial',
       buy_theme_url: `/console/website/templates?focus=${encodeURIComponent(row.code)}`,
@@ -385,6 +408,26 @@ export class PlatformService {
       where: { themeId: theme.id },
       orderBy: { version: 'desc' },
     });
+
+    let themeConfig = tpl.themeConfig as Prisma.InputJsonValue;
+    let pageContent = tpl.pageContent as Prisma.InputJsonValue;
+    if (this.feature('cms.package_resolve') && hasPackage(tpl.code)) {
+      try {
+        const pkg = getPackage(tpl.code);
+        themeConfig = packageToThemeConfig(pkg) as Prisma.InputJsonValue;
+        const home = packageToPageContent(pkg);
+        const legacy = packageToLegacyPageContent(pkg);
+        pageContent = {
+          ...legacy,
+          schema_version: 1,
+          section_order: home.section_order,
+          sections: home.sections,
+        } as Prisma.InputJsonValue;
+      } catch {
+        /* keep catalog JSON */
+      }
+    }
+
     const version = await this.prisma.db.themeVersion.create({
       data: {
         id: createId('thv'),
@@ -392,7 +435,7 @@ export class PlatformService {
         themeId: theme.id,
         version: (latest?.version ?? 0) + 1,
         status: 'draft',
-        config: tpl.themeConfig as Prisma.InputJsonValue,
+        config: themeConfig,
         note: `Installed from marketplace: ${tpl.code}`,
         previousVersionId: latest?.id,
       },
@@ -425,7 +468,7 @@ export class PlatformService {
         pageId: page.id,
         version: (pageLatest?.version ?? 0) + 1,
         status: 'draft',
-        content: tpl.pageContent as Prisma.InputJsonValue,
+        content: pageContent,
         seo: {
           title: tpl.name,
           description: `Storefront powered by ${tpl.name}`,
@@ -587,7 +630,60 @@ export class PlatformService {
   // ─── Builder / CMS ─────────────────────────────────────────
 
   sectionLibrary() {
-    return { sections: SECTION_LIBRARY, feature: this.feature('builder.v1') };
+    return {
+      sections: SECTION_REGISTRY.map((s) => ({
+        key: s.key,
+        label: s.label,
+        fields: [...s.fields],
+        props_schema: s.props_schema,
+      })),
+      schema_version: 1,
+      feature: this.feature('builder.v1'),
+      cms_registry_v1: this.feature('cms.registry.v1'),
+    };
+  }
+
+  /** CMS-0 — public ThemePackage catalog (filesystem packages/themes). */
+  listPublicThemePackages() {
+    if (!this.feature('cms.package_resolve')) {
+      throw AppError.validation('Feature cms.package_resolve disabled');
+    }
+    return listPackages().map((pkg) => ({
+      code: pkg.manifest.code,
+      name: pkg.manifest.name,
+      version: pkg.manifest.version,
+      supports: pkg.manifest.supports,
+      layouts: pkg.manifest.layouts,
+      demo_fixtures: pkg.manifest.demo_fixtures || {},
+      compatible_app_blocks: pkg.manifest.compatible_app_blocks || [],
+      tokens: pkg.starter.tokens,
+    }));
+  }
+
+  getPublicThemePackage(code: string) {
+    if (!this.feature('cms.package_resolve')) {
+      throw AppError.validation('Feature cms.package_resolve disabled');
+    }
+    if (!hasPackage(code)) throw AppError.notFound('Theme package not found');
+    const pkg = getPackage(code);
+    const demoBase =
+      process.env.DEMO_PUBLIC_URL?.replace(/\/$/, '') || 'https://themes.ngoinhahomnay.vn';
+    return {
+      code: pkg.manifest.code,
+      name: pkg.manifest.name,
+      version: pkg.manifest.version,
+      supports: pkg.manifest.supports,
+      layouts: pkg.manifest.layouts,
+      demo_fixtures: pkg.manifest.demo_fixtures || {},
+      compatible_app_blocks: pkg.manifest.compatible_app_blocks || [],
+      starter: {
+        home: pkg.starter.home,
+        home_legacy: toLegacyFlat(pkg.starter.home),
+        tokens: pkg.starter.tokens,
+      },
+      demo_url: `${demoBase}/?demo=${encodeURIComponent(pkg.manifest.code)}`,
+      package_codes: listPackageCodes(),
+    };
   }
 
   async listPages(tenantId: string, storefrontId: string) {
@@ -746,13 +842,13 @@ export class PlatformService {
   }
 
   private validateSections(content: Record<string, unknown>) {
-    const allowed = new Set(SECTION_LIBRARY.map((s) => s.key));
-    const order = content.section_order as string[] | undefined;
-    if (order) {
-      for (const key of order) {
-        if (!allowed.has(key as (typeof SECTION_LIBRARY)[number]['key'])) {
-          throw AppError.validation(`Section not in allowlist: ${key}`);
-        }
+    const allowed = new Set(SECTION_REGISTRY.map((s) => s.key));
+    const normalized = normalizeContent(content);
+    for (const key of normalized.section_order) {
+      const node = normalized.sections[key];
+      const type = node?.type || key;
+      if (!allowed.has(type as (typeof SECTION_REGISTRY)[number]['key'])) {
+        throw AppError.validation(`Section not in allowlist: ${type}`);
       }
     }
     // App block allowlist: reject arbitrary script keys

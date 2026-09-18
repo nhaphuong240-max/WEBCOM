@@ -35,6 +35,9 @@ importers:
       '@ptt/shared-kernel':
         specifier: workspace:*
         version: link:../../packages/shared-kernel
+      '@ptt/themes':
+        specifier: workspace:*
+        version: link:../../packages/themes
       bcryptjs:
         specifier: ^2.4.3
         version: 2.4.3
@@ -103,6 +106,8 @@ importers:
       typescript:
         specifier: ^5.8.2
         version: 5.9.3
+
+  apps/ai-gateway: {}
 
   apps/corporate-web:
     dependencies:
@@ -186,6 +191,18 @@ importers:
         version: 3.2.7(@types/node@22.20.3)(jiti@2.7.0)(tsx@4.23.13)
 
   packages/theme-cli: {}
+
+  packages/themes:
+    devDependencies:
+      '@types/node':
+        specifier: ^22.13.10
+        version: 22.20.3
+      typescript:
+        specifier: ^5.8.2
+        version: 5.9.3
+      vitest:
+        specifier: ^3.0.9
+        version: 3.2.7(@types/node@22.20.3)(jiti@2.7.0)(tsx@4.23.13)
 
   packages/ui:
     devDependencies:

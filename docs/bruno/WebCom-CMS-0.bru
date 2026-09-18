@@ -1,0 +1,19 @@
+meta {
+  name: WebCom-CMS-0
+}
+
+get {
+  url: {{baseUrl}}/v1/public/theme-packages
+}
+
+get {
+  url: {{baseUrl}}/v1/public/theme-packages/aura-commerce-lite
+}
+
+get {
+  url: {{baseUrl}}/v1/admin/builder/sections
+  headers {
+    x-tenant-id: ten_aura
+    x-actor-id: bruno
+  }
+}

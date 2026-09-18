@@ -1,0 +1,37 @@
+{
+  "schema_version": 1,
+  "section_order": ["hero", "collections", "featured", "trust"],
+  "sections": {
+    "hero": {
+      "type": "hero",
+      "id": "sec_hero",
+      "props": {
+        "eyebrow": "AURA Beauty",
+        "headline": "Serum tái tạo da đêm",
+        "cta": "Mua ngay",
+        "cta_href": "/products/glow-serum-30ml"
+      },
+      "style": {}
+    },
+    "collections": {
+      "type": "collections",
+      "id": "sec_collections",
+      "props": { "source": "theme" },
+      "style": {}
+    },
+    "featured": {
+      "type": "featured",
+      "id": "sec_featured",
+      "props": { "limit": 8 },
+      "style": {}
+    },
+    "trust": {
+      "type": "trust",
+      "id": "sec_trust",
+      "props": {
+        "items": ["COD toàn quốc", "Đổi trả 7 ngày", "Hàng chính hãng"]
+      },
+      "style": {}
+    }
+  }
+}

@@ -19,6 +19,7 @@
     "@nestjs/core": "^11.0.11",
     "@nestjs/platform-express": "^11.0.11",
     "@ptt/shared-kernel": "workspace:*",
+    "@ptt/themes": "workspace:*",
     "@prisma/client": "^6.5.0",
     "jose": "^6.0.10",
     "reflect-metadata": "^0.2.2",

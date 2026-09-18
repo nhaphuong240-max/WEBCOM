@@ -442,4 +442,15 @@ export class WebsiteController {
   publicTemplate(@Param('codeOrId') codeOrId: string) {
     return this.platform.getPublicTemplate(codeOrId);
   }
+
+  /** CMS-0 — ThemePackage filesystem catalog */
+  @Get('v1/public/theme-packages')
+  publicThemePackages() {
+    return this.platform.listPublicThemePackages();
+  }
+
+  @Get('v1/public/theme-packages/:code')
+  publicThemePackage(@Param('code') code: string) {
+    return this.platform.getPublicThemePackage(code);
+  }
 }

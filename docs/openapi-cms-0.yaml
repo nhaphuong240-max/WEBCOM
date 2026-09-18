@@ -1,0 +1,31 @@
+openapi: 3.0.3
+info:
+  title: WebCom CMS-0 ThemePackage
+  version: 0.1.0
+paths:
+  /api/v1/public/theme-packages:
+    get:
+      summary: List ThemePackage manifests (CMS-0)
+      responses:
+        '200':
+          description: Package summaries
+  /api/v1/public/theme-packages/{code}:
+    get:
+      summary: ThemePackage detail + starter ContentV1
+      parameters:
+        - in: path
+          name: code
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Package + starter
+        '404':
+          description: Not found
+  /api/v1/admin/builder/sections:
+    get:
+      summary: Section registry with props_schema
+      responses:
+        '200':
+          description: Registry

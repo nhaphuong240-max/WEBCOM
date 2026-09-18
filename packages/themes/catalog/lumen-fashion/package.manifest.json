@@ -1,0 +1,13 @@
+{
+  "code": "lumen-fashion",
+  "name": "Lumen Fashion",
+  "version": "1.0.0",
+  "supports": ["hero", "collections", "featured", "trust", "cta_banner"],
+  "layouts": {
+    "home": ["hero", "featured", "collections", "trust"]
+  },
+  "demo_fixtures": {
+    "brand_name": "Lumen"
+  },
+  "compatible_app_blocks": []
+}

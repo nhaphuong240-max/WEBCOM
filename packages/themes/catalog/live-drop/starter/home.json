@@ -1,0 +1,41 @@
+{
+  "schema_version": 1,
+  "section_order": ["hero", "cta_banner", "featured", "trust"],
+  "sections": {
+    "hero": {
+      "type": "hero",
+      "id": "sec_hero",
+      "props": {
+        "eyebrow": "Live Drop",
+        "headline": "Chốt đơn trong livestream",
+        "cta": "Pin SKU ngay",
+        "cta_href": "/search"
+      },
+      "style": {}
+    },
+    "cta_banner": {
+      "type": "cta_banner",
+      "id": "sec_cta",
+      "props": {
+        "title": "Flash drop còn 15 phút",
+        "cta": "Thêm vào giỏ",
+        "cta_href": "/cart"
+      },
+      "style": {}
+    },
+    "featured": {
+      "type": "featured",
+      "id": "sec_featured",
+      "props": { "limit": 6 },
+      "style": {}
+    },
+    "trust": {
+      "type": "trust",
+      "id": "sec_trust",
+      "props": {
+        "items": ["Deep-link từ live", "Sticky ATC", "Countdown"]
+      },
+      "style": {}
+    }
+  }
+}

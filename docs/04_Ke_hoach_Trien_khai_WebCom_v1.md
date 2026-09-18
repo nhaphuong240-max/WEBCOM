@@ -1014,6 +1014,30 @@ P6: Theme update compatibility warning blocks blind publish
 | 2 | Demo | **Subdomain** `themes.ngoinhahomnay.vn` → `storefront-web` |
 | 3 | Monetize phase 1 | **Mua theme** (chưa subscription plan) |
 | 4 | Paywall | **Self-serve trial trước** paywall mua theme |
+| 5 | CMS vs template | **Một CMS/Builder chung** cho mọi template — **không** CMS riêng từng theme |
+| 6 | Theme artifact | **ThemePackage** = layout shell + section whitelist + starter `pageContent` + default tokens (không phải CMS engine) |
+| 7 | Content truth | `Page` / `PageVersion` + section/block registry chung; Brand Kit overlay tokens |
+| 8 | Enterprise custom | Vẫn CMS chung + section/app embed riêng tenant — không fork CMS |
+
+## Kiến trúc Template Marketplace (chốt CMS 2026-09-18)
+
+```text
+Catalog (bán)     → TemplateCatalog + Version + Media + License tier
+Package (chạy)    → ThemePackage (sections hỗ trợ + defaults)
+CMS (sửa nội dung)→ Page / PageVersion / Media / Nav / SEO — **một hệ**
+Tenant instance   → Theme + ThemeVersion + installs + ThemeLicense
+```
+
+**Quy tắc tương thích**
+1. Mọi package chỉ dùng section/block trong **registry chung**.
+2. Package khai báo `supports[]` → trang chi tiết + cảnh báo lúc đổi/install theme.
+3. Đổi theme: map content theo `section.type`; type không hỗ trợ → ẩn / legacy.
+4. Demo `themes.?demo=<code>` phải resolve **package của code** (không chỉ đổi metadata trên Aura shell).
+5. Creator Portal (sau) upload **package**, không upload CMS riêng.
+
+**Won't:** CMS per-template; 400 theme mỏng không demo được khác nhau; fork editor cho Enterprise.
+
+**SRS:** FR-WCP-002 · FR-WCP-005 · FR-WCP-006 · ADR-005 (bổ sung 2026-09-18).
 
 ## Surface map
 | Host / path | App | Vai trò |
@@ -1040,6 +1064,63 @@ Browse /templates → Demo (demo. host) → Dùng thử (/console onboarding)
 **Won't (phase 1):** subscription Starter/Growth; CMS corporate đầy đủ FR-CORPWEB; marketplace 400 theme.
 
 **SRS:** FR-CORPWEB · FR-WCP-002 · mockup `01-corporate-gtm.html`.
+
+---
+
+# 9q. Shared CMS + ThemePackage (spec triển khai — chốt 2026-09-18)
+
+> **Spec:** [`docs/specs/shared-cms-themepackage.md`](../specs/shared-cms-themepackage.md)  
+> **Kế hoạch triển khai chi tiết:** [`docs/specs/shared-cms-implementation-plan.md`](../specs/shared-cms-implementation-plan.md) (sprint · task ID · RACI · e2e · rollout · rủi ro)  
+> ADR-005 · §9p #5–8.
+
+## Mục tiêu
+Một **Visual Builder + Page/CMS** dùng chung mọi template; template = **ThemePackage** (layout + `supports[]` + starter), không phải CMS riêng. Demo `?demo=<code>` phải resolve đúng package.
+
+## Lịch tổng
+| Tuần | Wave | Kết quả |
+|---|---|---|
+| 1 | **CMS-0** | Schema ContentV1 + 3 packages + public package API |
+| 2–3 | **CMS-1** | Normalize · pages/SEO/preview · demo resolve khác nhau · compatibility-check |
+| 4–6 | **CMS-2** | Builder canvas mockup 06 · nav/media · ≥5 packages · **GA Shared CMS** |
+| 7+ | **CMS-3** | Blog / saved blocks / AI drawer — backlog |
+| Song song 2–3 | **MKT-1** | `/templates/[code]` + facets dùng `supports[]` |
+
+## Hiện trạng (baseline)
+| Thành phần | Status |
+|---|---|
+| `Page` / `PageVersion` + PUT builder autosave | Có (W3 stub) |
+| `SECTION_LIBRARY` flat keys (`hero`, `trust`…) | Có — cần normalize → `sections{}` |
+| `/website/builder` form hero | Có — chưa canvas mockup 06 |
+| `TemplateCatalog.themeConfig` / seed 30 | Có — chưa `packages/themes/*` thật |
+| Demo host chrome D/M | Có — **chưa** đổi runtime theo package code |
+
+## Waves (task chi tiết → implementation plan)
+| Wave | Scope | Exit |
+|---|---|---|
+| **CMS-0** | ContentV1 + dual-read; `packages/themes` × 3; `GET …/theme-packages/:code`; seed sync | **shipped** — `@ptt/themes` · e2e-cms-0 · runbook `shared-cms.md` |
+| **CMS-1** | Normalize · static/SEO · preview token · demo theo code · compatibility-check | 3 demo khác nhau; e2e-cms-1 |
+| **CMS-2** | Canvas mockup 06 · nav/media · ≥5 packages · legacy warning | GA CMS chung; e2e-cms-2 |
+| **CMS-3** | Section SRS thêm · blog stub · saved blocks · AI drawer | Backlog |
+
+## Section MVP (CMS-0/1)
+`hero` · `collections` · `featured` · `trust` · (+ CMS-1: `rich_text`, `faq`, `cta_banner`)
+
+## ThemePackage (path)
+```text
+packages/themes/<code>/package.manifest.json
+packages/themes/<code>/starter/{home,tokens}.json
+```
+
+## Won't
+CMS per-template · fork editor Enterprise · arbitrary script · 400 theme mỏng · full blog trước CMS-3.
+
+## Phụ thuộc / song song
+- Marketplace IA (MKT-1) song song CMS-0/1.
+- GoLive / Brand Kit / ThemeLicense (P3) giữ nguyên.
+
+**Kickoff:** Day 0 audit + CMS-0 (C0-1…C0-11) — xem implementation plan §3 · §4 · §15.
+
+**SRS:** FR-WCP-004…007 · FR-WCP-002 · mockup 05/06/07.
 
 ---
 

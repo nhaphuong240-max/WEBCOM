@@ -643,23 +643,21 @@ async function main() {
   });
 
   const { TEMPLATE_CATALOG } = await import('./data/templates-catalog');
+  const {
+    hasPackage,
+    getPackage,
+    packageToThemeConfig,
+    packageToPageContent,
+    packageToLegacyPageContent,
+  } = await import('@ptt/themes');
   console.log(`Seeding ${TEMPLATE_CATALOG.length} marketplace playbooks…`);
 
   for (const t of TEMPLATE_CATALOG) {
-    await prisma.templateCatalog.upsert({
-      where: { code: t.code },
-      create: {
-        id: t.id,
-        code: t.code,
-        name: t.name,
-        industry: t.industry,
-        goal: t.goal,
-        license: t.license,
-        scores: t.scores,
-        features: t.features,
-        previewUrl: `https://themes.ngoinhahomnay.vn/?demo=${t.code}`,
-        demoUrl: `https://themes.ngoinhahomnay.vn/`,
-        themeConfig: {
+    const fromPkg = hasPackage(t.code);
+    const pkg = fromPkg ? getPackage(t.code) : null;
+    const themeConfig = pkg
+      ? packageToThemeConfig(pkg)
+      : {
           code: t.code,
           tokens: {
             accent: t.accent,
@@ -672,8 +670,19 @@ async function main() {
             { slug: 'noi-bat', title: 'Nổi bật' },
             { slug: 'moi', title: 'Mới' },
           ],
-        },
-        pageContent: {
+        };
+    const pageContent = pkg
+      ? (() => {
+          const home = packageToPageContent(pkg);
+          const legacy = packageToLegacyPageContent(pkg);
+          return {
+            ...legacy,
+            schema_version: 1 as const,
+            section_order: home.section_order,
+            sections: home.sections,
+          };
+        })()
+      : {
           section_order: ['hero', 'trust', 'featured'],
           hero: {
             eyebrow: t.name,
@@ -682,7 +691,26 @@ async function main() {
             cta_href: '/search',
           },
           trust: ['COD', 'Đổi trả', 'Chính hãng'],
-        },
+        };
+    const features = pkg
+      ? Array.from(new Set([...(t.features || []), ...pkg.manifest.supports]))
+      : t.features;
+
+    await prisma.templateCatalog.upsert({
+      where: { code: t.code },
+      create: {
+        id: t.id,
+        code: t.code,
+        name: t.name,
+        industry: t.industry,
+        goal: t.goal,
+        license: t.license,
+        scores: t.scores,
+        features,
+        previewUrl: `https://themes.ngoinhahomnay.vn/?demo=${t.code}`,
+        demoUrl: `https://themes.ngoinhahomnay.vn/`,
+        themeConfig,
+        pageContent,
         playbook: t.playbook,
         active: true,
       },
@@ -692,8 +720,10 @@ async function main() {
         goal: t.goal,
         license: t.license,
         scores: t.scores,
-        features: t.features,
+        features,
         playbook: t.playbook,
+        themeConfig,
+        pageContent,
         active: true,
       },
     });

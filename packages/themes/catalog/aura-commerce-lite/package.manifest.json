@@ -1,0 +1,13 @@
+{
+  "code": "aura-commerce-lite",
+  "name": "Aura Commerce Lite",
+  "version": "1.0.0",
+  "supports": ["hero", "collections", "featured", "trust"],
+  "layouts": {
+    "home": ["hero", "collections", "featured", "trust"]
+  },
+  "demo_fixtures": {
+    "brand_name": "AURA Beauty"
+  },
+  "compatible_app_blocks": []
+}

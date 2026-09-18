@@ -1,0 +1,13 @@
+{
+  "code": "live-drop",
+  "name": "Live Drop",
+  "version": "1.0.0",
+  "supports": ["hero", "cta_banner", "featured", "trust", "countdown"],
+  "layouts": {
+    "home": ["hero", "cta_banner", "featured", "trust"]
+  },
+  "demo_fixtures": {
+    "brand_name": "Live Drop"
+  },
+  "compatible_app_blocks": []
+}

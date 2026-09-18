@@ -11,7 +11,7 @@ Tài liệu được viết lại từ SRS Master v4.0 và Kiến trúc hệ th�
 
 OpenAPI / Bruno theo phase: `openapi-w1.yaml` … `openapi-w5.yaml` · `openapi-a1.yaml` … `openapi-a6.yaml` · `openapi-b1.yaml` … `openapi-b6.yaml` · `openapi-c1.yaml` … `openapi-c6.yaml` · Bruno `WebCom-B1` … `WebCom-B6` · `WebCom-C1` … `WebCom-C6`.
 Runbooks: `docs/runbooks/` (gồm `nba-service-recovery.md`, `platform-apex-demo.md`, `self-serve-trial.md`, `theme-license-billing.md`).
-Platform apex (Haravan-like): kế hoạch §9p · P2 trial `/trial` · P3 mua theme VietQR.
+Platform apex (Haravan-like): kế hoạch §9p · P2/P3 · **CMS** (§9q · [spec](specs/shared-cms-themepackage.md) · [plan](specs/shared-cms-implementation-plan.md) · [runbook](runbooks/shared-cms.md) · OpenAPI `openapi-cms-0.yaml`).
 
 ## Thứ tự đọc khuyến nghị
 

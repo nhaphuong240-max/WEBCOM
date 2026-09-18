@@ -25,6 +25,7 @@ echo "==> build packages + apps"
 rm -f packages/shared-kernel/tsconfig.tsbuildinfo packages/ui/tsconfig.tsbuildinfo
 pnpm --filter @ptt/shared-kernel build
 pnpm --filter @ptt/ui build
+pnpm --filter @ptt/themes build
 pnpm --filter @ptt/admin-api exec prisma generate
 pnpm --filter @ptt/admin-api exec prisma migrate deploy
 pnpm --filter @ptt/admin-api build

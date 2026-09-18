@@ -1,0 +1,37 @@
+{
+  "schema_version": 1,
+  "section_order": ["hero", "featured", "collections", "trust"],
+  "sections": {
+    "hero": {
+      "type": "hero",
+      "id": "sec_hero",
+      "props": {
+        "eyebrow": "Lumen Fashion",
+        "headline": "New season essentials",
+        "cta": "Shop lookbook",
+        "cta_href": "/collections/noi-bat"
+      },
+      "style": {}
+    },
+    "featured": {
+      "type": "featured",
+      "id": "sec_featured",
+      "props": { "limit": 12 },
+      "style": {}
+    },
+    "collections": {
+      "type": "collections",
+      "id": "sec_collections",
+      "props": { "source": "theme" },
+      "style": {}
+    },
+    "trust": {
+      "type": "trust",
+      "id": "sec_trust",
+      "props": {
+        "items": ["Đổi size 14 ngày", "Freeship nội thành", "Lookbook thật"]
+      },
+      "style": {}
+    }
+  }
+}
