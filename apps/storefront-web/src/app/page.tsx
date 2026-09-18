@@ -64,34 +64,17 @@ export default async function HomePage({
       ink={ink}
     >
       {demoCode ? (
-        <div
+        <p
           style={{
-            padding: '10px 14px',
-            background: '#0b1420',
-            color: '#f4f7fb',
-            fontSize: 13,
-            display: 'flex',
-            flexWrap: 'wrap',
-            gap: 10,
-            alignItems: 'center',
-            justifyContent: 'space-between',
+            margin: 0,
+            padding: '8px 14px',
+            fontSize: 12,
+            color: '#6b5559',
+            background: 'rgba(26,18,20,0.04)',
           }}
         >
-          <span>
-            Đang xem demo template <strong>{demoName || demoCode}</strong> · trial trước khi mua theme
-          </span>
-          <span style={{ display: 'flex', gap: 12 }}>
-            <a href="https://webecom.ngoinhahomnay.vn/templates" style={{ color: '#7dd3fc' }}>
-              Catalog
-            </a>
-            <a
-              href="https://webecom.ngoinhahomnay.vn/trial"
-              style={{ color: '#7dd3fc' }}
-            >
-              Dùng thử
-            </a>
-          </span>
-        </div>
+          Demo template <strong>{demoName || demoCode}</strong>
+        </p>
       ) : null}
       <HeroBlock
         eyebrow={hero?.eyebrow || 'AURA Beauty'}
@@ -101,7 +84,14 @@ export default async function HomePage({
         accent={accent}
       />
 
-      <div style={{ padding: '14px 14px 8px', display: 'flex', gap: 8, overflowX: 'auto' }}>
+      <div
+        style={{
+          padding: '14px clamp(14px, 3vw, 48px) 8px',
+          display: 'flex',
+          gap: 8,
+          overflowX: 'auto',
+        }}
+      >
         {collections.map((c) => (
           <Link
             key={c.slug}
@@ -123,7 +113,14 @@ export default async function HomePage({
         ))}
       </div>
 
-      <section style={{ padding: 14, display: 'grid', gap: 12 }}>
+      <section
+        style={{
+          padding: '14px clamp(14px, 3vw, 48px)',
+          display: 'grid',
+          gap: 12,
+          gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))',
+        }}
+      >
         {products.map((p) => {
           const sku = p.skus[0];
           return (
@@ -134,6 +131,8 @@ export default async function HomePage({
                 borderRadius: 14,
                 border: '1px solid rgba(26,18,20,0.06)',
                 overflow: 'hidden',
+                display: 'flex',
+                flexDirection: 'column',
               }}
             >
               <Link href={`/products/${p.slug}`} style={{ textDecoration: 'none', color: 'inherit' }}>
@@ -152,7 +151,7 @@ export default async function HomePage({
                   </p>
                 </div>
               </Link>
-              <div style={{ padding: '0 14px 14px' }}>
+              <div style={{ padding: '0 14px 14px', marginTop: 'auto' }}>
                 {sku ? <AddToCartButton skuId={sku.id} disabled={(sku.available ?? 0) < 1} /> : null}
               </div>
             </article>
@@ -160,7 +159,14 @@ export default async function HomePage({
         })}
       </section>
 
-      <section style={{ padding: '8px 14px 24px', display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+      <section
+        style={{
+          padding: '8px clamp(14px, 3vw, 48px) 24px',
+          display: 'flex',
+          gap: 8,
+          flexWrap: 'wrap',
+        }}
+      >
         {trust.map((t) => (
           <span
             key={t}

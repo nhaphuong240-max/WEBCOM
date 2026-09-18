@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { useExperiment } from '../lib/experiment';
+import { useThemePreview } from './ThemePreviewChrome';
 
 export function HeroBlock({
   eyebrow,
@@ -17,6 +18,8 @@ export function HeroBlock({
   accent: string;
 }) {
   const { variant } = useExperiment('hero_cta_v1');
+  const preview = useThemePreview();
+  const desktop = preview.active && preview.mode === 'desktop';
   const h = variant?.headline || headline;
   const c = variant?.cta || cta;
   const href = variant?.cta_href || ctaHref;
@@ -24,8 +27,8 @@ export function HeroBlock({
   return (
     <section
       style={{
-        minHeight: '42vh',
-        padding: '36px 20px',
+        minHeight: desktop ? 'min(72vh, 640px)' : '42vh',
+        padding: desktop ? '56px clamp(20px, 4vw, 48px)' : '36px 20px',
         color: '#fff',
         background:
           'radial-gradient(circle at 70% 30%, rgba(255,180,160,.55), transparent 45%), linear-gradient(165deg, #1a1514 0%, #3d2c28 40%, #c4a090 100%)',
@@ -38,10 +41,11 @@ export function HeroBlock({
       <h1
         style={{
           fontFamily: 'var(--ptt-font-display)',
-          fontSize: 36,
+          fontSize: desktop ? 'clamp(36px, 5vw, 56px)' : 36,
           letterSpacing: '-0.04em',
           margin: '6px 0 10px',
           fontWeight: 800,
+          maxWidth: desktop ? '16ch' : undefined,
         }}
       >
         {h}
@@ -58,7 +62,7 @@ export function HeroBlock({
           borderRadius: 8,
           fontWeight: 700,
           textDecoration: 'none',
-          width: 'fit-content',
+          alignSelf: 'flex-start',
         }}
       >
         {c}

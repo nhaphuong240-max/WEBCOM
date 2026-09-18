@@ -1,9 +1,11 @@
 import type { Metadata } from 'next';
+import { Suspense } from 'react';
 import { Be_Vietnam_Pro, Syne } from 'next/font/google';
 import '@ptt/ui/styles.css';
 import { CartProvider } from '../lib/cart';
 import { getRuntime } from '../lib/api';
 import { PwaRegister } from '../components/PwaRegister';
+import { ThemePreviewChrome } from '../components/ThemePreviewChrome';
 
 const body = Be_Vietnam_Pro({
   subsets: ['vietnamese', 'latin'],
@@ -62,7 +64,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         }
       >
         <CartProvider>
-          {children}
+          <Suspense fallback={children}>
+            <ThemePreviewChrome>{children}</ThemePreviewChrome>
+          </Suspense>
           <PwaRegister />
         </CartProvider>
       </body>
