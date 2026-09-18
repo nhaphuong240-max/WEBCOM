@@ -522,16 +522,22 @@ export class PlatformService {
       include: { versions: { orderBy: { version: 'desc' } } },
     });
     const sf = await this.sf(tenantId, storefrontId);
-    return themes.map((t) => ({
-      id: t.id,
-      code: t.code,
-      name: t.name,
-      status: t.status,
-      versions: t.versions.map((v) => ({
-        ...this.mapThemeVersion(v, t.code, t.name),
-        is_live: v.id === sf.publishedThemeVersionId,
-      })),
-    }));
+    return themes.map((t) => {
+      const pkg = hasPackage(t.code) ? getPackage(t.code) : null;
+      const cfg = (t.versions[0]?.config || {}) as { supports?: string[]; package_version?: string };
+      return {
+        id: t.id,
+        code: t.code,
+        name: t.name,
+        status: t.status,
+        package_version: pkg?.manifest.version || cfg.package_version || null,
+        supports: pkg?.manifest.supports || cfg.supports || [],
+        versions: t.versions.map((v) => ({
+          ...this.mapThemeVersion(v, t.code, t.name),
+          is_live: v.id === sf.publishedThemeVersionId,
+        })),
+      };
+    });
   }
 
   async promoteThemeVersion(
@@ -647,6 +653,7 @@ export class PlatformService {
       schema_version: 1,
       feature: this.feature('builder.v1'),
       cms_registry_v1: this.feature('cms.registry.v1'),
+      cms_builder_canvas: this.feature('cms.builder_canvas'),
     };
   }
 
@@ -715,6 +722,102 @@ export class PlatformService {
         created_at: v.createdAt.toISOString(),
       })),
     }));
+  }
+
+  // ─── CMS-2 Media / Navigation ──────────────────────────────
+
+  async listMedia(tenantId: string) {
+    const rows = await this.prisma.db.mediaAsset.findMany({
+      where: { tenantId },
+      orderBy: { createdAt: 'desc' },
+      take: 100,
+    });
+    return rows.map((m) => ({
+      id: m.id,
+      url: m.url,
+      alt: m.alt,
+      mime_type: m.mimeType,
+      width: m.width,
+      height: m.height,
+      created_at: m.createdAt.toISOString(),
+    }));
+  }
+
+  async createMedia(
+    tenantId: string,
+    input: { url: string; alt?: string; mime_type?: string; width?: number; height?: number },
+  ) {
+    const row = await this.prisma.db.mediaAsset.create({
+      data: {
+        id: createId('med'),
+        tenantId,
+        url: input.url,
+        alt: input.alt || '',
+        mimeType: input.mime_type || 'image/jpeg',
+        width: input.width ?? null,
+        height: input.height ?? null,
+      },
+    });
+    return {
+      id: row.id,
+      url: row.url,
+      alt: row.alt,
+      mime_type: row.mimeType,
+      width: row.width,
+      height: row.height,
+      created_at: row.createdAt.toISOString(),
+    };
+  }
+
+  async listNavigation(tenantId: string, storefrontId: string) {
+    await this.sf(tenantId, storefrontId);
+    const menus = await this.prisma.db.navigationMenu.findMany({
+      where: { tenantId, storefrontId },
+      orderBy: { handle: 'asc' },
+    });
+    return menus.map((m) => ({
+      id: m.id,
+      handle: m.handle,
+      items: m.items,
+      updated_at: m.updatedAt.toISOString(),
+    }));
+  }
+
+  async upsertNavigation(
+    tenantId: string,
+    storefrontId: string,
+    handle: string,
+    items: Array<{ label: string; href: string }>,
+    actorId?: string,
+  ) {
+    await this.sf(tenantId, storefrontId);
+    const allowed = ['header', 'footer', 'bottom'];
+    if (!allowed.includes(handle)) throw AppError.validation('Invalid navigation handle');
+    const row = await this.prisma.db.navigationMenu.upsert({
+      where: { storefrontId_handle: { storefrontId, handle } },
+      create: {
+        id: createId('nav'),
+        tenantId,
+        storefrontId,
+        handle,
+        items: items as Prisma.InputJsonValue,
+      },
+      update: { items: items as Prisma.InputJsonValue },
+    });
+    await this.audit.write({
+      tenantId,
+      actorId: actorId || 'system',
+      action: 'navigation.upsert',
+      entity: 'navigation_menu',
+      entityId: row.id,
+      payload: { handle, items },
+    });
+    return {
+      id: row.id,
+      handle: row.handle,
+      items: row.items,
+      updated_at: row.updatedAt.toISOString(),
+    };
   }
 
   async getPageDraft(tenantId: string, storefrontId: string, slug: string) {

@@ -93,6 +93,12 @@ export default async function HomePage({
   );
 
   const hasSections = pageContent.section_order.length > 0;
+  const headerLinks = Array.isArray(runtime.navigation?.header)
+    ? (runtime.navigation.header as Array<{ label: string; href: string }>)
+    : [];
+  const bottomLinks = Array.isArray(runtime.navigation?.bottom)
+    ? (runtime.navigation.bottom as Array<{ label: string; href: string }>)
+    : [];
 
   return (
     <StoreShell
@@ -102,6 +108,8 @@ export default async function HomePage({
       accent={accent}
       cream={cream}
       ink={ink}
+      headerLinks={headerLinks}
+      bottomLinks={bottomLinks}
     >
       {demoCode ? (
         <p

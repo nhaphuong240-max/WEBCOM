@@ -2,6 +2,7 @@ import { PageHeader, Panel, Badge, Button } from '@ptt/ui';
 import { apiGet, apiJson, getSessionStorefrontId } from '../../../lib/api';
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
+import { InstallWithCompat } from './install-with-compat';
 
 export const dynamic = 'force-dynamic';
 
@@ -32,6 +33,18 @@ async function installTemplate(code: string) {
   revalidatePath('/website/templates');
   revalidatePath('/website/themes');
   redirect(`/website/templates?installed=${encodeURIComponent(code)}`);
+}
+
+async function checkCompat(code: string): Promise<{
+  ok?: boolean;
+  warnings?: Array<string | { message?: string }>;
+  legacy_sections?: string[];
+}> {
+  'use server';
+  const SF = await getSessionStorefrontId();
+  return apiJson(`/v1/admin/storefronts/${SF}/themes/compatibility-check`, 'POST', {
+    template_code: code,
+  });
 }
 
 async function buyTheme(code: string) {
@@ -235,11 +248,12 @@ export default async function TemplatesPage({
                   <Badge tone="muted">SEO {t.scores?.seo ?? '—'}</Badge>
                 </div>
                 {hasLic ? (
-                  <form action={installTemplate.bind(null, t.code)}>
-                    <Button type="submit" variant="primary">
-                      Install
-                    </Button>
-                  </form>
+                  <InstallWithCompat
+                    code={t.code}
+                    license={t.license}
+                    checkAction={checkCompat}
+                    installAction={installTemplate}
+                  />
                 ) : (
                   <form action={buyTheme.bind(null, t.code)}>
                     <Button type="submit" variant="primary">

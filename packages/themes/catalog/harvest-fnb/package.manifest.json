@@ -1,0 +1,13 @@
+{
+  "code": "harvest-fnb",
+  "name": "Harvest F&B",
+  "version": "1.0.0",
+  "supports": ["hero", "featured", "cta_banner", "trust", "footer_links"],
+  "layouts": {
+    "home": ["hero", "featured", "cta_banner", "trust", "footer_links"]
+  },
+  "demo_fixtures": {
+    "brand_name": "Harvest Kitchen"
+  },
+  "compatible_app_blocks": []
+}

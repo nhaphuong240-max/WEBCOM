@@ -118,6 +118,38 @@ export const SECTION_REGISTRY = [
       },
     },
   },
+  {
+    key: 'footer_links',
+    label: 'Footer links',
+    fields: ['columns'],
+    props_schema: {
+      type: 'object',
+      properties: {
+        columns: {
+          type: 'array',
+          items: {
+            type: 'object',
+            properties: {
+              title: { type: 'string' },
+              links: {
+                type: 'array',
+                items: {
+                  type: 'object',
+                  properties: {
+                    label: { type: 'string' },
+                    href: { type: 'string' },
+                  },
+                  required: ['label', 'href'],
+                },
+              },
+            },
+            required: ['title', 'links'],
+          },
+        },
+      },
+      required: ['columns'],
+    },
+  },
 ] as const;
 
 export type SectionKey = (typeof SECTION_REGISTRY)[number]['key'];

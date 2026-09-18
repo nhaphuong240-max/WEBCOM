@@ -1,0 +1,66 @@
+{
+  "schema_version": 1,
+  "section_order": ["hero", "rich_text", "featured", "faq", "footer_links"],
+  "sections": {
+    "hero": {
+      "type": "hero",
+      "id": "sec_hero",
+      "props": {
+        "eyebrow": "Atelier Luxe",
+        "headline": "Thủ công từng chi tiết — bộ sưu tập giới hạn",
+        "cta": "Khám phá lookbook",
+        "cta_href": "/search"
+      },
+      "style": {}
+    },
+    "rich_text": {
+      "type": "rich_text",
+      "id": "sec_story",
+      "props": {
+        "title": "Craftsmanship",
+        "body": "Mỗi sản phẩm được hoàn thiện bởi thợ thủ công với chất liệu chọn lọc và đường may chuẩn atelier."
+      },
+      "style": {}
+    },
+    "featured": {
+      "type": "featured",
+      "id": "sec_featured",
+      "props": { "limit": 4 },
+      "style": {}
+    },
+    "faq": {
+      "type": "faq",
+      "id": "sec_faq",
+      "props": {
+        "items": [
+          { "q": "Có đặt lịch tư vấn riêng?", "a": "Có — đặt hẹn private sale qua CTA." },
+          { "q": "Giao hàng quốc tế?", "a": "Hỗ trợ COD nội địa; quốc tế theo yêu cầu." }
+        ]
+      },
+      "style": {}
+    },
+    "footer_links": {
+      "type": "footer_links",
+      "id": "sec_footer_links",
+      "props": {
+        "columns": [
+          {
+            "title": "Maison",
+            "links": [
+              { "label": "Câu chuyện", "href": "/p/about" },
+              { "label": "Lookbook", "href": "/search" }
+            ]
+          },
+          {
+            "title": "Dịch vụ",
+            "links": [
+              { "label": "Private sale", "href": "/p/about" },
+              { "label": "Chăm sóc", "href": "/p/about" }
+            ]
+          }
+        ]
+      },
+      "style": {}
+    }
+  }
+}

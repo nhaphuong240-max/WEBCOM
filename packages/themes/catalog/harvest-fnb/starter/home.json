@@ -1,0 +1,64 @@
+{
+  "schema_version": 1,
+  "section_order": ["hero", "featured", "cta_banner", "trust", "footer_links"],
+  "sections": {
+    "hero": {
+      "type": "hero",
+      "id": "sec_hero",
+      "props": {
+        "eyebrow": "Harvest Kitchen",
+        "headline": "Đặt món hôm nay — nóng hổi giao nhanh",
+        "cta": "Xem menu",
+        "cta_href": "/search"
+      },
+      "style": {}
+    },
+    "featured": {
+      "type": "featured",
+      "id": "sec_featured",
+      "props": { "limit": 6 },
+      "style": {}
+    },
+    "cta_banner": {
+      "type": "cta_banner",
+      "id": "sec_cta",
+      "props": {
+        "title": "Combo trưa tiết kiệm 15%",
+        "cta": "Đặt ngay",
+        "cta_href": "/cart"
+      },
+      "style": {}
+    },
+    "trust": {
+      "type": "trust",
+      "id": "sec_trust",
+      "props": {
+        "items": ["Giao 30 phút", "Nguyên liệu tươi", "Thanh toán COD"]
+      },
+      "style": {}
+    },
+    "footer_links": {
+      "type": "footer_links",
+      "id": "sec_footer_links",
+      "props": {
+        "columns": [
+          {
+            "title": "Menu",
+            "links": [
+              { "label": "Món chính", "href": "/search" },
+              { "label": "Đồ uống", "href": "/search" }
+            ]
+          },
+          {
+            "title": "Hỗ trợ",
+            "links": [
+              { "label": "Liên hệ", "href": "/p/about" },
+              { "label": "Giờ mở cửa", "href": "/p/about" }
+            ]
+          }
+        ]
+      },
+      "style": {}
+    }
+  }
+}

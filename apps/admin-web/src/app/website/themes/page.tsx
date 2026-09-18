@@ -33,6 +33,8 @@ export default async function ThemesPage() {
     code: string;
     name: string;
     status: string;
+    package_version?: string | null;
+    supports?: string[];
     versions: Array<{
       id: string;
       version: number;
@@ -43,10 +45,12 @@ export default async function ThemesPage() {
       created_at: string;
     }>;
   }> = [];
+  let packages: Array<{ code: string; version: string; supports: string[] }> = [];
   let preview: { preview_path: string; token: string; expires_at: string } | null = null;
   let error = '';
   try {
     themes = await apiGet(`/v1/admin/storefronts/${SF}/themes`);
+    packages = await apiGet('/v1/public/theme-packages');
     preview = await apiJson(`/v1/admin/storefronts/${SF}/preview-token`, 'POST', { hours: 24 });
   } catch (e) {
     error = e instanceof Error ? e.message : 'API error';
@@ -56,14 +60,24 @@ export default async function ThemesPage() {
     <>
       <PageHeader
         title="Theme Library"
-        description="Draft / Staging / Published · clone · preview · rollback"
-        actions={<Badge tone="accent">W3 · mockup 05</Badge>}
+        description="Draft / Staging / Published · package version · supports"
+        actions={<Badge tone="accent">CMS-2 · mockup 05</Badge>}
       />
       {error ? (
         <Panel title="API">
           <p style={{ color: 'crimson' }}>{error}</p>
         </Panel>
       ) : null}
+
+      <Panel title={`Theme packages (${packages.length})`}>
+        <ul style={{ fontSize: 13 }}>
+          {packages.map((p) => (
+            <li key={p.code}>
+              <strong>{p.code}</strong> v{p.version} · supports: {(p.supports || []).join(', ')}
+            </li>
+          ))}
+        </ul>
+      </Panel>
 
       {preview ? (
         <Panel title="Staging preview token">
@@ -74,7 +88,15 @@ export default async function ThemesPage() {
       ) : null}
 
       {themes.map((t) => (
-        <Panel key={t.id} title={`${t.name} (${t.code}) · ${t.status}`}>
+        <Panel
+          key={t.id}
+          title={`${t.name} (${t.code}) · ${t.status}${t.package_version ? ` · pkg v${t.package_version}` : ''}`}
+        >
+          {t.supports?.length ? (
+            <p style={{ fontSize: 12, opacity: 0.75, marginTop: 0 }}>
+              supports: {t.supports.join(', ')}
+            </p>
+          ) : null}
           <table style={{ width: '100%', fontSize: 13, borderCollapse: 'collapse' }}>
             <thead>
               <tr style={{ textAlign: 'left' }}>

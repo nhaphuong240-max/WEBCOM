@@ -40,6 +40,18 @@ curl -sS -H "x-tenant-id: ten_aura" -H "x-actor-id: op" \
 BASE_URL=http://127.0.0.1:3101/api bash scripts/e2e-cms-1.sh
 ```
 
+## CMS-2 notes
+- Builder canvas: `FEATURE_CMS_BUILDER_CANVAS` (default on) — add/remove/reorder · D/T/M · undo · inspector
+- Media stub: `GET/POST /v1/admin/media` (URL)
+- Nav: `GET/PUT …/navigation/:handle` (`header|footer|bottom`) — storefront đọc runtime.navigation
+- Packages ≥5: `harvest-fnb`, `atelier-luxe` + 3 pilot
+- Install template: compatibility modal trước confirm
+- Section `footer_links`
+
+```bash
+BASE_URL=http://127.0.0.1:3101/api bash scripts/e2e-cms-2.sh
+```
+
 ## Spec
 - `docs/specs/shared-cms-themepackage.md`
-- `docs/specs/shared-cms-implementation-plan.md` · wave CMS-0
+- `docs/specs/shared-cms-implementation-plan.md` · wave CMS-0…CMS-2

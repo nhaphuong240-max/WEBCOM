@@ -16,6 +16,8 @@ export function StoreShell({
   accent = '#c45a6a',
   cream = '#faf6f4',
   ink = '#1a1214',
+  headerLinks,
+  bottomLinks,
 }: {
   children: React.ReactNode;
   brand?: string;
@@ -24,11 +26,21 @@ export function StoreShell({
   accent?: string;
   cream?: string;
   ink?: string;
+  headerLinks?: Array<{ label: string; href: string }>;
+  bottomLinks?: Array<{ label: string; href: string }>;
 }) {
   const { qty } = useCart();
   const preview = useThemePreview();
   const desktop = preview.active && preview.mode === 'desktop';
   const mobilePreview = preview.active && preview.mode === 'mobile';
+  const navLinks =
+    headerLinks && headerLinks.length > 0
+      ? headerLinks
+      : [
+          { label: 'Serum', href: '/collections/serum' },
+          { label: 'Skincare', href: '/collections/skincare' },
+          { label: 'Tìm kiếm', href: '/search' },
+        ];
 
   return (
     <div
@@ -89,15 +101,11 @@ export function StoreShell({
               color: '#6b5559',
             }}
           >
-            <Link href="/collections/serum" style={{ color: 'inherit', textDecoration: 'none' }}>
-              Serum
-            </Link>
-            <Link href="/collections/skincare" style={{ color: 'inherit', textDecoration: 'none' }}>
-              Skincare
-            </Link>
-            <Link href="/search" style={{ color: 'inherit', textDecoration: 'none' }}>
-              Tìm kiếm
-            </Link>
+            {navLinks.map((l) => (
+              <Link key={l.href + l.label} href={l.href} style={{ color: 'inherit', textDecoration: 'none' }}>
+                {l.label}
+              </Link>
+            ))}
           </nav>
         ) : null}
         <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
@@ -131,7 +139,7 @@ export function StoreShell({
       >
         {children}
       </div>
-      {!desktop ? <BottomNav /> : null}
+      {!desktop ? <BottomNav links={bottomLinks} /> : null}
       <ConsentBanner hasGtm={!!gtm} hasPixel={!!pixel} />
     </div>
   );

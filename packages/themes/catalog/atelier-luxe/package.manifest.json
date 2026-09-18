@@ -1,0 +1,13 @@
+{
+  "code": "atelier-luxe",
+  "name": "Atelier Luxe",
+  "version": "1.0.0",
+  "supports": ["hero", "rich_text", "featured", "faq", "footer_links"],
+  "layouts": {
+    "home": ["hero", "rich_text", "featured", "faq", "footer_links"]
+  },
+  "demo_fixtures": {
+    "brand_name": "Atelier Luxe"
+  },
+  "compatible_app_blocks": []
+}

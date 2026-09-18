@@ -323,6 +323,59 @@ export class WebsiteController {
     );
   }
 
+  // ─── CMS-2 Media / Navigation ──────────────────────────────
+
+  @Get('v1/admin/media')
+  @UseGuards(TenantAuthGuard)
+  listMedia(@ReqContext() ctx: RequestContext) {
+    return this.platform.listMedia(ctx.tenantId);
+  }
+
+  @Post('v1/admin/media')
+  @UseGuards(TenantAuthGuard)
+  createMedia(@ReqContext() ctx: RequestContext, @Body() body: unknown) {
+    const parsed = z
+      .object({
+        url: z.string().url(),
+        alt: z.string().optional(),
+        mime_type: z.string().optional(),
+        width: z.number().optional(),
+        height: z.number().optional(),
+      })
+      .safeParse(body);
+    if (!parsed.success) throw AppError.validation('Invalid media', parsed.error.flatten());
+    return this.platform.createMedia(ctx.tenantId, parsed.data);
+  }
+
+  @Get('v1/admin/storefronts/:id/navigation')
+  @UseGuards(TenantAuthGuard)
+  listNav(@ReqContext() ctx: RequestContext, @Param('id') id: string) {
+    return this.platform.listNavigation(ctx.tenantId, id);
+  }
+
+  @Put('v1/admin/storefronts/:id/navigation/:handle')
+  @UseGuards(TenantAuthGuard)
+  upsertNav(
+    @ReqContext() ctx: RequestContext,
+    @Param('id') id: string,
+    @Param('handle') handle: string,
+    @Body() body: unknown,
+  ) {
+    const parsed = z
+      .object({
+        items: z.array(z.object({ label: z.string().min(1), href: z.string().min(1) })),
+      })
+      .safeParse(body);
+    if (!parsed.success) throw AppError.validation('Invalid navigation', parsed.error.flatten());
+    return this.platform.upsertNavigation(
+      ctx.tenantId,
+      id,
+      handle,
+      parsed.data.items,
+      ctx.actorId,
+    );
+  }
+
   // ─── W3 Go-live / Publish ──────────────────────────────────
 
   @Get('v1/admin/storefronts/:id/golive')

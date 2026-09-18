@@ -171,6 +171,65 @@ export function SectionStack({
           );
         }
 
+        if (node.type === 'countdown') {
+          return (
+            <section
+              key={key}
+              style={{
+                margin: '8px clamp(14px, 3vw, 48px)',
+                padding: '12px 14px',
+                borderRadius: 10,
+                border: `1px solid ${accent}44`,
+                fontSize: 14,
+                fontWeight: 600,
+              }}
+            >
+              {String(props.label || 'Countdown')} · {String(props.ends_at || '')}
+            </section>
+          );
+        }
+
+        if (node.type === 'footer_links') {
+          const columns = Array.isArray(props.columns)
+            ? (props.columns as Array<{
+                title?: string;
+                links?: Array<{ label?: string; href?: string }>;
+              }>)
+            : [];
+          return (
+            <footer
+              key={key}
+              style={{
+                marginTop: 24,
+                padding: '24px clamp(14px, 3vw, 48px)',
+                borderTop: '1px solid rgba(26,18,20,0.08)',
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))',
+                gap: 16,
+              }}
+            >
+              {columns.map((col, i) => (
+                <div key={i}>
+                  <div style={{ fontWeight: 700, marginBottom: 8 }}>{col.title}</div>
+                  <ul style={{ listStyle: 'none', margin: 0, padding: 0 }}>
+                    {(col.links || []).map((l, j) => (
+                      <li key={j} style={{ marginBottom: 6 }}>
+                        <Link
+                          href={String(l.href || '/')}
+                          style={{ color: '#6b5559', textDecoration: 'none', fontSize: 13 }}
+                        >
+                          {l.label}
+                        </Link>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ))}
+            </footer>
+          );
+        }
+
+        // legacy / unsupported — hide on storefront
         return null;
       })}
     </>

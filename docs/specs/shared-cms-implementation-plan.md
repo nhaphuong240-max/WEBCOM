@@ -225,11 +225,11 @@ Chia **CMS-1a** (BE/CMS) và **CMS-1b** (demo/storefront) song song sau C0.
 | C2-15 | Legacy sections: render ẩn trên storefront + badge trong builder | Merchant thấy |
 
 ### 6.5. Exit CMS-2
-- [ ] AC mockup 06 chính (add/reorder/inspector/responsive)
-- [ ] ≥5 packages; demo 5 codes phân biệt
-- [ ] Nav + media stub
-- [ ] e2e-cms-2 pass
-- [ ] Không regression P2/P3/GoLive
+- [x] AC mockup 06 chính (add/reorder/inspector/responsive)
+- [x] ≥5 packages; demo 5 codes phân biệt
+- [x] Nav + media stub
+- [x] e2e-cms-2 pass
+- [ ] Không regression P2/P3/GoLive (smoke khi deploy)
 
 ---
 

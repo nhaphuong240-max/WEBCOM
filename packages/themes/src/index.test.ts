@@ -35,9 +35,18 @@ describe('normalizeContent', () => {
 });
 
 describe('theme packages', () => {
-  it('lists 3 pilot codes', () => {
+  it('lists ≥5 package codes', () => {
     const codes = listPackageCodes();
-    expect(codes).toEqual(['aura-commerce-lite', 'live-drop', 'lumen-fashion']);
+    expect(codes.length).toBeGreaterThanOrEqual(5);
+    expect(codes).toEqual(
+      expect.arrayContaining([
+        'aura-commerce-lite',
+        'atelier-luxe',
+        'harvest-fnb',
+        'live-drop',
+        'lumen-fashion',
+      ]),
+    );
   });
 
   it('loads and validates each package', () => {
@@ -50,10 +59,10 @@ describe('theme packages', () => {
     }
   });
 
-  it('pilot packages differ in headline', () => {
-    const a = getPackage('aura-commerce-lite').starter.home.sections.hero.props.headline;
-    const b = getPackage('lumen-fashion').starter.home.sections.hero.props.headline;
-    const c = getPackage('live-drop').starter.home.sections.hero.props.headline;
-    expect(new Set([a, b, c]).size).toBe(3);
+  it('packages differ in headline', () => {
+    const headlines = listPackageCodes().map(
+      (c) => getPackage(c).starter.home.sections.hero.props.headline,
+    );
+    expect(new Set(headlines).size).toBe(headlines.length);
   });
 });

@@ -1,6 +1,7 @@
 import { PageHeader, Panel, Badge, Button } from '@ptt/ui';
 import { apiGet, apiJson } from '../../../lib/api';
 import { revalidatePath } from 'next/cache';
+import { BuilderCanvas, type ContentV1 } from './builder-canvas';
 
 export const dynamic = 'force-dynamic';
 
@@ -51,6 +52,49 @@ async function createStaticPage(formData: FormData) {
   revalidatePath('/website/builder');
 }
 
+async function saveCanvasAction(payload: {
+  content: ContentV1;
+  seo: { title?: string; description?: string };
+  expected_version: number;
+}) {
+  'use server';
+  try {
+    const res = await apiJson<{ version: number }>(`/v1/admin/storefronts/${SF}/pages/home`, 'PUT', {
+      expected_version: payload.expected_version || undefined,
+      create_if_missing: true,
+      content: payload.content,
+      seo: payload.seo,
+    });
+    revalidatePath('/website/builder');
+    return { version: res.version, ok: true as const };
+  } catch (e) {
+    return {
+      version: payload.expected_version,
+      ok: false as const,
+      error: e instanceof Error ? e.message : 'Save failed',
+    };
+  }
+}
+
+async function createMediaAction(url: string, alt: string) {
+  'use server';
+  return apiJson<{ id: string; url: string; alt: string }>('/v1/admin/media', 'POST', {
+    url,
+    alt,
+  });
+}
+
+async function saveNavAction(items: Array<{ label: string; href: string }>) {
+  'use server';
+  const res = await apiJson<{ items: Array<{ label: string; href: string }> }>(
+    `/v1/admin/storefronts/${SF}/navigation/header`,
+    'PUT',
+    { items },
+  );
+  revalidatePath('/website/builder');
+  return (res.items || items) as Array<{ label: string; href: string }>;
+}
+
 export default async function BuilderPage() {
   let draft: {
     version?: number;
@@ -59,49 +103,77 @@ export default async function BuilderPage() {
       trust?: string[];
       section_order?: string[];
     };
-    content_v1?: { schema_version?: number };
+    content_v1?: ContentV1;
     seo?: { title?: string; description?: string };
   } | null = null;
-  let sections: { sections: Array<{ key: string; label: string }> } | null = null;
+  let sections: {
+    sections: Array<{ key: string; label: string; fields: string[] }>;
+    cms_builder_canvas?: boolean;
+  } | null = null;
   let pages: Array<{ slug: string; title: string; status: string; template_key?: string }> = [];
+  let themes: Array<{ code: string; supports?: string[] }> = [];
+  let media: Array<{ id: string; url: string; alt: string }> = [];
+  let nav: Array<{ handle: string; items: Array<{ label: string; href: string }> }> = [];
   let error = '';
   try {
     sections = await apiGet('/v1/admin/builder/sections');
     pages = await apiGet(`/v1/admin/storefronts/${SF}/pages`);
     draft = await apiGet(`/v1/admin/storefronts/${SF}/pages/home`);
+    themes = await apiGet(`/v1/admin/storefronts/${SF}/themes`);
+    media = await apiGet('/v1/admin/media');
+    nav = await apiGet(`/v1/admin/storefronts/${SF}/navigation`);
   } catch (e) {
     error = e instanceof Error ? e.message : 'API error';
   }
 
+  const canvasOn =
+    sections?.cms_builder_canvas !== false &&
+    (process.env.FEATURE_CMS_BUILDER_CANVAS ?? 'true') !== 'false' &&
+    (process.env.FEATURE_CMS_BUILDER_CANVAS ?? 'true') !== '0';
+
   const hero = draft?.content?.hero || {};
   const trust = (draft?.content?.trust || []).join(' | ');
   const seo = draft?.seo || {};
+  const supports = themes[0]?.supports || [];
+  const headerNav =
+    (nav.find((n) => n.handle === 'header')?.items as Array<{ label: string; href: string }>) || [];
+
+  const contentV1: ContentV1 = draft?.content_v1?.schema_version
+    ? draft.content_v1
+    : {
+        schema_version: 1,
+        section_order: ['hero'],
+        sections: {
+          hero: {
+            type: 'hero',
+            id: 'sec_hero',
+            props: {
+              eyebrow: hero.eyebrow || '',
+              headline: hero.headline || 'Headline',
+              cta: hero.cta || 'Mua ngay',
+              cta_href: hero.cta_href || '/',
+            },
+            style: {},
+          },
+        },
+      };
 
   return (
     <>
       <PageHeader
         title="Visual Site Builder"
-        description="CMS-1 · ContentV1 dual-write · SEO · static pages"
-        actions={<Badge tone="accent">CMS-1 · mockup 06</Badge>}
+        description={
+          canvasOn
+            ? 'CMS-2 · canvas add/reorder · D/T/M · nav/media stub'
+            : 'CMS-1 form · bật FEATURE_CMS_BUILDER_CANVAS để canvas'
+        }
+        actions={<Badge tone="accent">{canvasOn ? 'CMS-2 · mockup 06' : 'CMS-1 · mockup 06'}</Badge>}
       />
       {error ? (
         <Panel title="API">
           <p style={{ color: 'crimson' }}>{error}</p>
         </Panel>
       ) : null}
-
-      <Panel title="Section library">
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-          {(sections?.sections || []).map((s) => (
-            <Badge key={s.key}>{s.label}</Badge>
-          ))}
-        </div>
-        {draft?.content_v1?.schema_version ? (
-          <p style={{ fontSize: 12, opacity: 0.7, marginTop: 8 }}>
-            Draft schema_version={draft.content_v1.schema_version}
-          </p>
-        ) : null}
-      </Panel>
 
       <Panel title="Pages">
         <ul style={{ fontSize: 13 }}>
@@ -120,72 +192,103 @@ export default async function BuilderPage() {
         </form>
       </Panel>
 
-      <Panel title={`Edit home (draft v${draft?.version ?? '—'})`}>
-        <form action={saveHome} style={{ display: 'grid', gap: 10, maxWidth: 560 }}>
-          <input type="hidden" name="expected_version" value={draft?.version ?? 0} />
-          <label style={{ fontSize: 13 }}>
-            Eyebrow
-            <input name="eyebrow" defaultValue={hero.eyebrow || ''} style={{ width: '100%', padding: 8 }} />
-          </label>
-          <label style={{ fontSize: 13 }}>
-            Headline
-            <input
-              name="headline"
-              defaultValue={hero.headline || ''}
-              style={{ width: '100%', padding: 8 }}
-            />
-          </label>
-          <label style={{ fontSize: 13 }}>
-            CTA
-            <input name="cta" defaultValue={hero.cta || 'Mua ngay'} style={{ width: '100%', padding: 8 }} />
-          </label>
-          <label style={{ fontSize: 13 }}>
-            CTA href
-            <input
-              name="cta_href"
-              defaultValue={hero.cta_href || '/products/glow-serum-30ml'}
-              style={{ width: '100%', padding: 8 }}
-            />
-          </label>
-          <label style={{ fontSize: 13 }}>
-            Trust (phân tách |)
-            <input name="trust" defaultValue={trust} style={{ width: '100%', padding: 8 }} />
-          </label>
-          <label style={{ fontSize: 13 }}>
-            SEO title
-            <input
-              name="seo_title"
-              defaultValue={seo.title || ''}
-              style={{ width: '100%', padding: 8 }}
-            />
-          </label>
-          <label style={{ fontSize: 13 }}>
-            SEO description
-            <input
-              name="seo_description"
-              defaultValue={seo.description || ''}
-              style={{ width: '100%', padding: 8 }}
-            />
-          </label>
-          <Button type="submit" variant="primary">
-            Autosave draft (ContentV1)
-          </Button>
-        </form>
+      {canvasOn && !error ? (
+        <Panel title="Builder canvas">
+          <BuilderCanvas
+            initialContent={contentV1}
+            initialVersion={draft?.version || 0}
+            initialSeo={seo}
+            sections={(sections?.sections || []).map((s) => ({
+              key: s.key,
+              label: s.label,
+              fields: s.fields || [],
+            }))}
+            supports={supports}
+            media={media}
+            headerNav={headerNav}
+            saveAction={saveCanvasAction}
+            createMediaAction={createMediaAction}
+            saveNavAction={saveNavAction}
+          />
+        </Panel>
+      ) : (
+        <>
+          <Panel title="Section library">
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+              {(sections?.sections || []).map((s) => (
+                <Badge key={s.key}>{s.label}</Badge>
+              ))}
+            </div>
+          </Panel>
+          <Panel title={`Edit home (draft v${draft?.version ?? '—'})`}>
+            <form action={saveHome} style={{ display: 'grid', gap: 10, maxWidth: 560 }}>
+              <input type="hidden" name="expected_version" value={draft?.version ?? 0} />
+              <label style={{ fontSize: 13 }}>
+                Eyebrow
+                <input name="eyebrow" defaultValue={hero.eyebrow || ''} style={{ width: '100%', padding: 8 }} />
+              </label>
+              <label style={{ fontSize: 13 }}>
+                Headline
+                <input
+                  name="headline"
+                  defaultValue={hero.headline || ''}
+                  style={{ width: '100%', padding: 8 }}
+                />
+              </label>
+              <label style={{ fontSize: 13 }}>
+                CTA
+                <input name="cta" defaultValue={hero.cta || 'Mua ngay'} style={{ width: '100%', padding: 8 }} />
+              </label>
+              <label style={{ fontSize: 13 }}>
+                CTA href
+                <input
+                  name="cta_href"
+                  defaultValue={hero.cta_href || '/products/glow-serum-30ml'}
+                  style={{ width: '100%', padding: 8 }}
+                />
+              </label>
+              <label style={{ fontSize: 13 }}>
+                Trust (phân tách |)
+                <input name="trust" defaultValue={trust} style={{ width: '100%', padding: 8 }} />
+              </label>
+              <label style={{ fontSize: 13 }}>
+                SEO title
+                <input
+                  name="seo_title"
+                  defaultValue={seo.title || ''}
+                  style={{ width: '100%', padding: 8 }}
+                />
+              </label>
+              <label style={{ fontSize: 13 }}>
+                SEO description
+                <input
+                  name="seo_description"
+                  defaultValue={seo.description || ''}
+                  style={{ width: '100%', padding: 8 }}
+                />
+              </label>
+              <Button type="submit" variant="primary">
+                Autosave draft (ContentV1)
+              </Button>
+            </form>
+          </Panel>
+        </>
+      )}
+
+      <Panel title="Preview">
         <form
           action={async () => {
             'use server';
             await apiJson(`/v1/admin/storefronts/${SF}/preview-token`, 'POST', { hours: 24 });
             revalidatePath('/website/builder');
           }}
-          style={{ marginTop: 12 }}
         >
           <Button type="submit" variant="ghost">
             Tạo preview token (24h)
           </Button>
         </form>
-        <p style={{ fontSize: 12, opacity: 0.7 }}>
-          Publish qua Go-live checklist — Builder không auto-publish. Demo package:{' '}
-          <code>?demo=lumen-fashion</code> trên themes host.
+        <p style={{ fontSize: 12, opacity: 0.7, marginTop: 8 }}>
+          Publish qua Go-live · Demo: <code>?demo=harvest-fnb</code> / <code>?demo=atelier-luxe</code>
         </p>
       </Panel>
     </>
