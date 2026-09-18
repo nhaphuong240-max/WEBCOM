@@ -59,6 +59,8 @@ model Tenant {
   domains     StorefrontDomain[]
   paymentIntents PaymentIntent[]
   webhookEvents  WebhookEvent[]
+  platformInvoices PlatformInvoice[]
+  themeLicenses ThemeLicense[]
   searchOutbox   SearchOutbox[]
   aiBudgets      AiBudgetLedger[]
   channelAccounts ChannelAccount[]
@@ -99,17 +101,20 @@ model Brand {
 }
 
 model User {
-  id        String   @id @default(uuid())
-  tenantId  String   @map("tenant_id")
-  email     String
-  name      String
-  roles     String[] @default([])
-  status    String   @default("active")
-  createdAt DateTime @default(now()) @map("created_at")
-  tenant    Tenant   @relation(fields: [tenantId], references: [id])
+  id           String   @id @default(uuid())
+  tenantId     String   @map("tenant_id")
+  email        String
+  name         String
+  /// bcrypt hash for platform merchant login (P2 trial)
+  passwordHash String?  @map("password_hash")
+  roles        String[] @default([])
+  status       String   @default("active")
+  createdAt    DateTime @default(now()) @map("created_at")
+  tenant       Tenant   @relation(fields: [tenantId], references: [id])
 
   @@unique([tenantId, email])
   @@index([tenantId])
+  @@index([email])
   @@map("users")
 }
 
@@ -1084,6 +1089,8 @@ model TemplateCatalog {
   active      Boolean  @default(true)
   createdAt   DateTime @default(now()) @map("created_at")
   installs    TemplateInstall[]
+  invoices    PlatformInvoice[]
+  licenses    ThemeLicense[]
 
   @@index([industry, goal])
   @@map("template_catalog")
@@ -1104,6 +1111,51 @@ model TemplateInstall {
   @@unique([storefrontId, templateId])
   @@index([tenantId])
   @@map("template_installs")
+}
+
+/// P3 — Platform theme purchase invoice (separate from merchant Order)
+model PlatformInvoice {
+  id              String   @id @default(uuid())
+  tenantId        String   @map("tenant_id")
+  templateId      String   @map("template_id")
+  amount          Decimal  @db.Decimal(18, 2)
+  currency        String   @default("VND")
+  /// open | paid | expired | cancelled
+  status          String   @default("open")
+  qrPayload       String?  @map("qr_payload")
+  qrImageUrl      String?  @map("qr_image_url")
+  transferContent String?  @map("transfer_content")
+  providerRef     String?  @map("provider_ref")
+  paidAt          DateTime? @map("paid_at")
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+  tenant          Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  template        TemplateCatalog @relation(fields: [templateId], references: [id])
+  license         ThemeLicense?
+
+  @@index([tenantId, status])
+  @@index([tenantId, templateId])
+  @@unique([tenantId, providerRef])
+  @@map("platform_invoices")
+}
+
+/// P3 — Granted theme license after paid invoice (or free catalog)
+model ThemeLicense {
+  id         String   @id @default(uuid())
+  tenantId   String   @map("tenant_id")
+  templateId String   @map("template_id")
+  invoiceId  String?  @unique @map("invoice_id")
+  /// active | revoked
+  status     String   @default("active")
+  grantedAt  DateTime @default(now()) @map("granted_at")
+  createdAt  DateTime @default(now()) @map("created_at")
+  tenant     Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  template   TemplateCatalog @relation(fields: [templateId], references: [id])
+  invoice    PlatformInvoice? @relation(fields: [invoiceId], references: [id], onDelete: SetNull)
+
+  @@unique([tenantId, templateId])
+  @@index([tenantId, status])
+  @@map("theme_licenses")
 }
 
 /// W3 — Go-live governance checklist (BR-025)

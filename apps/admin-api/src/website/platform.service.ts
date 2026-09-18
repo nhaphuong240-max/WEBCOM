@@ -6,6 +6,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { AuditService } from '../audit/audit.service';
 import { TemporalService } from '../temporal/temporal.service';
 import { TemporalWorkflowsService } from '../temporal/temporal-workflows.service';
+import { BillingService } from '../billing/billing.service';
 
 export const SECTION_LIBRARY = [
   { key: 'hero', label: 'Hero', fields: ['eyebrow', 'headline', 'cta', 'cta_href'] },
@@ -69,6 +70,8 @@ export class PlatformService {
     private readonly temporal: TemporalService,
     @Inject(forwardRef(() => TemporalWorkflowsService))
     private readonly workflows: TemporalWorkflowsService,
+    @Inject(forwardRef(() => BillingService))
+    private readonly billing: BillingService,
   ) {}
 
   private feature(name: string, fallback = true) {
@@ -286,7 +289,7 @@ export class PlatformService {
     return {
       ...mapped,
       demo_url: `${demoBase}/?demo=${encodeURIComponent(row.code)}`,
-      trial_url: '/console/website/onboarding',
+      trial_url: '/trial',
       buy_theme_url: `/console/website/templates?focus=${encodeURIComponent(row.code)}`,
       monetize: 'theme_license',
       trial_before_paywall: true,
@@ -351,6 +354,16 @@ export class PlatformService {
       },
     });
     if (!tpl) throw AppError.notFound('Template not found');
+
+    // P3: one_time themes require active ThemeLicense
+    if (tpl.license !== 'free') {
+      const ok = await this.billing.hasActiveLicense(tenantId, tpl.id);
+      if (!ok) {
+        throw AppError.conflict(
+          'Theme license required — mua theme (VietQR) trước khi install',
+        );
+      }
+    }
 
     let theme = await this.prisma.db.theme.findUnique({
       where: { storefrontId_code: { storefrontId, code: tpl.code } },

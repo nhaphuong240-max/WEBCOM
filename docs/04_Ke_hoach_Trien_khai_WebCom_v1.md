@@ -1034,8 +1034,8 @@ Browse /templates → Demo (demo. host) → Dùng thử (/console onboarding)
 |---|---|---|
 | **P0** | Remount nginx apex→corporate; themes.→storefront; enable systemd corporate; SSL themes | Apex = Platform; shop AURA trên themes. |
 | **P1** | Public `GET /api/v1/public/templates` (+ detail); UI `/templates`; demo banner `?demo=` | Gallery public + demo link hoạt động |
-| **P2** | Self-serve trial tenant/storefront + deep-link onboarding | Trial không cần trả tiền trước |
-| **P3** | Theme license checkout (VietQR/TRANSFER) tách khỏi cart hàng hóa | Mua theme sau trial |
+| **P2** | Self-serve trial tenant/storefront + deep-link onboarding | **shipped** — `POST /api/v1/public/trial/signup` · `/trial` · console session JWT |
+| **P3** | Theme license checkout (VietQR/TRANSFER) tách khỏi cart hàng hóa | **shipped** — `PlatformInvoice` + `ThemeLicense` · simulate-paid · gate install |
 
 **Won't (phase 1):** subscription Starter/Growth; CMS corporate đầy đủ FR-CORPWEB; marketplace 400 theme.
 

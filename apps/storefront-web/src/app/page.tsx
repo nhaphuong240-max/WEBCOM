@@ -85,7 +85,7 @@ export default async function HomePage({
               Catalog
             </a>
             <a
-              href="https://webecom.ngoinhahomnay.vn/console/website/onboarding"
+              href="https://webecom.ngoinhahomnay.vn/trial"
               style={{ color: '#7dd3fc' }}
             >
               Dùng thử

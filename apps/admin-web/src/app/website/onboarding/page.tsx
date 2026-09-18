@@ -1,13 +1,12 @@
 import { PageHeader, Panel, Badge, Button } from '@ptt/ui';
-import { apiGet, apiJson } from '../../../lib/api';
+import { apiGet, apiJson, getSessionStorefrontId } from '../../../lib/api';
 import { revalidatePath } from 'next/cache';
 
 export const dynamic = 'force-dynamic';
 
-const SF = process.env.NEXT_PUBLIC_STOREFRONT_ID || 'sf_aura';
-
 async function saveBrandKit(formData: FormData) {
   'use server';
+  const SF = await getSessionStorefrontId();
   const accent = String(formData.get('accent') || '#c45a6a');
   const ink = String(formData.get('ink') || '#1a1214');
   const title = String(formData.get('seo_title') || '');
@@ -34,11 +33,13 @@ async function saveBrandKit(formData: FormData) {
 
 async function advance(step: string) {
   'use server';
+  const SF = await getSessionStorefrontId();
   await apiJson(`/v1/admin/storefronts/${SF}/onboarding/advance`, 'POST', { step, done: true });
   revalidatePath('/website/onboarding');
 }
 
 export default async function OnboardingPage() {
+  const SF = await getSessionStorefrontId();
   let onboarding: {
     current_step: string;
     completed: Record<string, boolean>;
@@ -61,12 +62,15 @@ export default async function OnboardingPage() {
     <>
       <PageHeader
         title="Website Onboarding"
-        description="Brand Kit → Catalog → Theme Match → Payment → Go-live"
-        actions={<Badge tone="accent">W3 · mockup 02</Badge>}
+        description={`Trial SF ${SF.slice(0, 14)}… · Brand Kit → Catalog → Theme → Go-live`}
+        actions={<Badge tone="accent">P2 trial</Badge>}
       />
       {error ? (
         <Panel title="API">
           <p style={{ color: 'crimson' }}>{error}</p>
+          <p style={{ fontSize: 13 }}>
+            <a href="/login">Đăng nhập trial</a> nếu chưa có session.
+          </p>
         </Panel>
       ) : null}
 
@@ -80,7 +84,7 @@ export default async function OnboardingPage() {
               ) : onboarding?.current_step === s.key ? (
                 <Badge tone="accent">đang làm</Badge>
               ) : (
-                <Badge>pending</Badge>
+                <Badge tone="muted">pending</Badge>
               )}{' '}
               · <a href={s.href}>{s.href}</a>
             </li>
@@ -102,7 +106,7 @@ export default async function OnboardingPage() {
             SEO title
             <input
               name="seo_title"
-              defaultValue={seo.title || 'AURA Beauty'}
+              defaultValue={seo.title || ''}
               style={{ width: '100%', padding: 8 }}
             />
           </label>

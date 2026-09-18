@@ -1,11 +1,9 @@
 import { PageHeader, Panel, Badge, Button } from '@ptt/ui';
-import { apiGet, apiJson } from '../../../lib/api';
+import { apiGet, apiJson, getSessionStorefrontId } from '../../../lib/api';
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 
 export const dynamic = 'force-dynamic';
-
-const SF = process.env.NEXT_PUBLIC_STOREFRONT_ID || 'sf_aura';
 
 type Template = {
   id: string;
@@ -16,11 +14,16 @@ type Template = {
   license: string;
   scores: { cvr?: number; mobile?: number; seo?: number };
   features: string[];
-  playbook?: string[];
+};
+
+type License = {
+  template_code: string;
+  status: string;
 };
 
 async function installTemplate(code: string) {
   'use server';
+  const SF = await getSessionStorefrontId();
   await apiJson(`/v1/admin/storefronts/${SF}/templates/${code}/install`, 'POST', {});
   await apiJson(`/v1/admin/storefronts/${SF}/onboarding/advance`, 'POST', {
     step: 'theme_match',
@@ -29,6 +32,30 @@ async function installTemplate(code: string) {
   revalidatePath('/website/templates');
   revalidatePath('/website/themes');
   redirect(`/website/templates?installed=${encodeURIComponent(code)}`);
+}
+
+async function buyTheme(code: string) {
+  'use server';
+  const inv = await apiJson<{
+    invoice_id: string | null;
+    status: string;
+    qr_image_url?: string | null;
+  }>('/v1/admin/theme-licenses/invoices', 'POST', { template_code: code });
+  if (inv.status === 'paid' || !inv.invoice_id) {
+    revalidatePath('/website/templates');
+    redirect(`/website/templates?licensed=${encodeURIComponent(code)}`);
+  }
+  redirect(`/website/templates?invoice=${encodeURIComponent(inv.invoice_id)}`);
+}
+
+async function simulatePaid(invoiceId: string) {
+  'use server';
+  const res = await apiJson<{
+    invoice: { template_code?: string };
+  }>(`/v1/admin/theme-licenses/invoices/${invoiceId}/simulate-paid`, 'POST', {});
+  const code = res.invoice?.template_code || '';
+  revalidatePath('/website/templates');
+  redirect(`/website/templates?licensed=${encodeURIComponent(code)}`);
 }
 
 async function runMatch(formData: FormData) {
@@ -55,13 +82,25 @@ export default async function TemplatesPage({
   const goal = typeof sp.goal === 'string' ? sp.goal : '';
   const sort = typeof sp.sort === 'string' ? sp.sort : 'cvr';
   const installed = typeof sp.installed === 'string' ? sp.installed : '';
+  const licensed = typeof sp.licensed === 'string' ? sp.licensed : '';
+  const invoiceId = typeof sp.invoice === 'string' ? sp.invoice : '';
+  const focus = typeof sp.focus === 'string' ? sp.focus : '';
   const budget = typeof sp.budget === 'string' ? sp.budget : 'free';
   const matched = sp.matched === '1';
 
   let templates: Template[] = [];
+  let licenses: License[] = [];
+  let invoice: {
+    invoice_id: string;
+    amount: string;
+    qr_image_url: string | null;
+    transfer_content: string | null;
+    status: string;
+    template_code?: string;
+  } | null = null;
+  let billing: { default_price_vnd?: number } | null = null;
   let matches: {
     matches: Array<{ score: number; reasons: string[]; template: { code: string; name: string } }>;
-    playbook: string[];
   } | null = null;
   let error = '';
   try {
@@ -71,6 +110,11 @@ export default async function TemplatesPage({
     if (sort) qs.set('sort', sort);
     const qstr = qs.toString();
     templates = await apiGet(`/v1/admin/templates${qstr ? `?${qstr}` : ''}`);
+    licenses = await apiGet('/v1/admin/theme-licenses');
+    billing = await apiGet('/v1/admin/billing/status');
+    if (invoiceId) {
+      invoice = await apiGet(`/v1/admin/theme-licenses/invoices/${invoiceId}`);
+    }
     matches = await apiJson(`/v1/admin/templates/match`, 'POST', {
       industry: industry || 'beauty',
       goal: goal || 'conversion',
@@ -82,103 +126,82 @@ export default async function TemplatesPage({
     error = e instanceof Error ? e.message : 'API error';
   }
 
-  const installedTpl = installed ? templates.find((t) => t.code === installed) : null;
-  const industries = Array.from(new Set(templates.map((t) => t.industry))).sort();
+  const licensedSet = new Set(licenses.filter((l) => l.status === 'active').map((l) => l.template_code));
+  const price = billing?.default_price_vnd ?? 1990000;
 
   return (
     <>
       <PageHeader
         title="Template Marketplace"
-        description="30 Conversion Playbooks — lọc ngành, sắp xếp CVR/Mobile/SEO, AI Match (rules)"
-        actions={<Badge tone="accent">A1 · mockup 04</Badge>}
+        description="P3 — free install · one_time mua theme (VietQR) rồi install"
+        actions={<Badge tone="accent">P3 billing</Badge>}
       />
       {error ? (
         <Panel title="API">
           <p style={{ color: 'crimson' }}>{error}</p>
         </Panel>
       ) : null}
-
-      {installedTpl ? (
-        <Panel title={`Conversion Playbook · ${installedTpl.name}`}>
-          <p style={{ fontSize: 13, marginTop: 0 }}>
-            Đã cài <code>{installedTpl.code}</code> — checklist sau install:
+      {installed ? (
+        <Panel title="Installed">
+          <p>
+            Đã cài <strong>{installed}</strong>
           </p>
-          <ol style={{ fontSize: 13, lineHeight: 1.7 }}>
-            {(installedTpl.playbook || []).map((p) => (
-              <li key={p}>{p}</li>
-            ))}
-          </ol>
-          <p style={{ fontSize: 13 }}>
-            Tiếp: <a href="/website/themes">Theme Library</a> ·{' '}
-            <a href="/website/domains">Domain / SSL</a> · <a href="/website/golive">Go-live</a>
+        </Panel>
+      ) : null}
+      {licensed ? (
+        <Panel title="Licensed">
+          <p>
+            Đã cấp license <strong>{licensed}</strong> — có thể Install.
           </p>
         </Panel>
       ) : null}
 
-      <Panel title="AI Theme Matchmaker">
-        <form action={runMatch} style={{ display: 'flex', flexWrap: 'wrap', gap: 10, marginBottom: 12 }}>
-          <label style={{ fontSize: 12 }}>
-            Industry
-            <select name="industry" defaultValue={industry || 'beauty'} style={{ display: 'block', marginTop: 4 }}>
-              <option value="">Tất cả</option>
-              {['beauty', 'fashion', 'fnb', 'b2b', 'edu', 'home', 'electronics', 'social'].map((i) => (
-                <option key={i} value={i}>
-                  {i}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label style={{ fontSize: 12 }}>
-            Goal
-            <select name="goal" defaultValue={goal || 'conversion'} style={{ display: 'block', marginTop: 4 }}>
-              <option value="conversion">conversion</option>
-              <option value="lead">lead</option>
-              <option value="local">local</option>
-              <option value="brand">brand</option>
-              <option value="campaign">campaign</option>
-            </select>
-          </label>
-          <label style={{ fontSize: 12 }}>
-            Budget
-            <select name="budget" defaultValue={budget} style={{ display: 'block', marginTop: 4 }}>
-              <option value="free">free</option>
-              <option value="paid">paid</option>
-            </select>
-          </label>
-          <div style={{ alignSelf: 'end' }}>
-            <Button type="submit" variant="primary">
-              Match
-            </Button>
-          </div>
+      {invoice ? (
+        <Panel title={`Hóa đơn theme · ${invoice.status}`}>
+          <p style={{ fontSize: 14 }}>
+            {invoice.template_code} · {invoice.amount} VND
+          </p>
+          <p style={{ fontSize: 13, opacity: 0.8 }}>Nội dung CK: {invoice.transfer_content}</p>
+          {invoice.qr_image_url ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={invoice.qr_image_url} alt="VietQR" width={220} height={220} />
+          ) : null}
+          {invoice.status === 'open' ? (
+            <form action={simulatePaid.bind(null, invoice.invoice_id)} style={{ marginTop: 12 }}>
+              <Button type="submit" variant="primary">
+                Simulate paid (stub)
+              </Button>
+            </form>
+          ) : null}
+        </Panel>
+      ) : null}
+
+      <Panel title="AI Match">
+        <form action={runMatch} style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+          <input name="industry" defaultValue={industry || 'beauty'} placeholder="industry" />
+          <input name="goal" defaultValue={goal || 'conversion'} placeholder="goal" />
+          <select name="budget" defaultValue={budget}>
+            <option value="free">free</option>
+            <option value="one_time">one_time</option>
+          </select>
+          <Button type="submit" variant="ghost">
+            Match
+          </Button>
         </form>
-        {matched || matches ? (
-          <>
-            <ul style={{ fontSize: 13 }}>
-              {(matches?.matches || []).slice(0, 5).map((m) => (
-                <li key={m.template.code}>
-                  <strong>{m.template.name}</strong> · score {m.score} · {m.reasons.join(', ')}
-                </li>
-              ))}
-            </ul>
-            <ol style={{ fontSize: 13 }}>
-              {(matches?.playbook || []).map((p) => (
-                <li key={p}>{p}</li>
-              ))}
-            </ol>
-          </>
+        {matched && matches ? (
+          <ul style={{ fontSize: 13 }}>
+            {matches.matches.slice(0, 5).map((m) => (
+              <li key={m.template.code}>
+                {m.template.name} ({m.score}) — {m.reasons.join(', ')}
+              </li>
+            ))}
+          </ul>
         ) : null}
       </Panel>
 
-      <Panel title={`Catalog (${templates.length})`}>
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 14, fontSize: 12 }}>
+      <Panel title={`Catalog (${templates.length}) · one_time ≈ ${price.toLocaleString('vi-VN')}đ`}>
+        <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginBottom: 12, fontSize: 13 }}>
           <a href="/website/templates?sort=cvr">Sort CVR</a>
-          <a href="/website/templates?sort=mobile">Sort Mobile</a>
-          <a href="/website/templates?sort=seo">Sort SEO</a>
-          {industries.map((i) => (
-            <a key={i} href={`/website/templates?industry=${i}&sort=${sort}`}>
-              {i}
-            </a>
-          ))}
           <a href="/website/templates">All</a>
         </div>
         <div
@@ -188,32 +211,45 @@ export default async function TemplatesPage({
             gap: 12,
           }}
         >
-          {templates.map((t) => (
-            <div
-              key={t.id}
-              style={{
-                border: '1px solid var(--ptt-line, #e5e2dc)',
-                borderRadius: 10,
-                padding: 14,
-                background: '#fff',
-              }}
-            >
-              <div style={{ fontWeight: 700 }}>{t.name}</div>
-              <div style={{ fontSize: 12, opacity: 0.7, marginBottom: 8 }}>
-                {t.industry} · {t.goal} · {t.license}
+          {templates.map((t) => {
+            const hasLic = t.license === 'free' || licensedSet.has(t.code);
+            const isFocus = focus === t.code;
+            return (
+              <div
+                key={t.id}
+                style={{
+                  border: isFocus ? '2px solid var(--ptt-accent, #ff5c1a)' : '1px solid var(--ptt-line, #e5e2dc)',
+                  borderRadius: 10,
+                  padding: 14,
+                  background: '#fff',
+                }}
+              >
+                <div style={{ fontWeight: 700 }}>{t.name}</div>
+                <div style={{ fontSize: 12, opacity: 0.7, marginBottom: 8 }}>
+                  {t.industry} · {t.goal} · {t.license}
+                  {hasLic ? ' · licensed' : ''}
+                </div>
+                <div style={{ fontSize: 12, marginBottom: 10, display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                  <Badge tone="accent">CVR {t.scores?.cvr ?? '—'}</Badge>
+                  <Badge tone="muted">Mobile {t.scores?.mobile ?? '—'}</Badge>
+                  <Badge tone="muted">SEO {t.scores?.seo ?? '—'}</Badge>
+                </div>
+                {hasLic ? (
+                  <form action={installTemplate.bind(null, t.code)}>
+                    <Button type="submit" variant="primary">
+                      Install
+                    </Button>
+                  </form>
+                ) : (
+                  <form action={buyTheme.bind(null, t.code)}>
+                    <Button type="submit" variant="primary">
+                      Mua theme
+                    </Button>
+                  </form>
+                )}
               </div>
-              <div style={{ fontSize: 12, marginBottom: 10, display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-                <Badge tone="accent">CVR {t.scores?.cvr ?? '—'}</Badge>
-                <Badge>Mobile {t.scores?.mobile ?? '—'}</Badge>
-                <Badge>SEO {t.scores?.seo ?? '—'}</Badge>
-              </div>
-              <form action={installTemplate.bind(null, t.code)}>
-                <Button type="submit" variant="primary">
-                  Install
-                </Button>
-              </form>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </Panel>
     </>

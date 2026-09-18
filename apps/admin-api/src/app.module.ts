@@ -26,9 +26,10 @@ import { CrmModule } from './crm/crm.module';
 import { LoyaltyModule } from './loyalty/loyalty.module';
 import { JourneyModule } from './journey/journey.module';
 import { CxModule } from './cx/cx.module';
+import { IamModule } from './iam/iam.module';
+import { BillingModule } from './billing/billing.module';
 import { HealthController } from './health/health.controller';
 import { MeController } from './iam/me.controller';
-import { AuthController } from './iam/auth.controller';
 import { TenancyController } from './tenancy/tenancy.controller';
 
 @Module({
@@ -60,7 +61,9 @@ import { TenancyController } from './tenancy/tenancy.controller';
     LoyaltyModule,
     JourneyModule,
     CxModule,
+    IamModule,
+    BillingModule,
   ],
-  controllers: [HealthController, MeController, AuthController, TenancyController],
+  controllers: [HealthController, MeController, TenancyController],
 })
 export class AppModule {}

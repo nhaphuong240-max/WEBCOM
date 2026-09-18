@@ -111,7 +111,7 @@ export default function CorporateHome() {
             Xem demo shop
           </a>
           <a
-            href="https://webecom.ngoinhahomnay.vn/console/website/onboarding"
+            href="/trial"
             style={{
               padding: '12px 18px',
               borderRadius: 10,

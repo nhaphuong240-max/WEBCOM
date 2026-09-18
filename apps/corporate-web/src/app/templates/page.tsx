@@ -89,7 +89,7 @@ export default async function TemplatesPage({
       >
         {templates.map((t) => {
           const demoHref = `${DEMO}/?demo=${encodeURIComponent(t.code)}`;
-          const trialHref = `${CONSOLE}/website/onboarding`;
+          const trialHref = `/trial${t.code ? `?template=${encodeURIComponent(t.code)}` : ''}`;
           const buyHref = `${CONSOLE}/website/templates?focus=${encodeURIComponent(t.code)}`;
           return (
             <Panel key={t.id} title={t.name}>
