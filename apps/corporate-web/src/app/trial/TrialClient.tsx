@@ -3,7 +3,6 @@
 import { FormEvent, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
-import { Button, Input, PttMark } from '@ptt/ui';
 
 const API =
   process.env.NEXT_PUBLIC_ADMIN_API_URL?.replace(/\/$/, '') || 'http://127.0.0.1:3001';
@@ -52,64 +51,59 @@ export default function TrialPage() {
   }
 
   return (
-    <main style={{ maxWidth: 520, margin: '0 auto', padding: '48px 24px 80px' }}>
-      <Link href="/" style={{ color: '#7dd3fc', fontSize: 14 }}>
-        ← PTT
-      </Link>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10, margin: '20px 0 8px' }}>
-        <PttMark />
-        <strong>Dùng thử miễn phí</strong>
+    <main className="corp-page">
+      <div className="corp-page-h">
+        <div className="corp-eyebrow">Trial</div>
+        <h1>Tạo storefront trial</h1>
+        <p>
+          Không cần thanh toán trước. Sau trial có thể mua theme (P3).
+          {templateCode ? (
+            <>
+              {' '}
+              Template: <code style={{ color: 'var(--accent)', fontWeight: 600 }}>{templateCode}</code>
+            </>
+          ) : null}
+        </p>
       </div>
-      <h1
-        style={{
-          fontFamily: 'var(--ptt-font-display)',
-          fontSize: 'clamp(28px, 4vw, 40px)',
-          letterSpacing: '-0.03em',
-          margin: '0 0 8px',
-        }}
-      >
-        Tạo storefront trial
-      </h1>
-      <p style={{ opacity: 0.75, marginBottom: 24 }}>
-        Không cần thanh toán trước. Sau trial có thể mua theme (P3).
-        {templateCode ? (
-          <>
-            {' '}
-            Template: <code>{templateCode}</code>
-          </>
-        ) : null}
-      </p>
 
-      <form
-        onSubmit={onSubmit}
-        style={{
-          display: 'grid',
-          gap: 10,
-          padding: 20,
-          borderRadius: 16,
-          border: '1px solid rgba(255,255,255,0.12)',
-          background: 'rgba(255,255,255,0.04)',
-        }}
-      >
-        <Input name="company" placeholder="Tên công ty / shop" required />
-        <Input name="name" placeholder="Họ tên" />
-        <Input name="email" type="email" placeholder="Email công việc" required />
-        <Input
-          name="password"
-          type="password"
-          placeholder="Mật khẩu (≥8 ký tự)"
-          required
-          minLength={8}
-        />
-        <Button type="submit" variant="primary" disabled={busy}>
+      <form className="corp-form-card" onSubmit={onSubmit}>
+        <div>
+          <label htmlFor="company">Tên công ty / shop</label>
+          <input id="company" name="company" placeholder="Aura Beauty" required />
+        </div>
+        <div>
+          <label htmlFor="name">Họ tên</label>
+          <input id="name" name="name" placeholder="Nguyễn Văn A" />
+        </div>
+        <div>
+          <label htmlFor="email">Email công việc</label>
+          <input id="email" name="email" type="email" placeholder="you@company.vn" required />
+        </div>
+        <div>
+          <label htmlFor="password">Mật khẩu (≥8 ký tự)</label>
+          <input
+            id="password"
+            name="password"
+            type="password"
+            placeholder="••••••••"
+            required
+            minLength={8}
+          />
+        </div>
+        <button type="submit" className="corp-btn corp-btn-primary" disabled={busy}>
           {busy ? 'Đang tạo…' : 'Bắt đầu trial'}
-        </Button>
-        {msg ? <p style={{ color: '#fca5a5', fontSize: 13 }}>{msg}</p> : null}
-        <p style={{ fontSize: 13, opacity: 0.7, margin: 0 }}>
+        </button>
+        {msg ? <p style={{ color: '#b91c1c', fontSize: 13, margin: 0 }}>{msg}</p> : null}
+        <p style={{ fontSize: 13, color: 'var(--ink-3)', margin: 0 }}>
           Đã có tài khoản?{' '}
-          <a href={`${CONSOLE}/login`} style={{ color: '#7dd3fc' }}>
+          <a href={`${CONSOLE}/login`} style={{ color: 'var(--accent)', fontWeight: 600 }}>
             Đăng nhập console
           </a>
+        </p>
+        <p style={{ fontSize: 13, margin: 0 }}>
+          <Link href="/templates" style={{ color: 'var(--ink-3)' }}>
+            ← Quay lại marketplace
+          </Link>
         </p>
       </form>
     </main>

@@ -3,7 +3,13 @@ import TrialPage from './TrialClient';
 
 export default function TrialRoute() {
   return (
-    <Suspense fallback={<main style={{ padding: 48 }}>Đang tải…</main>}>
+    <Suspense
+      fallback={
+        <main className="corp-page">
+          <p style={{ color: 'var(--ink-3)' }}>Đang tải…</p>
+        </main>
+      }
+    >
       <TrialPage />
     </Suspense>
   );

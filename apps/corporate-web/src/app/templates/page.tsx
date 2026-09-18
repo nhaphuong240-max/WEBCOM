@@ -1,5 +1,4 @@
 import Link from 'next/link';
-import { Badge, Button, Panel } from '@ptt/ui';
 
 export const dynamic = 'force-dynamic';
 
@@ -49,81 +48,68 @@ export default async function TemplatesPage({
   const industries = Array.from(new Set((await loadTemplates()).map((t) => t.industry))).sort();
 
   return (
-    <main style={{ maxWidth: 1100, margin: '0 auto', padding: '48px 24px 80px' }}>
-      <div style={{ marginBottom: 28 }}>
-        <Link href="/" style={{ color: '#7dd3fc', fontSize: 14 }}>
-          ← PTT
-        </Link>
-        <h1
-          style={{
-            fontFamily: 'var(--ptt-font-display)',
-            fontSize: 'clamp(32px, 5vw, 48px)',
-            letterSpacing: '-0.03em',
-            margin: '12px 0 8px',
-          }}
-        >
-          Template Marketplace
-        </h1>
-        <p style={{ opacity: 0.75, maxWidth: '52ch', margin: 0 }}>
-          Chọn template → xem demo live → dùng thử miễn phí → mua theme khi sẵn sàng.
-        </p>
+    <main className="corp-page">
+      <div className="corp-page-h">
+        <div className="corp-eyebrow">Marketplace</div>
+        <h1>Template Marketplace</h1>
+        <p>Chọn template → xem demo live → dùng thử miễn phí → mua theme khi sẵn sàng.</p>
       </div>
 
-      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, marginBottom: 24, fontSize: 13 }}>
-        <Link href="/templates" style={{ color: '#7dd3fc' }}>
+      <div className="corp-chip-row">
+        <Link href="/templates" className={`corp-chip${!sp.industry ? ' active' : ''}`}>
           All
         </Link>
         {industries.map((i) => (
-          <Link key={i} href={`/templates?industry=${encodeURIComponent(i)}`} style={{ color: '#7dd3fc' }}>
+          <Link
+            key={i}
+            href={`/templates?industry=${encodeURIComponent(i)}`}
+            className={`corp-chip${sp.industry === i ? ' active' : ''}`}
+          >
             {i}
           </Link>
         ))}
       </div>
 
-      <div
-        style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))',
-          gap: 16,
-        }}
-      >
+      <div className="corp-card-grid">
         {templates.map((t) => {
           const demoHref = `${DEMO}/?demo=${encodeURIComponent(t.code)}`;
           const trialHref = `/trial${t.code ? `?template=${encodeURIComponent(t.code)}` : ''}`;
           const buyHref = `${CONSOLE}/website/templates?focus=${encodeURIComponent(t.code)}`;
           return (
-            <Panel key={t.id} title={t.name}>
-              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 10 }}>
-                <Badge tone="muted">{t.industry}</Badge>
-                <Badge tone="accent">{t.goal}</Badge>
-                <Badge tone="signal">{t.license}</Badge>
+            <article key={t.id} className="corp-card">
+              <div className="meta">
+                <span className="tag">{t.industry}</span>
+                <span className="tag tag-accent">{t.goal}</span>
+                <span className="tag">{t.license}</span>
               </div>
-              <p style={{ fontSize: 12, opacity: 0.7, marginBottom: 12 }}>
+              <h3>{t.name}</h3>
+              <p style={{ fontSize: 12, color: 'var(--ink-3)', margin: 0 }}>
                 CVR {t.scores?.cvr ?? '—'} · Mobile {t.scores?.mobile ?? '—'} · SEO{' '}
                 {t.scores?.seo ?? '—'}
               </p>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                <a href={demoHref} target="_blank" rel="noreferrer">
-                  <Button type="button" variant="ghost" style={{ width: '100%' }}>
-                    Xem demo
-                  </Button>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 'auto' }}>
+                <a href={demoHref} target="_blank" rel="noreferrer" className="corp-btn corp-btn-ghost">
+                  Xem demo
                 </a>
-                <a href={trialHref}>
-                  <Button type="button" variant="primary" style={{ width: '100%' }}>
-                    Dùng thử miễn phí
-                  </Button>
+                <a href={trialHref} className="corp-btn corp-btn-primary">
+                  Dùng thử miễn phí
                 </a>
-                <a href={buyHref} style={{ fontSize: 12, opacity: 0.7, textAlign: 'center' }}>
+                <a
+                  href={buyHref}
+                  style={{ fontSize: 12, color: 'var(--ink-3)', textAlign: 'center', fontWeight: 500 }}
+                >
                   Mua theme (sau trial) →
                 </a>
               </div>
-            </Panel>
+            </article>
           );
         })}
       </div>
 
       {!templates.length ? (
-        <p style={{ opacity: 0.7 }}>Chưa tải được catalog — kiểm tra API public templates.</p>
+        <p style={{ color: 'var(--ink-3)' }}>
+          Chưa tải được catalog — kiểm tra API public templates.
+        </p>
       ) : null}
     </main>
   );
