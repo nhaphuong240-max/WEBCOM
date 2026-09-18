@@ -21,6 +21,13 @@ type MediaItem = { id: string; url: string; alt: string };
 
 type NavItem = { label: string; href: string };
 
+type SavedBlock = {
+  id: string;
+  name: string;
+  section_type: string;
+  content: SectionNode;
+};
+
 const VIEWPORTS = {
   desktop: 1100,
   tablet: 768,
@@ -51,6 +58,14 @@ function defaultProps(type: string): Record<string, unknown> {
       return { source: 'theme' };
     case 'featured':
       return { limit: 8 };
+    case 'announcement':
+      return { text: 'Thông báo mới', href: '/', dismissible: true };
+    case 'testimonial':
+      return { items: [{ quote: 'Rất hài lòng', author: 'Khách hàng', role: '' }] };
+    case 'video':
+      return { url: 'https://www.youtube.com/embed/dQw4w9WgXcQ', caption: '' };
+    case 'product_grid':
+      return { limit: 8, sort: 'manual', columns: 2 };
     default:
       return {};
   }
@@ -68,9 +83,12 @@ export function BuilderCanvas({
   supports,
   media,
   headerNav,
+  savedBlocks: initialBlocks,
   saveAction,
   createMediaAction,
   saveNavAction,
+  saveBlockAction,
+  suggestCopyAction,
 }: {
   initialContent: ContentV1;
   initialVersion: number;
@@ -79,6 +97,7 @@ export function BuilderCanvas({
   supports: string[];
   media: MediaItem[];
   headerNav: NavItem[];
+  savedBlocks: SavedBlock[];
   saveAction: (payload: {
     content: ContentV1;
     seo: { title?: string; description?: string };
@@ -86,6 +105,12 @@ export function BuilderCanvas({
   }) => Promise<{ version: number; ok: boolean; error?: string }>;
   createMediaAction: (url: string, alt: string) => Promise<MediaItem>;
   saveNavAction: (items: NavItem[]) => Promise<NavItem[]>;
+  saveBlockAction: (input: {
+    name: string;
+    section_type: string;
+    content: SectionNode;
+  }) => Promise<SavedBlock>;
+  suggestCopyAction: (headline: string) => Promise<{ variants: string[]; draft_only: boolean }>;
 }) {
   const [content, setContent] = useState(() => cloneContent(initialContent));
   const [version, setVersion] = useState(initialVersion);
@@ -96,6 +121,8 @@ export function BuilderCanvas({
   const [error, setError] = useState('');
   const [mediaList, setMediaList] = useState(media);
   const [navItems, setNavItems] = useState(headerNav);
+  const [blocks, setBlocks] = useState(initialBlocks);
+  const [aiVariants, setAiVariants] = useState<string[]>([]);
   const [navDraft, setNavDraft] = useState(
     headerNav.map((i) => `${i.label}|${i.href}`).join('\n') || 'Serum|/search\nSkincare|/search',
   );
@@ -108,7 +135,15 @@ export function BuilderCanvas({
 
   const supportSet = useMemo(() => new Set(supports), [supports]);
   const allowAdd = useMemo(() => {
-    const global = new Set(['rich_text', 'faq', 'footer_links']);
+    const global = new Set([
+      'rich_text',
+      'faq',
+      'footer_links',
+      'announcement',
+      'testimonial',
+      'video',
+      'product_grid',
+    ]);
     return sections.filter((s) => supportSet.has(s.key) || global.has(s.key) || supports.length === 0);
   }, [sections, supportSet, supports.length]);
 
@@ -354,6 +389,34 @@ export function BuilderCanvas({
               </button>
             ))}
           </div>
+          <div style={{ fontSize: 11, opacity: 0.6, margin: '14px 0 6px' }}>SAVED BLOCKS</div>
+          <div style={{ display: 'grid', gap: 4 }}>
+            {blocks.map((b) => (
+              <button
+                key={b.id}
+                type="button"
+                style={{ ...btnTiny, textAlign: 'left', width: '100%' }}
+                onClick={() => {
+                  const key = `${b.section_type}_${Date.now().toString(36)}`;
+                  mutate((c) => {
+                    c.sections[key] = {
+                      ...b.content,
+                      id: `sec_${key}`,
+                      type: b.section_type,
+                    };
+                    c.section_order.push(key);
+                    return c;
+                  });
+                  setSelected(key);
+                }}
+              >
+                ↩ {b.name}
+              </button>
+            ))}
+            {!blocks.length ? (
+              <span style={{ fontSize: 11, opacity: 0.5 }}>Chưa có — lưu từ inspector</span>
+            ) : null}
+          </div>
         </aside>
 
         {/* Canvas */}
@@ -518,6 +581,63 @@ export function BuilderCanvas({
                   placeholder="16px"
                 />
               </label>
+              <button
+                type="button"
+                style={btnDark}
+                onClick={async () => {
+                  if (!selected || !selectedNode) return;
+                  const name = `${selectedNode.type} · ${new Date().toLocaleTimeString('vi-VN')}`;
+                  const saved = await saveBlockAction({
+                    name,
+                    section_type: selectedNode.type,
+                    content: selectedNode,
+                  });
+                  setBlocks((b) => [saved, ...b]);
+                }}
+              >
+                Lưu thành saved block
+              </button>
+              <div style={{ fontSize: 11, opacity: 0.6, marginTop: 8 }}>AI COPY (draft only)</div>
+              <button
+                type="button"
+                style={btnDark}
+                onClick={async () => {
+                  const headline = String(
+                    selectedNode.props.headline || selectedNode.props.title || selectedNode.props.text || 'Headline',
+                  );
+                  const res = await suggestCopyAction(headline);
+                  setAiVariants(res.variants || []);
+                }}
+              >
+                Gợi ý copy (không publish)
+              </button>
+              {aiVariants.length ? (
+                <ul style={{ margin: '6px 0 0', paddingLeft: 16, fontSize: 12 }}>
+                  {aiVariants.map((v) => (
+                    <li key={v} style={{ marginBottom: 4 }}>
+                      <button
+                        type="button"
+                        style={{
+                          background: 'transparent',
+                          border: 'none',
+                          color: '#9ec1ff',
+                          cursor: 'pointer',
+                          textAlign: 'left',
+                          padding: 0,
+                        }}
+                        onClick={() => {
+                          if (selectedNode.props.headline !== undefined) updateProp('headline', v);
+                          else if (selectedNode.props.title !== undefined) updateProp('title', v);
+                          else if (selectedNode.props.text !== undefined) updateProp('text', v);
+                          else updateProp('headline', v);
+                        }}
+                      >
+                        {v}
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              ) : null}
             </div>
           )}
 

@@ -52,6 +52,16 @@ BASE_URL=http://127.0.0.1:3101/api bash scripts/e2e-cms-1.sh
 BASE_URL=http://127.0.0.1:3101/api bash scripts/e2e-cms-2.sh
 ```
 
+## CMS-3 notes
+- Sections: `announcement`, `testimonial`, `video`, `product_grid`
+- Blog: `template_key=blog_post` · `GET …/pages?template_key=blog_post` · storefront `/blog`, `/blog/[slug]`
+- Saved blocks: `GET/POST/DELETE …/saved-blocks` (`FEATURE_CMS_SAVED_BLOCKS`)
+- AI copy drawer: `POST …/builder/ai-copy` — **draft only**, không auto-publish (`FEATURE_CMS_AI_COPY`)
+
+```bash
+BASE_URL=http://127.0.0.1:3101/api bash scripts/e2e-cms-3.sh
+```
+
 ## Spec
 - `docs/specs/shared-cms-themepackage.md`
-- `docs/specs/shared-cms-implementation-plan.md` · wave CMS-0…CMS-2
+- `docs/specs/shared-cms-implementation-plan.md` · wave CMS-0…CMS-3

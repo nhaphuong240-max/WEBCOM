@@ -109,9 +109,23 @@ export async function getPage(slug: string) {
   return storeApi<{
     slug: string;
     title: string;
+    template_key?: string;
     content: Record<string, unknown>;
     seo: Record<string, unknown>;
   }>(`/v1/storefronts/${storefrontId}/pages/${slug}`, { cache: 'no-store' });
+}
+
+export async function getBlogPosts() {
+  const { storefrontId } = await getStoreContext();
+  return storeApi<
+    Array<{
+      slug: string;
+      title: string;
+      href: string;
+      seo?: Record<string, unknown>;
+      updated_at: string;
+    }>
+  >(`/v1/storefronts/${storefrontId}/blog`, { cache: 'no-store' });
 }
 
 export async function getProducts(query?: {

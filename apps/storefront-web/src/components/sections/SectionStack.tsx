@@ -229,6 +229,111 @@ export function SectionStack({
           );
         }
 
+        if (node.type === 'announcement') {
+          const text = String(props.text || '');
+          const href = String(props.href || '');
+          return (
+            <div
+              key={key}
+              style={{
+                padding: '10px 14px',
+                background: accent,
+                color: '#fff',
+                fontSize: 13,
+                fontWeight: 600,
+                textAlign: 'center',
+              }}
+            >
+              {href ? (
+                <Link href={href} style={{ color: 'inherit', textDecoration: 'none' }}>
+                  {text}
+                </Link>
+              ) : (
+                text
+              )}
+            </div>
+          );
+        }
+
+        if (node.type === 'testimonial') {
+          const items = Array.isArray(props.items)
+            ? (props.items as Array<{ quote?: string; author?: string; role?: string }>)
+            : [];
+          return (
+            <section
+              key={key}
+              style={{
+                padding: '20px clamp(14px, 3vw, 48px)',
+                display: 'grid',
+                gap: 12,
+                gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
+              }}
+            >
+              {items.map((it, i) => (
+                <blockquote
+                  key={i}
+                  style={{
+                    margin: 0,
+                    padding: 16,
+                    background: '#fff',
+                    borderRadius: 12,
+                    border: '1px solid rgba(26,18,20,0.08)',
+                  }}
+                >
+                  <p style={{ margin: '0 0 10px', fontStyle: 'italic', color: '#3a2a2e' }}>
+                    “{it.quote}”
+                  </p>
+                  <footer style={{ fontSize: 13, fontWeight: 700 }}>
+                    {it.author}
+                    {it.role ? <span style={{ fontWeight: 400, opacity: 0.7 }}> · {it.role}</span> : null}
+                  </footer>
+                </blockquote>
+              ))}
+            </section>
+          );
+        }
+
+        if (node.type === 'video') {
+          const url = String(props.url || '');
+          return (
+            <section key={key} style={{ padding: '16px clamp(14px, 3vw, 48px)' }}>
+              {url ? (
+                <div
+                  style={{
+                    position: 'relative',
+                    paddingBottom: '56.25%',
+                    height: 0,
+                    overflow: 'hidden',
+                    borderRadius: 12,
+                    background: '#111',
+                  }}
+                >
+                  <iframe
+                    title={String(props.caption || 'Video')}
+                    src={url}
+                    style={{
+                      position: 'absolute',
+                      inset: 0,
+                      width: '100%',
+                      height: '100%',
+                      border: 0,
+                    }}
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    allowFullScreen
+                  />
+                </div>
+              ) : null}
+              {props.caption ? (
+                <p style={{ fontSize: 13, color: '#6b5559', marginTop: 8 }}>{String(props.caption)}</p>
+              ) : null}
+            </section>
+          );
+        }
+
+        if (node.type === 'product_grid' && productsSlot) {
+          return <div key={key}>{productsSlot}</div>;
+        }
+
         // legacy / unsupported — hide on storefront
         return null;
       })}

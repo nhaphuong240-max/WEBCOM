@@ -235,15 +235,17 @@ Chia **CMS-1a** (BE/CMS) và **CMS-1b** (demo/storefront) song song sau C0.
 
 ## 7. Wave CMS-3 — Backlog (không chặn “CMS chung GA”)
 
-| ID | Item | Ưu tiên |
-|---|---|---|
-| C3-1 | Section SRS thêm: announcement, product grid advanced, testimonial, video | Should |
-| C3-2 | Blog post `templateKey=blog_post` + list | Should |
-| C3-3 | Saved blocks / global header section | Should |
-| C3-4 | AI copy drawer → draft only, BR-018 | Should |
-| C3-5 | Creator Portal upload zip package | Could |
-| C3-6 | Reviews trên marketplace detail | Could |
-| C3-7 | A/B experiment flag trên page | Could |
+| ID | Item | Ưu tiên | Status |
+|---|---|---|---|
+| C3-1 | Section SRS thêm: announcement, product grid advanced, testimonial, video | Should | **shipped** |
+| C3-2 | Blog post `templateKey=blog_post` + list | Should | **shipped** |
+| C3-3 | Saved blocks / global header section | Should | **shipped** (saved blocks) |
+| C3-4 | AI copy drawer → draft only, BR-018 | Should | **shipped** |
+| C3-5 | Creator Portal upload zip package | Could | backlog |
+| C3-6 | Reviews trên marketplace detail | Could | backlog |
+| C3-7 | A/B experiment flag trên page | Could | backlog |
+
+**Exit CMS-3 (Should):** e2e-cms-3 · flags `FEATURE_CMS_BLOG` / `FEATURE_CMS_SAVED_BLOCKS` / `FEATURE_CMS_AI_COPY`.
 
 **GA “Shared CMS”** = xong CMS-2 exit + docs + flags on production.
 

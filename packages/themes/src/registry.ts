@@ -150,6 +150,71 @@ export const SECTION_REGISTRY = [
       required: ['columns'],
     },
   },
+  {
+    key: 'announcement',
+    label: 'Announcement bar',
+    fields: ['text', 'href', 'dismissible'],
+    props_schema: {
+      type: 'object',
+      properties: {
+        text: { type: 'string' },
+        href: { type: 'string' },
+        dismissible: { type: 'boolean' },
+      },
+      required: ['text'],
+    },
+  },
+  {
+    key: 'testimonial',
+    label: 'Testimonials',
+    fields: ['items'],
+    props_schema: {
+      type: 'object',
+      properties: {
+        items: {
+          type: 'array',
+          items: {
+            type: 'object',
+            properties: {
+              quote: { type: 'string' },
+              author: { type: 'string' },
+              role: { type: 'string' },
+            },
+            required: ['quote', 'author'],
+          },
+        },
+      },
+      required: ['items'],
+    },
+  },
+  {
+    key: 'video',
+    label: 'Video embed',
+    fields: ['url', 'poster', 'caption'],
+    props_schema: {
+      type: 'object',
+      properties: {
+        url: { type: 'string' },
+        poster: { type: 'string' },
+        caption: { type: 'string' },
+      },
+      required: ['url'],
+    },
+  },
+  {
+    key: 'product_grid',
+    label: 'Product grid (advanced)',
+    fields: ['limit', 'collection_slug', 'sort', 'columns'],
+    props_schema: {
+      type: 'object',
+      properties: {
+        limit: { type: 'number' },
+        collection_slug: { type: 'string' },
+        sort: { type: 'string', enum: ['manual', 'price_asc', 'price_desc', 'newest'] },
+        columns: { type: 'number' },
+      },
+    },
+  },
 ] as const;
 
 export type SectionKey = (typeof SECTION_REGISTRY)[number]['key'];

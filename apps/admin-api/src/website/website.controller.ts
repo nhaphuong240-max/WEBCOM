@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Post, Put, Query, UseGuards } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Post, Put, Query, UseGuards } from '@nestjs/common';
 import { z } from 'zod';
 import { AppError, type RequestContext } from '@ptt/shared-kernel';
 import { StorefrontContextGuard } from '../common/storefront-context.guard';
@@ -41,6 +41,12 @@ export class WebsiteController {
     @Param('slug') slug: string,
   ) {
     return this.website.getPublishedPage(ctx.tenantId, idOrSlug, slug);
+  }
+
+  @Get('v1/storefronts/:idOrSlug/blog')
+  @UseGuards(StorefrontContextGuard)
+  blogList(@ReqContext() ctx: RequestContext, @Param('idOrSlug') idOrSlug: string) {
+    return this.website.listPublishedBlog(ctx.tenantId, idOrSlug);
   }
 
   @Post('v1/admin/storefronts/:id/ensure-aura-lite')
@@ -248,8 +254,14 @@ export class WebsiteController {
 
   @Get('v1/admin/storefronts/:id/pages')
   @UseGuards(TenantAuthGuard)
-  pages(@ReqContext() ctx: RequestContext, @Param('id') id: string) {
-    return this.platform.listPages(ctx.tenantId, id);
+  pages(
+    @ReqContext() ctx: RequestContext,
+    @Param('id') id: string,
+    @Query('template_key') templateKey?: string,
+  ) {
+    return this.platform.listPages(ctx.tenantId, id, {
+      template_key: templateKey,
+    });
   }
 
   @Post('v1/admin/storefronts/:id/pages')
@@ -374,6 +386,51 @@ export class WebsiteController {
       parsed.data.items,
       ctx.actorId,
     );
+  }
+
+  // ─── CMS-3 Saved blocks / AI copy ──────────────────────────
+
+  @Get('v1/admin/storefronts/:id/saved-blocks')
+  @UseGuards(TenantAuthGuard)
+  listBlocks(@ReqContext() ctx: RequestContext, @Param('id') id: string) {
+    return this.platform.listSavedBlocks(ctx.tenantId, id);
+  }
+
+  @Post('v1/admin/storefronts/:id/saved-blocks')
+  @UseGuards(TenantAuthGuard)
+  createBlock(@ReqContext() ctx: RequestContext, @Param('id') id: string, @Body() body: unknown) {
+    const parsed = z
+      .object({
+        name: z.string().min(1),
+        section_type: z.string().min(1),
+        content: z.record(z.unknown()),
+      })
+      .safeParse(body);
+    if (!parsed.success) throw AppError.validation('Invalid saved block', parsed.error.flatten());
+    return this.platform.createSavedBlock(ctx.tenantId, id, parsed.data, ctx.actorId);
+  }
+
+  @Delete('v1/admin/storefronts/:id/saved-blocks/:blockId')
+  @UseGuards(TenantAuthGuard)
+  deleteBlock(
+    @ReqContext() ctx: RequestContext,
+    @Param('id') id: string,
+    @Param('blockId') blockId: string,
+  ) {
+    return this.platform.deleteSavedBlock(ctx.tenantId, id, blockId, ctx.actorId);
+  }
+
+  @Post('v1/admin/storefronts/:id/builder/ai-copy')
+  @UseGuards(TenantAuthGuard)
+  aiCopy(@ReqContext() ctx: RequestContext, @Param('id') id: string, @Body() body: unknown) {
+    const parsed = z
+      .object({
+        headline: z.string().optional(),
+        field: z.string().optional(),
+      })
+      .safeParse(body ?? {});
+    if (!parsed.success) throw AppError.validation('Invalid ai-copy body', parsed.error.flatten());
+    return this.platform.suggestBuilderCopy(ctx.tenantId, id, parsed.data, ctx.actorId);
   }
 
   // ─── W3 Go-live / Publish ──────────────────────────────────

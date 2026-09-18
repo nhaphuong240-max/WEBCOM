@@ -43,11 +43,12 @@ async function createStaticPage(formData: FormData) {
     .toLowerCase()
     .replace(/\s+/g, '-');
   const title = String(formData.get('title') || slug);
+  const templateKey = String(formData.get('template_key') || 'static');
   if (!slug) return;
   await apiJson(`/v1/admin/storefronts/${SF}/pages`, 'POST', {
     slug,
     title,
-    template_key: 'static',
+    template_key: templateKey,
   });
   revalidatePath('/website/builder');
 }
@@ -95,6 +96,31 @@ async function saveNavAction(items: Array<{ label: string; href: string }>) {
   return (res.items || items) as Array<{ label: string; href: string }>;
 }
 
+async function saveBlockAction(input: {
+  name: string;
+  section_type: string;
+  content: { type: string; id: string; props: Record<string, unknown>; style: Record<string, unknown> };
+}) {
+  'use server';
+  const res = await apiJson<{
+    id: string;
+    name: string;
+    section_type: string;
+    content: { type: string; id: string; props: Record<string, unknown>; style: Record<string, unknown> };
+  }>(`/v1/admin/storefronts/${SF}/saved-blocks`, 'POST', input);
+  revalidatePath('/website/builder');
+  return res;
+}
+
+async function suggestCopyAction(headline: string) {
+  'use server';
+  return apiJson<{ variants: string[]; draft_only: boolean }>(
+    `/v1/admin/storefronts/${SF}/builder/ai-copy`,
+    'POST',
+    { headline, field: 'headline' },
+  );
+}
+
 export default async function BuilderPage() {
   let draft: {
     version?: number;
@@ -114,6 +140,12 @@ export default async function BuilderPage() {
   let themes: Array<{ code: string; supports?: string[] }> = [];
   let media: Array<{ id: string; url: string; alt: string }> = [];
   let nav: Array<{ handle: string; items: Array<{ label: string; href: string }> }> = [];
+  let savedBlocks: Array<{
+    id: string;
+    name: string;
+    section_type: string;
+    content: ContentV1['sections'][string];
+  }> = [];
   let error = '';
   try {
     sections = await apiGet('/v1/admin/builder/sections');
@@ -122,6 +154,11 @@ export default async function BuilderPage() {
     themes = await apiGet(`/v1/admin/storefronts/${SF}/themes`);
     media = await apiGet('/v1/admin/media');
     nav = await apiGet(`/v1/admin/storefronts/${SF}/navigation`);
+    try {
+      savedBlocks = await apiGet(`/v1/admin/storefronts/${SF}/saved-blocks`);
+    } catch {
+      savedBlocks = [];
+    }
   } catch (e) {
     error = e instanceof Error ? e.message : 'API error';
   }
@@ -164,10 +201,10 @@ export default async function BuilderPage() {
         title="Visual Site Builder"
         description={
           canvasOn
-            ? 'CMS-2 · canvas add/reorder · D/T/M · nav/media stub'
+            ? 'CMS-3 · canvas · saved blocks · AI copy draft · blog'
             : 'CMS-1 form · bật FEATURE_CMS_BUILDER_CANVAS để canvas'
         }
-        actions={<Badge tone="accent">{canvasOn ? 'CMS-2 · mockup 06' : 'CMS-1 · mockup 06'}</Badge>}
+        actions={<Badge tone="accent">{canvasOn ? 'CMS-3 · mockup 06' : 'CMS-1 · mockup 06'}</Badge>}
       />
       {error ? (
         <Panel title="API">
@@ -186,8 +223,13 @@ export default async function BuilderPage() {
         <form action={createStaticPage} style={{ display: 'flex', gap: 8, marginTop: 12, flexWrap: 'wrap' }}>
           <input name="slug" placeholder="slug (vd. about)" style={{ padding: 8 }} required />
           <input name="title" placeholder="Tiêu đề" style={{ padding: 8 }} />
+          <select name="template_key" defaultValue="static" style={{ padding: 8 }}>
+            <option value="static">static</option>
+            <option value="blog_post">blog_post</option>
+            <option value="landing">landing</option>
+          </select>
           <Button type="submit" variant="ghost">
-            Tạo static page
+            Tạo page
           </Button>
         </form>
       </Panel>
@@ -206,9 +248,17 @@ export default async function BuilderPage() {
             supports={supports}
             media={media}
             headerNav={headerNav}
+            savedBlocks={savedBlocks.map((b) => ({
+              id: b.id,
+              name: b.name,
+              section_type: b.section_type,
+              content: b.content as ContentV1['sections'][string],
+            }))}
             saveAction={saveCanvasAction}
             createMediaAction={createMediaAction}
             saveNavAction={saveNavAction}
+            saveBlockAction={saveBlockAction}
+            suggestCopyAction={suggestCopyAction}
           />
         </Panel>
       ) : (

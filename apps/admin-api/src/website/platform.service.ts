@@ -20,6 +20,7 @@ import { AuditService } from '../audit/audit.service';
 import { TemporalService } from '../temporal/temporal.service';
 import { TemporalWorkflowsService } from '../temporal/temporal-workflows.service';
 import { BillingService } from '../billing/billing.service';
+import { AiGatewayClient } from '../ai/ai-gateway.client';
 
 /** @deprecated prefer SECTION_REGISTRY from @ptt/themes — kept for local key typing */
 export const SECTION_LIBRARY = SECTION_REGISTRY.map((s) => ({
@@ -88,6 +89,7 @@ export class PlatformService {
     private readonly workflows: TemporalWorkflowsService,
     @Inject(forwardRef(() => BillingService))
     private readonly billing: BillingService,
+    private readonly aiGateway: AiGatewayClient,
   ) {}
 
   private feature(name: string, fallback = true) {
@@ -654,6 +656,9 @@ export class PlatformService {
       feature: this.feature('builder.v1'),
       cms_registry_v1: this.feature('cms.registry.v1'),
       cms_builder_canvas: this.feature('cms.builder_canvas'),
+      cms_blog: this.feature('cms.blog'),
+      cms_saved_blocks: this.feature('cms.saved_blocks'),
+      cms_ai_copy: this.feature('cms.ai_copy'),
     };
   }
 
@@ -700,10 +705,18 @@ export class PlatformService {
     };
   }
 
-  async listPages(tenantId: string, storefrontId: string) {
+  async listPages(
+    tenantId: string,
+    storefrontId: string,
+    query?: { template_key?: string },
+  ) {
     await this.sf(tenantId, storefrontId);
     const pages = await this.prisma.db.page.findMany({
-      where: { tenantId, storefrontId },
+      where: {
+        tenantId,
+        storefrontId,
+        ...(query?.template_key ? { templateKey: query.template_key } : {}),
+      },
       include: {
         versions: { orderBy: { version: 'desc' }, take: 5 },
       },
@@ -820,6 +833,126 @@ export class PlatformService {
     };
   }
 
+  // ─── CMS-3 Saved blocks / AI copy ──────────────────────────
+
+  async listSavedBlocks(tenantId: string, storefrontId: string) {
+    if (!this.feature('cms.saved_blocks')) {
+      throw AppError.validation('Feature cms.saved_blocks disabled');
+    }
+    await this.sf(tenantId, storefrontId);
+    const rows = await this.prisma.db.savedBlock.findMany({
+      where: { tenantId, storefrontId },
+      orderBy: { updatedAt: 'desc' },
+    });
+    return rows.map((r) => ({
+      id: r.id,
+      name: r.name,
+      section_type: r.sectionType,
+      content: r.content,
+      updated_at: r.updatedAt.toISOString(),
+    }));
+  }
+
+  async createSavedBlock(
+    tenantId: string,
+    storefrontId: string,
+    input: { name: string; section_type: string; content: Record<string, unknown> },
+    actorId?: string,
+  ) {
+    if (!this.feature('cms.saved_blocks')) {
+      throw AppError.validation('Feature cms.saved_blocks disabled');
+    }
+    await this.sf(tenantId, storefrontId);
+    const row = await this.prisma.db.savedBlock.create({
+      data: {
+        id: createId('blk'),
+        tenantId,
+        storefrontId,
+        name: input.name,
+        sectionType: input.section_type,
+        content: input.content as Prisma.InputJsonValue,
+      },
+    });
+    await this.audit.write({
+      tenantId,
+      actorId: actorId || 'system',
+      action: 'saved_block.create',
+      entity: 'saved_block',
+      entityId: row.id,
+      payload: { name: row.name, section_type: row.sectionType },
+    });
+    return {
+      id: row.id,
+      name: row.name,
+      section_type: row.sectionType,
+      content: row.content,
+      updated_at: row.updatedAt.toISOString(),
+    };
+  }
+
+  async deleteSavedBlock(tenantId: string, storefrontId: string, blockId: string, actorId?: string) {
+    if (!this.feature('cms.saved_blocks')) {
+      throw AppError.validation('Feature cms.saved_blocks disabled');
+    }
+    const row = await this.prisma.db.savedBlock.findFirst({
+      where: { id: blockId, tenantId, storefrontId },
+    });
+    if (!row) throw AppError.notFound('Saved block not found');
+    await this.prisma.db.savedBlock.delete({ where: { id: row.id } });
+    await this.audit.write({
+      tenantId,
+      actorId: actorId || 'system',
+      action: 'saved_block.delete',
+      entity: 'saved_block',
+      entityId: row.id,
+    });
+    return { ok: true };
+  }
+
+  /**
+   * CMS-3 AI copy drawer — draft suggestions only (BR-018).
+   * Never mutates PageVersion / never publishes.
+   */
+  async suggestBuilderCopy(
+    tenantId: string,
+    storefrontId: string,
+    input: { headline?: string; field?: string },
+    actorId?: string,
+  ) {
+    if (!this.feature('cms.ai_copy')) {
+      throw AppError.validation('Feature cms.ai_copy disabled');
+    }
+    await this.sf(tenantId, storefrontId);
+    const base = String(input.headline || 'Headline mới');
+    const generated = await this.aiGateway.generate({
+      tenantId,
+      kind: 'headline_variants',
+      payload: { headline: base, field: input.field || 'headline' },
+      storefrontId,
+      actorId,
+    });
+    const variants = Array.isArray(generated.output.variants)
+      ? (generated.output.variants as string[])
+      : [base];
+    await this.audit.write({
+      tenantId,
+      actorId: actorId || 'system',
+      action: 'builder.ai_copy_suggest',
+      entity: 'storefront',
+      entityId: storefrontId,
+      payload: { field: input.field || 'headline', count: variants.length, draft_only: true },
+    });
+    return {
+      draft_only: true,
+      auto_publish: false,
+      field: input.field || 'headline',
+      variants,
+      guardrails: generated.guardrails,
+      engine: generated.engine,
+      policy: { auto_publish: false },
+    };
+  }
+
   async getPageDraft(tenantId: string, storefrontId: string, slug: string) {
     const page = await this.prisma.db.page.findFirst({
       where: { tenantId, storefrontId, slug },
@@ -885,31 +1018,50 @@ export class PlatformService {
 
     const templateKey = input.template_key || (slug === 'home' ? 'home' : 'static');
     const starter =
-      templateKey === 'static' || templateKey === 'landing'
+      templateKey === 'blog_post'
         ? this.dualWriteContent({
             schema_version: 1,
-            section_order: ['rich_text'],
+            section_order: ['announcement', 'rich_text'],
             sections: {
+              announcement: {
+                type: 'announcement',
+                id: 'sec_announce',
+                props: { text: 'Blog · ' + (input.title || slug), href: '/blog' },
+                style: {},
+              },
               rich_text: {
                 type: 'rich_text',
-                id: 'sec_rich',
+                id: 'sec_body',
                 props: { title: input.title || slug, body: '' },
                 style: {},
               },
             },
           })
-        : this.dualWriteContent({
-            schema_version: 1,
-            section_order: ['hero'],
-            sections: {
-              hero: {
-                type: 'hero',
-                id: 'sec_hero',
-                props: { headline: input.title || slug },
-                style: {},
+        : templateKey === 'static' || templateKey === 'landing'
+          ? this.dualWriteContent({
+              schema_version: 1,
+              section_order: ['rich_text'],
+              sections: {
+                rich_text: {
+                  type: 'rich_text',
+                  id: 'sec_rich',
+                  props: { title: input.title || slug, body: '' },
+                  style: {},
+                },
               },
-            },
-          });
+            })
+          : this.dualWriteContent({
+              schema_version: 1,
+              section_order: ['hero'],
+              sections: {
+                hero: {
+                  type: 'hero',
+                  id: 'sec_hero',
+                  props: { headline: input.title || slug },
+                  style: {},
+                },
+              },
+            });
 
     const page = await this.prisma.db.page.create({
       data: {

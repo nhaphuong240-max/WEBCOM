@@ -43,6 +43,7 @@ model Tenant {
   idempotency IdempotencyRecord[]
   themes      Theme[]
   mediaAssets MediaAsset[]
+  savedBlocks SavedBlock[]
   leads       Lead[]
   brandKits   BrandKit[]
   templateInstalls TemplateInstall[]
@@ -140,6 +141,7 @@ model Storefront {
   themes           Theme[]
   pages            Page[]
   navigationMenus  NavigationMenu[]
+  savedBlocks      SavedBlock[]
   events           StorefrontEvent[]
   vouchers         Voucher[]
   brandKits        BrandKit[]
@@ -991,6 +993,24 @@ model NavigationMenu {
   @@unique([storefrontId, handle])
   @@index([tenantId])
   @@map("navigation_menus")
+}
+
+/// CMS-3 — reusable section block (global/saved)
+model SavedBlock {
+  id           String     @id
+  tenantId     String     @map("tenant_id")
+  storefrontId String     @map("storefront_id")
+  name         String
+  sectionType  String     @map("section_type")
+  /// SectionNode JSON { type, id, props, style }
+  content      Json       @default("{}")
+  createdAt    DateTime   @default(now()) @map("created_at")
+  updatedAt    DateTime   @updatedAt @map("updated_at")
+  tenant       Tenant     @relation(fields: [tenantId], references: [id])
+  storefront   Storefront @relation(fields: [storefrontId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, storefrontId])
+  @@map("saved_blocks")
 }
 
 model StorefrontEvent {
