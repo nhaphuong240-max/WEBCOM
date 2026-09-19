@@ -30,6 +30,7 @@ import { CxModule } from './cx/cx.module';
 import { IamModule } from './iam/iam.module';
 import { BillingModule } from './billing/billing.module';
 import { HrModule } from './hr/hr.module';
+import { HrmModule } from './hrm/hrm.module';
 import { HealthController } from './health/health.controller';
 import { MeController } from './iam/me.controller';
 import { TenancyController } from './tenancy/tenancy.controller';
@@ -67,6 +68,7 @@ import { TenancyController } from './tenancy/tenancy.controller';
     IamModule,
     BillingModule,
     HrModule,
+    HrmModule,
   ],
   controllers: [HealthController, MeController, TenancyController],
 })

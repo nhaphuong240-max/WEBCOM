@@ -24,6 +24,20 @@ export const HR_PERMISSIONS = [
   'audit.read',
   'pos.shift.manage',
   'pos.sell',
+  // HRM-Pro
+  'hrm.department.manage',
+  'hrm.contract.read',
+  'hrm.contract.manage',
+  'hrm.leave.read',
+  'hrm.leave.manage',
+  'hrm.leave.approve',
+  'hrm.attendance.read',
+  'hrm.attendance.manage',
+  'hrm.timesheet.lock',
+  'hrm.payroll.read',
+  'hrm.payroll.manage',
+  'hrm.payroll.approve',
+  'hrm.pii.view',
 ] as const;
 
 export type HrPermission = (typeof HR_PERMISSIONS)[number];
@@ -45,6 +59,10 @@ const SENSITIVE = new Set<HrPermission>([
   'secret.manage',
   'hr.role.manage',
   'hr.user.manage',
+  'hrm.payroll.manage',
+  'hrm.payroll.approve',
+  'hrm.pii.view',
+  'hrm.contract.manage',
 ]);
 
 const DESCRIPTIONS: Record<HrPermission, string> = {
@@ -68,6 +86,19 @@ const DESCRIPTIONS: Record<HrPermission, string> = {
   'audit.read': 'Đọc audit trail',
   'pos.shift.manage': 'Mở / đóng ca POS',
   'pos.sell': 'Bán hàng POS',
+  'hrm.department.manage': 'HRM · CRUD phòng ban',
+  'hrm.contract.read': 'HRM · xem HĐLĐ',
+  'hrm.contract.manage': 'HRM · tạo / sửa HĐLĐ',
+  'hrm.leave.read': 'HRM · xem phép / số dư',
+  'hrm.leave.manage': 'HRM · tạo yêu cầu phép',
+  'hrm.leave.approve': 'HRM · duyệt phép',
+  'hrm.attendance.read': 'HRM · xem chấm công / roster',
+  'hrm.attendance.manage': 'HRM · check-in / roster',
+  'hrm.timesheet.lock': 'HRM · khóa bảng công tháng',
+  'hrm.payroll.read': 'HRM · xem kỳ lương / payslip',
+  'hrm.payroll.manage': 'HRM · chạy payroll draft',
+  'hrm.payroll.approve': 'HRM · duyệt / paid payroll',
+  'hrm.pii.view': 'HRM · xem PII lương / HĐ',
 };
 
 export const PERMISSION_CATALOG: PermissionDef[] = HR_PERMISSIONS.map((code) => ({

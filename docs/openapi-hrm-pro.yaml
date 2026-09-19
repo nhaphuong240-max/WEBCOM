@@ -1,0 +1,66 @@
+# OpenAPI stub — HRM-Pro (HRMP-A/B/C)
+openapi: 3.0.3
+info:
+  title: WebCom HRM-Pro
+  version: 1.0.0
+  description: Requires FEATURE_HRM_PRO=true on admin-api
+paths:
+  /api/v1/admin/hrm/departments:
+    get:
+      summary: List departments
+    post:
+      summary: Create department { code, name }
+  /api/v1/admin/hrm/contracts:
+    get:
+      summary: List employment contracts
+    post:
+      summary: Create contract { employee_id, contract_type, start_date, base_salary }
+  /api/v1/admin/hrm/leave/requests:
+    get:
+      summary: List leave requests
+    post:
+      summary: Create leave request
+  /api/v1/admin/hrm/leave/requests/{id}/approve:
+    post:
+      summary: Approve leave (deduct balance)
+  /api/v1/admin/hrm/leave/requests/{id}/reject:
+    post:
+      summary: Reject leave request
+  /api/v1/admin/hrm/leave/balances:
+    get:
+      summary: Leave balances by employee_id query
+  /api/v1/admin/hrm/attendance/check:
+    post:
+      summary: Check-in or check-out { employee_id, event_type }
+  /api/v1/admin/hrm/attendance/events:
+    get:
+      summary: Recent attendance events
+  /api/v1/admin/hrm/timesheets:
+    get:
+      summary: List monthly timesheets
+  /api/v1/admin/hrm/timesheets/{year}/{month}/build:
+    post:
+      summary: Build timesheet for period
+  /api/v1/admin/hrm/timesheets/{year}/{month}/lock:
+    post:
+      summary: Lock timesheet for payroll input
+  /api/v1/admin/hrm/salary/{employeeId}:
+    put:
+      summary: Set base salary { base_salary }
+  /api/v1/admin/hrm/payroll/runs:
+    get:
+      summary: List payroll runs
+  /api/v1/admin/hrm/payroll/{year}/{month}/run:
+    post:
+      summary: Create draft payroll run
+  /api/v1/admin/hrm/payroll/runs/{id}/transition:
+    post:
+      summary: Transition run status { status approved|paid }
+  /api/v1/admin/hrm/payroll/runs/{id}/payslips:
+    get:
+      summary: Payslips for run (net_salary, tax_disclaimer)
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer

@@ -87,6 +87,22 @@ model Tenant {
   marketplaceListings MarketplaceListing[]
   marketplaceOrders MarketplaceOrder[]
   marketplaceOutbox MarketplaceOutbox[]
+  legalEntities LegalEntity[]
+  hrmDepartments HrmDepartment[]
+  employmentContracts EmploymentContract[]
+  leavePolicies LeavePolicy[]
+  leaveBalances LeaveBalance[]
+  leaveRequests LeaveRequest[]
+  workSchedules WorkSchedule[]
+  rosterEntries RosterEntry[]
+  attendanceEvents AttendanceEvent[]
+  timesheetPeriods TimesheetPeriod[]
+  timesheetLines TimesheetLine[]
+  salaryStructures SalaryStructure[]
+  payrollRateConfigs PayrollRateConfig[]
+  payrollPeriods PayrollPeriod[]
+  payrollRuns PayrollRun[]
+  payslips Payslip[]
 
   @@map("tenants")
 }
@@ -245,6 +261,9 @@ model Employee {
   email        String?
   /// HR-3 stub — free-text department label
   department   String?
+  departmentId String?  @map("department_id")
+  reportsToId  String?  @map("reports_to_id")
+  legalEntityId String? @map("legal_entity_id")
   /// active | on_leave | terminated
   status       String   @default("active")
   hiredAt      DateTime? @map("hired_at")
@@ -256,10 +275,25 @@ model Employee {
   tenant       Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   user         User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
   assignments  EmployeeStoreAssignment[]
+  hrmDepartment HrmDepartment? @relation(fields: [departmentId], references: [id], onDelete: SetNull)
+  reportsTo    Employee?  @relation("EmployeeManager", fields: [reportsToId], references: [id], onDelete: SetNull)
+  directReports Employee[] @relation("EmployeeManager")
+  legalEntity  LegalEntity? @relation(fields: [legalEntityId], references: [id], onDelete: SetNull)
+  contracts    EmploymentContract[]
+  leaveBalances LeaveBalance[]
+  leaveRequests LeaveRequest[]
+  reviewedLeaveRequests LeaveRequest[] @relation("LeaveReviewer")
+  rosterEntries RosterEntry[]
+  attendanceEvents AttendanceEvent[]
+  timesheetLines TimesheetLine[]
+  salaryStructures SalaryStructure[]
+  payslips     Payslip[]
 
   @@unique([tenantId, code])
   @@index([tenantId, status])
   @@index([tenantId, department])
+  @@index([tenantId, departmentId])
+  @@index([tenantId, reportsToId])
   @@map("employees")
 }
 
@@ -2237,4 +2271,336 @@ model MarketplaceOutbox {
   @@index([status, createdAt])
   @@index([tenantId, accountId, jobType])
   @@map("marketplace_outbox")
+}
+
+/// HRM-Pro — legal entity (company branch)
+model LegalEntity {
+  id        String   @id
+  tenantId  String   @map("tenant_id")
+  code      String
+  name      String
+  taxCode   String?  @map("tax_code")
+  /// active | inactive
+  status    String   @default("active")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  tenant    Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  departments HrmDepartment[]
+  employees Employee[]
+
+  @@unique([tenantId, code])
+  @@index([tenantId, status])
+  @@map("legal_entities")
+}
+
+/// HRM-Pro — org department tree
+model HrmDepartment {
+  id            String   @id
+  tenantId      String   @map("tenant_id")
+  legalEntityId String?  @map("legal_entity_id")
+  parentId      String?  @map("parent_id")
+  code          String
+  name          String
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+  tenant        Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  legalEntity   LegalEntity? @relation(fields: [legalEntityId], references: [id], onDelete: SetNull)
+  parent        HrmDepartment? @relation("DepartmentTree", fields: [parentId], references: [id], onDelete: SetNull)
+  children      HrmDepartment[] @relation("DepartmentTree")
+  employees     Employee[]
+
+  @@unique([tenantId, code])
+  @@index([tenantId, legalEntityId])
+  @@map("hrm_departments")
+}
+
+/// HRM-Pro — employment contract
+model EmploymentContract {
+  id           String   @id
+  tenantId     String   @map("tenant_id")
+  employeeId   String   @map("employee_id")
+  /// probation | fixed | indefinite
+  contractType String   @map("contract_type")
+  startDate    DateTime @map("start_date") @db.Date
+  endDate      DateTime? @map("end_date") @db.Date
+  baseSalary   Decimal  @map("base_salary") @db.Decimal(18, 2)
+  currency     String   @default("VND")
+  /// draft | active | ended
+  status       String   @default("draft")
+  documentUrl  String?  @map("document_url")
+  note         String?
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+  tenant       Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  employee     Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, employeeId, status])
+  @@map("employment_contracts")
+}
+
+/// HRM-Pro — leave policy catalog
+model LeavePolicy {
+  id         String   @id
+  tenantId   String   @map("tenant_id")
+  /// annual | unpaid | sick | remote | custom
+  leaveType  String   @map("leave_type")
+  name       String
+  daysPerYear Int     @map("days_per_year")
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+  tenant     Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, leaveType])
+  @@map("leave_policies")
+}
+
+/// HRM-Pro — leave balance per employee/year
+model LeaveBalance {
+  id         String   @id
+  tenantId   String   @map("tenant_id")
+  employeeId String   @map("employee_id")
+  leaveType  String   @map("leave_type")
+  year       Int
+  balance    Decimal  @db.Decimal(10, 2)
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+  tenant     Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  employee   Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, employeeId, leaveType, year])
+  @@index([tenantId, employeeId, year])
+  @@map("leave_balances")
+}
+
+/// HRM-Pro — leave request workflow
+model LeaveRequest {
+  id           String    @id
+  tenantId     String    @map("tenant_id")
+  employeeId   String    @map("employee_id")
+  leaveType    String    @map("leave_type")
+  startDate    DateTime  @map("start_date") @db.Date
+  endDate      DateTime  @map("end_date") @db.Date
+  days         Decimal   @db.Decimal(10, 2)
+  /// pending | approved | rejected | cancelled
+  status       String    @default("pending")
+  reason       String?
+  reviewerNote String?   @map("reviewer_note")
+  reviewedById String?   @map("reviewed_by_id")
+  reviewedAt   DateTime? @map("reviewed_at")
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
+  tenant       Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  employee     Employee  @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  reviewedBy   Employee? @relation("LeaveReviewer", fields: [reviewedById], references: [id], onDelete: SetNull)
+
+  @@index([tenantId, employeeId, status])
+  @@index([tenantId, status, startDate])
+  @@map("leave_requests")
+}
+
+/// HRM-Pro — work schedule pattern
+model WorkSchedule {
+  id        String   @id
+  tenantId  String   @map("tenant_id")
+  code      String
+  name      String
+  pattern   Json     @default("{}")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  tenant    Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  rosterEntries RosterEntry[]
+
+  @@unique([tenantId, code])
+  @@map("work_schedules")
+}
+
+/// HRM-Pro — roster assignment
+model RosterEntry {
+  id           String    @id
+  tenantId     String    @map("tenant_id")
+  employeeId   String    @map("employee_id")
+  storeId      String    @map("store_id")
+  workDate     DateTime  @map("work_date") @db.Date
+  scheduleId   String?   @map("schedule_id")
+  plannedStart String?   @map("planned_start")
+  plannedEnd   String?   @map("planned_end")
+  /// planned | confirmed | absent
+  status       String    @default("planned")
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
+  tenant       Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  employee     Employee  @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  schedule     WorkSchedule? @relation(fields: [scheduleId], references: [id], onDelete: SetNull)
+
+  @@index([tenantId, employeeId, workDate])
+  @@index([tenantId, storeId, workDate])
+  @@map("roster_entries")
+}
+
+/// HRM-Pro — attendance check-in/out
+model AttendanceEvent {
+  id         String   @id
+  tenantId   String   @map("tenant_id")
+  employeeId String   @map("employee_id")
+  storeId    String?  @map("store_id")
+  /// check_in | check_out
+  eventType  String   @map("event_type")
+  occurredAt DateTime @map("occurred_at")
+  /// manual | qr | csv | pos_shift
+  source     String   @default("manual")
+  note       String?
+  createdAt  DateTime @default(now()) @map("created_at")
+  tenant     Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  employee   Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, employeeId, occurredAt])
+  @@index([tenantId, storeId, occurredAt])
+  @@map("attendance_events")
+}
+
+/// HRM-Pro — monthly timesheet period
+model TimesheetPeriod {
+  id         String    @id
+  tenantId   String    @map("tenant_id")
+  year       Int
+  month      Int
+  /// open | locked | approved
+  status     String    @default("open")
+  lockedAt   DateTime? @map("locked_at")
+  approvedAt DateTime? @map("approved_at")
+  createdAt  DateTime  @default(now()) @map("created_at")
+  updatedAt  DateTime  @updatedAt @map("updated_at")
+  tenant     Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  lines      TimesheetLine[]
+  payrollRuns PayrollRun[]
+
+  @@unique([tenantId, year, month])
+  @@map("timesheet_periods")
+}
+
+/// HRM-Pro — per-employee timesheet line
+model TimesheetLine {
+  id              String   @id
+  tenantId        String   @map("tenant_id")
+  periodId        String   @map("period_id")
+  employeeId      String   @map("employee_id")
+  workDays        Decimal  @map("work_days") @db.Decimal(10, 2)
+  workHours       Decimal  @map("work_hours") @db.Decimal(10, 2)
+  lateMinutes     Int      @default(0) @map("late_minutes")
+  otHours         Decimal  @default(0) @map("ot_hours") @db.Decimal(10, 2)
+  unpaidLeaveDays Decimal  @default(0) @map("unpaid_leave_days") @db.Decimal(10, 2)
+  note            String?
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+  tenant          Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  period          TimesheetPeriod @relation(fields: [periodId], references: [id], onDelete: Cascade)
+  employee        Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+
+  @@unique([periodId, employeeId])
+  @@index([tenantId, employeeId])
+  @@map("timesheet_lines")
+}
+
+/// HRM-Pro — salary structure per employee
+model SalaryStructure {
+  id            String   @id
+  tenantId      String   @map("tenant_id")
+  employeeId    String   @map("employee_id")
+  baseSalary    Decimal  @map("base_salary") @db.Decimal(18, 2)
+  allowances    Json     @default("{}")
+  effectiveFrom DateTime @map("effective_from")
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+  tenant        Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  employee      Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, employeeId, effectiveFrom])
+  @@map("salary_structures")
+}
+
+/// HRM-Pro — statutory rate config per year
+model PayrollRateConfig {
+  id                   String   @id
+  tenantId             String   @map("tenant_id")
+  year                 Int
+  bhxhEmployee         Decimal  @map("bhxh_employee") @db.Decimal(8, 4)
+  bhxhEmployer         Decimal  @map("bhxh_employer") @db.Decimal(8, 4)
+  bhytEmployee         Decimal  @map("bhyt_employee") @db.Decimal(8, 4)
+  bhytEmployer         Decimal  @map("bhyt_employer") @db.Decimal(8, 4)
+  bhtnEmployee         Decimal  @map("bhtn_employee") @db.Decimal(8, 4)
+  bhtnEmployer         Decimal  @map("bhtn_employer") @db.Decimal(8, 4)
+  pitPersonalDeduction Decimal  @map("pit_personal_deduction") @db.Decimal(18, 2)
+  pitDependentDeduction Decimal @map("pit_dependent_deduction") @db.Decimal(18, 2)
+  createdAt            DateTime @default(now()) @map("created_at")
+  updatedAt            DateTime @updatedAt @map("updated_at")
+  tenant               Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, year])
+  @@map("payroll_rate_configs")
+}
+
+/// HRM-Pro — payroll period (month)
+model PayrollPeriod {
+  id        String   @id
+  tenantId  String   @map("tenant_id")
+  year      Int
+  month     Int
+  label     String
+  /// draft | open | closed
+  status    String   @default("draft")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  tenant    Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  runs      PayrollRun[]
+
+  @@unique([tenantId, year, month])
+  @@map("payroll_periods")
+}
+
+/// HRM-Pro — payroll run within period
+model PayrollRun {
+  id         String    @id
+  tenantId   String    @map("tenant_id")
+  periodId   String    @map("period_id")
+  /// draft | review | approved | paid
+  status     String    @default("draft")
+  ratesYear  Int       @map("rates_year")
+  note       String?
+  approvedAt DateTime? @map("approved_at")
+  paidAt     DateTime? @map("paid_at")
+  createdAt  DateTime  @default(now()) @map("created_at")
+  updatedAt  DateTime  @updatedAt @map("updated_at")
+  tenant     Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  period     PayrollPeriod @relation(fields: [periodId], references: [id], onDelete: Cascade)
+  timesheetPeriodId String? @map("timesheet_period_id")
+  timesheetPeriod TimesheetPeriod? @relation(fields: [timesheetPeriodId], references: [id], onDelete: SetNull)
+  payslips   Payslip[]
+
+  @@index([tenantId, periodId, status])
+  @@map("payroll_runs")
+}
+
+/// HRM-Pro — payslip per employee per run
+model Payslip {
+  id           String   @id
+  tenantId     String   @map("tenant_id")
+  runId        String   @map("run_id")
+  employeeId   String   @map("employee_id")
+  gross        Decimal  @db.Decimal(18, 2)
+  bhxhEmployee Decimal  @map("bhxh_employee") @db.Decimal(18, 2)
+  bhytEmployee Decimal  @map("bhyt_employee") @db.Decimal(18, 2)
+  bhtnEmployee Decimal  @map("bhtn_employee") @db.Decimal(18, 2)
+  pit          Decimal  @db.Decimal(18, 2)
+  net          Decimal  @db.Decimal(18, 2)
+  employerCost Decimal  @map("employer_cost") @db.Decimal(18, 2)
+  lines        Json     @default("[]")
+  disclaimer   String
+  createdAt    DateTime @default(now()) @map("created_at")
+  tenant       Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  run          PayrollRun @relation(fields: [runId], references: [id], onDelete: Cascade)
+  employee     Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+
+  @@unique([runId, employeeId])
+  @@index([tenantId, employeeId])
+  @@map("payslips")
 }

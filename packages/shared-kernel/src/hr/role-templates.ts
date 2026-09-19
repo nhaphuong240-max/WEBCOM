@@ -30,6 +30,10 @@ const OPS_PERMS: HrPermission[] = [
   'refund.issue',
   'price.override',
   'website.edit',
+  'hrm.leave.read',
+  'hrm.leave.manage',
+  'hrm.attendance.read',
+  'hrm.attendance.manage',
 ];
 
 const STORE_MANAGER_PERMS: HrPermission[] = [
@@ -41,6 +45,11 @@ const STORE_MANAGER_PERMS: HrPermission[] = [
   'refund.issue',
   'price.override',
   'audit.read',
+  'hrm.leave.read',
+  'hrm.leave.approve',
+  'hrm.attendance.read',
+  'hrm.attendance.manage',
+  'hrm.timesheet.lock',
 ];
 
 const CASHIER_PERMS: HrPermission[] = ['pos.sell', 'pos.shift.manage'];

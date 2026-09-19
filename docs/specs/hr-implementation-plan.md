@@ -4,7 +4,7 @@
 |---|---|
 | Phiên bản | 1.0 |
 | Ngày | 2026-09-19 |
-| Trạng thái | **HR-0…HR-3 shipped** (code) · HRM-Pro = backlog |
+| Trạng thái | **HR-0…HR-3 shipped** · **HRM-Pro A+B+C MVP** (code · `FEATURE_HRM_PRO`) |
 | Spec | [`hr-iam-employee.md`](./hr-iam-employee.md) |
 | Kế hoạch tổng | `docs/04` §15 · SRS FR-IAM · FR-ORG · FR-POS |
 | ADR | `docs/adr/006-hr-iam-employee.md` (tạo ở HR-0) |

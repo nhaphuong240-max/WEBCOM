@@ -4,7 +4,7 @@
 |---|---|
 | Phiên bản | 1.1 |
 | Ngày | 2026-09-19 |
-| Trạng thái | **HR-0…HR-3 shipped** (code) · HRM-Pro = Could / Phase sau (§18) |
+| Trạng thái | **HR-0…HR-3 shipped** · **HRM-Pro A+B+C MVP shipped** (code · flag off prod) |
 | Kế hoạch triển khai | [`hr-implementation-plan.md`](./hr-implementation-plan.md) |
 | ADR | [`docs/adr/006-hr-iam-employee.md`](../adr/006-hr-iam-employee.md) |
 | Tham chiếu | SRS `docs/02` §6.1 FR-ORG · §6.2 FR-IAM · §9.1 FR-POS · UC-IAM-* (`docs/01` §7.1) · BR-010 · NFR security |

@@ -1108,7 +1108,7 @@ Một **Visual Builder + Page/CMS** dùng chung mọi template; template = **The
 | **HR-1** | Invite/Users/RBAC · Employee · UI `/hr/*` · e2e-hr-1 | **shipped** (code) |
 | **HR-2** | Sessions · Shift · scope OMS · PII gate | shipped (code) |
 | **HR-3** | Custom roles · dept · POS PIN · SCIM stub | shipped (code) |
-| **HRM-Pro** | HĐLĐ · công · phép · lương VN (Could) | backlog — spec §18 |
+| **HRM-Pro** | HĐLĐ · công · phép · lương VN (A+B+C MVP) | shipped (code · flag off) |
 
 ## Section MVP (CMS-0/1)
 `hero` · `collections` · `featured` · `trust` · (+ CMS-1: `rich_text`, `faq`, `cta_banner`)

@@ -18,6 +18,15 @@ export const hrNav = [
   { href: '/hr/sessions', label: 'Login history', mockup: 'HR' },
 ] as const;
 
+export const hrmNav = [
+  { href: '/hrm', label: 'HRM home', mockup: 'HRM' },
+  { href: '/hrm/departments', label: 'Departments', mockup: 'HRM' },
+  { href: '/hrm/contracts', label: 'Contracts', mockup: 'HRM' },
+  { href: '/hrm/leave', label: 'Leave', mockup: 'HRM' },
+  { href: '/hrm/attendance', label: 'Attendance', mockup: 'HRM' },
+  { href: '/hrm/payroll', label: 'Payroll', mockup: 'HRM' },
+] as const;
+
 export const mainNav = [
   { href: '/', label: 'Command Center', section: 'Điều hành' },
   { href: '/products', label: 'Sản phẩm', section: 'Điều hành' },
@@ -30,6 +39,7 @@ export const mainNav = [
   { href: '/recovery', label: 'Recovery', section: 'Điều hành' },
   { href: '/inventory', label: 'Tồn kho', section: 'Điều hành' },
   ...hrNav.map((i) => ({ ...i, section: 'Nhân sự' as const })),
+  ...hrmNav.map((i) => ({ ...i, section: 'HRM' as const })),
   ...websiteNav.map((i) => ({ ...i, section: 'Website' as const })),
   { href: '/design-system', label: 'Design system', section: 'Website' },
   { href: '/social', label: 'Social Inbox', section: 'Tăng trưởng' },
