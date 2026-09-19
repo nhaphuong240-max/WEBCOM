@@ -2,20 +2,19 @@
 
 import { FormEvent, useState } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 
-const CATEGORIES = [
-  { label: 'Website Templates', href: '/templates?goal=conversion' },
-  { label: 'Beauty & Fashion', href: '/templates?industry=beauty' },
-  { label: 'Live Commerce', href: '/templates?goal=live' },
-  { label: 'POS & Omnichannel', href: '/templates?goal=omnichannel' },
-  { label: 'Landing Pages', href: '/templates?goal=leadgen' },
-  { label: 'CRM Ready', href: '/templates?goal=retention' },
-  { label: 'Sale', href: '/templates?license=one_time' },
+const NAV = [
+  { label: 'Website bán hàng', href: '/templates?goal=conversion' },
+  { label: 'Beauty & Live', href: '/templates?industry=beauty' },
+  { label: 'Doanh nghiệp', href: '/templates?industry=b2b' },
+  { label: 'Giao diện miễn phí', href: '/templates?license=free' },
 ];
 
 export function SiteNav() {
   const router = useRouter();
+  const pathname = usePathname() || '/';
+  const light = pathname.startsWith('/templates') || pathname.startsWith('/trial');
   const [q, setQ] = useState('');
   const [menuOpen, setMenuOpen] = useState(false);
 
@@ -23,6 +22,65 @@ export function SiteNav() {
     e.preventDefault();
     const query = q.trim();
     router.push(query ? `/templates?q=${encodeURIComponent(query)}` : '/templates');
+  }
+
+  if (light) {
+    return (
+      <header className="hv-nav">
+        <div className="hv-nav-inner">
+          <button
+            type="button"
+            className="hv-menu-btn"
+            aria-label="Menu"
+            onClick={() => setMenuOpen((v) => !v)}
+          >
+            <span />
+            <span />
+            <span />
+          </button>
+
+          <Link href="/" className="hv-logo" aria-label="WebCom">
+            <span className="hv-logo-mark" aria-hidden>
+              W
+            </span>
+            webcom
+          </Link>
+
+          <form className="hv-search" onSubmit={onSearch} role="search">
+            <input
+              type="search"
+              value={q}
+              onChange={(e) => setQ(e.target.value)}
+              placeholder="Tìm giao diện"
+              aria-label="Tìm giao diện"
+            />
+            <button type="submit" aria-label="Tìm kiếm">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden>
+                <circle cx="11" cy="11" r="7" stroke="currentColor" strokeWidth="2" />
+                <path d="M20 20l-3.5-3.5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+              </svg>
+            </button>
+          </form>
+
+          <nav className={`hv-nav-links${menuOpen ? ' open' : ''}`} aria-label="Danh mục">
+            {NAV.map((n) => (
+              <Link key={n.href} href={n.href} onClick={() => setMenuOpen(false)}>
+                {n.label}
+              </Link>
+            ))}
+          </nav>
+
+          <div className="hv-nav-actions">
+            <Link href="/trial" className="hv-btn hv-btn-outline">
+              Đăng nhập
+            </Link>
+            <Link href="/trial" className="hv-btn hv-btn-primary">
+              Bắt đầu miễn phí
+            </Link>
+          </div>
+        </div>
+      </header>
+    );
   }
 
   return (
@@ -60,12 +118,6 @@ export function SiteNav() {
 
           <form className="tm-search" onSubmit={onSearch} role="search">
             <Link href="/templates" className="tm-search-cats" title="Danh mục">
-              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden>
-                <rect x="1" y="1" width="6" height="6" rx="1.2" fill="currentColor" />
-                <rect x="9" y="1" width="6" height="6" rx="1.2" fill="currentColor" />
-                <rect x="1" y="9" width="6" height="6" rx="1.2" fill="currentColor" />
-                <rect x="9" y="9" width="6" height="6" rx="1.2" fill="currentColor" />
-              </svg>
               Categories
             </Link>
             <input
@@ -77,51 +129,28 @@ export function SiteNav() {
               aria-label="Tìm template"
             />
             <button type="submit" className="tm-search-submit" aria-label="Search">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden>
-                <circle cx="11" cy="11" r="7" stroke="currentColor" strokeWidth="2" />
-                <path d="M20 20l-3.5-3.5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-              </svg>
+              ⌕
             </button>
           </form>
 
           <div className="tm-header-actions">
-            <span className="tm-lang" title="Ngôn ngữ">
-              VI
-            </span>
             <Link href="/pricing" className="tm-btn tm-btn-unlimited">
               Unlimited
             </Link>
             <Link href="/trial" className="tm-btn tm-btn-account">
               Đăng nhập
             </Link>
-            <Link href="/templates" className="tm-icon-btn tm-cart" aria-label="Catalog">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden>
-                <path
-                  d="M6 6h15l-1.5 9h-12L6 6zm0 0L5 3H2"
-                  stroke="currentColor"
-                  strokeWidth="1.8"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-                <circle cx="9" cy="20" r="1.2" fill="currentColor" />
-                <circle cx="17" cy="20" r="1.2" fill="currentColor" />
-              </svg>
-            </Link>
           </div>
         </div>
 
         <nav className={`tm-cat-nav${menuOpen ? ' open' : ''}`} aria-label="Danh mục sản phẩm">
-          {CATEGORIES.map((c) => (
-            <Link key={c.href + c.label} href={c.href} onClick={() => setMenuOpen(false)}>
+          {NAV.map((c) => (
+            <Link key={c.href} href={c.href} onClick={() => setMenuOpen(false)}>
               {c.label}
             </Link>
           ))}
-          <Link href="/case-studies" onClick={() => setMenuOpen(false)}>
-            Case / ROI
-          </Link>
-          <Link href="/resources" onClick={() => setMenuOpen(false)}>
-            Resources
-          </Link>
+          <Link href="/case-studies">Case / ROI</Link>
+          <Link href="/resources">Resources</Link>
         </nav>
       </header>
     </div>
@@ -130,74 +159,69 @@ export function SiteNav() {
 
 export function SiteFooter() {
   return (
-    <footer className="tm-footer">
-      <div className="tm-footer-inner">
-        <div className="tm-footer-brand">
-          <Link href="/" className="tm-logo tm-logo-footer">
-            <span className="tm-logo-mark" aria-hidden>
+    <footer className="hv-footer">
+      <div className="hv-footer-inner">
+        <div>
+          <Link href="/" className="hv-logo hv-logo-foot">
+            <span className="hv-logo-mark" aria-hidden>
               W
             </span>
-            <span className="tm-logo-text">
-              WebCom<em>.</em>
-            </span>
+            webcom
           </Link>
           <p>
-            Digital marketplace theme & playbook cho bán hàng đa kênh Việt Nam — demo live, trial
-            self-serve, mua license one-time.
+            Kho giao diện website bán hàng & doanh nghiệp — demo live, trial miễn phí, mua license
+            one-time.
           </p>
         </div>
         <div>
-          <h4>Marketplace</h4>
+          <h4>Giao diện</h4>
           <ul>
             <li>
-              <Link href="/templates">Browse templates</Link>
+              <Link href="/templates">Tất cả giao diện</Link>
+            </li>
+            <li>
+              <Link href="/templates?license=free">Miễn phí</Link>
+            </li>
+            <li>
+              <Link href="/templates?goal=conversion">Website bán hàng</Link>
             </li>
             <li>
               <a href="https://themes.ngoinhahomnay.vn/">Demo storefront</a>
             </li>
-            <li>
-              <Link href="/trial">Self-serve trial</Link>
-            </li>
-            <li>
-              <Link href="/pricing">Unlimited & pricing</Link>
-            </li>
           </ul>
         </div>
         <div>
-          <h4>Platform</h4>
+          <h4>Bắt đầu</h4>
           <ul>
             <li>
-              <a href="/#categories">Website Commerce</a>
-            </li>
-            <li>
-              <a href="/#bestsellers">Bestsellers</a>
-            </li>
-            <li>
-              <a href="https://webecom.ngoinhahomnay.vn/console">Admin console</a>
-            </li>
-            <li>
-              <a href="/#lead">Book demo</a>
-            </li>
-          </ul>
-        </div>
-        <div>
-          <h4>Resources</h4>
-          <ul>
-            <li>
-              <Link href="/case-studies">Case / ROI</Link>
-            </li>
-            <li>
-              <Link href="/resources">Guides</Link>
+              <Link href="/trial">Trial miễn phí</Link>
             </li>
             <li>
               <Link href="/pricing">Pricing</Link>
             </li>
+            <li>
+              <a href="https://webecom.ngoinhahomnay.vn/console">Admin console</a>
+            </li>
+          </ul>
+        </div>
+        <div>
+          <h4>Hỗ trợ</h4>
+          <ul>
+            <li>
+              <Link href="/resources">Tài nguyên</Link>
+            </li>
+            <li>
+              <Link href="/case-studies">Case / ROI</Link>
+            </li>
+            <li>
+              <a href="/#lead">Liên hệ sales</a>
+            </li>
           </ul>
         </div>
       </div>
-      <div className="tm-footer-bottom">
-        <span>© {new Date().getFullYear()} WebCom · ngoinhahomnay.vn</span>
-        <span>Inspired marketplace UX · original WebCom product & content</span>
+      <div className="hv-footer-bottom">
+        <span>© {new Date().getFullYear()} WebCom</span>
+        <span>Layout inspired by marketplace UX · brand & content WebCom</span>
       </div>
     </footer>
   );

@@ -8,56 +8,27 @@ import {
 
 export const dynamic = 'force-dynamic';
 
-const GOAL_LABEL: Record<string, string> = {
-  conversion: 'Conversion',
-  brand: 'Brand',
-  campaign: 'Campaign',
-  lead: 'Lead gen',
-  local: 'Local / POS',
-  live: 'Live commerce',
-  omnichannel: 'Omnichannel',
-  retention: 'Retention',
-  leadgen: 'Lead gen',
-};
+const INDUSTRY_CARDS: Array<{ key: string; label: string; mark: string }> = [
+  { key: 'fashion', label: 'Thời trang', mark: 'Tf' },
+  { key: 'electronics', label: 'Công nghệ - Điện tử', mark: 'Tech' },
+  { key: 'beauty', label: 'Mỹ phẩm - Làm đẹp', mark: 'Be' },
+  { key: 'b2b', label: 'Doanh nghiệp', mark: 'Biz' },
+  { key: 'home', label: 'Nội thất & Gia dụng', mark: 'Home' },
+  { key: 'jewelry', label: 'Trang sức & Quà tặng', mark: 'Jw' },
+  { key: 'fnb', label: 'Nhà hàng - Quán ăn', mark: 'F&B' },
+  { key: 'health', label: 'Chăm sóc sức khoẻ', mark: 'Care' },
+  { key: 'pets', label: 'Thú cưng', mark: 'Pet' },
+  { key: 'general', label: 'Tạp hoá - Nhiều mặt hàng', mark: 'Shop' },
+];
 
-const INDUSTRY_LABEL: Record<string, string> = {
-  beauty: 'Beauty',
-  fashion: 'Fashion',
-  fnb: 'F&B',
-  sports: 'Sports',
-  pets: 'Pets',
-  home: 'Home',
-  kids: 'Kids',
-  edu: 'Education',
-  books: 'Books',
-  b2b: 'B2B',
-  health: 'Health',
-  electronics: 'Electronics',
-  auto: 'Auto',
-  jewelry: 'Jewelry',
-  organic: 'Organic',
-  travel: 'Travel',
-  social: 'Social',
-  realestate: 'Real estate',
-  services: 'Services',
-  agency: 'Agency',
-  general: 'General',
-};
-
-const LICENSE_LABEL: Record<string, string> = {
-  free: 'Miễn phí',
-  one_time: 'One-time',
-};
-
-const SORT_LABEL: Record<string, string> = {
-  cvr: 'Conversion',
-  mobile: 'Mobile',
-  seo: 'SEO',
-};
-
-function labelOf(map: Record<string, string>, key: string) {
-  return map[key] || key;
-}
+const GOAL_PILLS: Array<{ key?: string; label: string }> = [
+  { key: undefined, label: 'Tất cả' },
+  { key: 'conversion', label: 'Website bán hàng' },
+  { key: 'brand', label: 'Thương hiệu' },
+  { key: 'campaign', label: 'Campaign' },
+  { key: 'lead', label: 'Lead gen' },
+  { key: 'local', label: 'Local / POS' },
+];
 
 export default async function TemplatesPage({
   searchParams,
@@ -91,205 +62,178 @@ export default async function TemplatesPage({
     q: sp.q,
   };
 
-  const activeFilters: Array<{ key: string; label: string; href: string }> = [];
-  if (sp.industry) {
-    activeFilters.push({
-      key: 'industry',
-      label: labelOf(INDUSTRY_LABEL, sp.industry),
-      href: facetHref(base, { industry: undefined }),
-    });
-  }
-  if (sp.goal) {
-    activeFilters.push({
-      key: 'goal',
-      label: labelOf(GOAL_LABEL, sp.goal),
-      href: facetHref(base, { goal: undefined }),
-    });
-  }
-  if (sp.license) {
-    activeFilters.push({
-      key: 'license',
-      label: labelOf(LICENSE_LABEL, sp.license),
-      href: facetHref(base, { license: undefined }),
-    });
-  }
-  if (sp.q) {
-    activeFilters.push({
-      key: 'q',
-      label: `“${sp.q}”`,
-      href: facetHref(base, { q: undefined }),
-    });
-  }
-
-  const titleGoal = sp.goal ? labelOf(GOAL_LABEL, sp.goal) : null;
-  const titleIndustry = sp.industry ? labelOf(INDUSTRY_LABEL, sp.industry) : null;
-  const pageTitle = [titleIndustry, titleGoal, 'Website Templates'].filter(Boolean).join(' · ');
+  const countLabel = templates.length;
+  const heroTitle = sp.goal
+    ? `${countLabel}+ Giao diện website ${sp.goal === 'conversion' ? 'bán hàng' : sp.goal} đẹp mắt, chuyên nghiệp`
+    : `${countLabel}+ Giao diện website bán hàng và doanh nghiệp đẹp mắt, chuyên nghiệp`;
 
   return (
-    <main className="cat-page">
-      <section className="cat-hero">
-        <div className="cat-hero-inner">
-          <nav className="cat-breadcrumb" aria-label="Breadcrumb">
-            <Link href="/">WebCom</Link>
-            <span>/</span>
-            <Link href="/templates">Templates</Link>
-            {sp.goal ? (
-              <>
-                <span>/</span>
-                <span>{labelOf(GOAL_LABEL, sp.goal)}</span>
-              </>
-            ) : null}
-          </nav>
-          <div className="cat-hero-row">
-            <div>
-              <p className="cat-kicker">Marketplace</p>
-              <h1>{pageTitle}</h1>
-              <p className="cat-lead">
-                Theme sẵn demo live + trial. Lọc theo ngành, mục tiêu và license — chọn, thử, rồi mua
-                khi sẵn sàng go-live.
-              </p>
-            </div>
-            <div className="cat-hero-stats" aria-label="Tóm tắt catalog">
-              <div>
-                <strong>{templates.length}</strong>
-                <span>kết quả</span>
-              </div>
-              <div>
-                <strong>{facets.industries.length || '—'}</strong>
-                <span>ngành</span>
-              </div>
-              <div>
-                <strong>Trial</strong>
-                <span>trước paywall</span>
-              </div>
+    <main className="hv-page">
+      <section className="hv-hero">
+        <div className="hv-hero-inner">
+          <div className="hv-hero-copy">
+            <h1>{heroTitle}</h1>
+            <p>
+              Từ thiết kế tinh tế, hiện đại đến phong cách trẻ trung, năng động — kho giao diện
+              WebCom cập nhật liên tục, chuẩn SEO, có demo live và dùng thử trước khi mua.
+            </p>
+            <form className="hv-hero-search" action="/templates" method="get">
+              {sp.goal ? <input type="hidden" name="goal" value={sp.goal} /> : null}
+              <input
+                type="search"
+                name="q"
+                defaultValue={sp.q || ''}
+                placeholder="Tìm giao diện"
+                aria-label="Tìm giao diện"
+              />
+              <button type="submit" aria-label="Tìm">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden>
+                  <circle cx="11" cy="11" r="7" stroke="currentColor" strokeWidth="2" />
+                  <path d="M20 20l-3.5-3.5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                </svg>
+              </button>
+            </form>
+          </div>
+          <div className="hv-hero-collage" aria-hidden>
+            <div className="hv-collage-card c1" />
+            <div className="hv-collage-card c2" />
+            <div className="hv-collage-card c3" />
+            <div className="hv-collage-badge">
+              <strong>Trial</strong>
+              <span>trước paywall</span>
             </div>
           </div>
         </div>
       </section>
 
-      <div className="cat-shell">
-        <aside className="cat-sidebar" aria-label="Bộ lọc">
-          <div className="cat-side-block">
-            <div className="cat-side-title">Ngành</div>
-            <div className="cat-side-list">
+      <section className="hv-section">
+        <div className="hv-section-head">
+          <h2>Giao diện website theo ngành hàng phổ biến</h2>
+          <p>
+            Những mẫu giao diện phù hợp mọi ngành nghề, chuẩn SEO, giúp khách hàng có trải nghiệm
+            tốt.
+          </p>
+        </div>
+        <div className="hv-industry-grid">
+          {INDUSTRY_CARDS.map((c) => {
+            const available = !facets.industries.length || facets.industries.includes(c.key);
+            if (!available && facets.industries.length) return null;
+            return (
               <Link
-                href={facetHref(base, { industry: undefined })}
-                className={`cat-side-item${!sp.industry ? ' active' : ''}`}
+                key={c.key}
+                href={facetHref(base, { industry: c.key })}
+                className={`hv-industry${sp.industry === c.key ? ' active' : ''}`}
               >
-                Tất cả
+                <span className="hv-industry-ico" aria-hidden>
+                  {c.mark}
+                </span>
+                <span>{c.label}</span>
               </Link>
-              {facets.industries.map((i) => (
-                <Link
-                  key={i}
-                  href={facetHref(base, { industry: i })}
-                  className={`cat-side-item${sp.industry === i ? ' active' : ''}`}
-                >
-                  {labelOf(INDUSTRY_LABEL, i)}
-                </Link>
-              ))}
-            </div>
-          </div>
+            );
+          })}
+        </div>
+      </section>
 
-          <div className="cat-side-block">
-            <div className="cat-side-title">Mục tiêu</div>
-            <div className="cat-side-list">
+      <section className="hv-section hv-section-soft" id="catalog">
+        <div className="hv-section-head">
+          <h2>
+            {sp.license === 'free'
+              ? 'Giao diện miễn phí'
+              : sp.goal === 'conversion'
+                ? 'Giao diện website bán hàng'
+                : 'Giao diện mới cập nhật'}
+          </h2>
+          <p>
+            Khám phá {countLabel} giao diện
+            {sp.industry ? ` · ngành ${sp.industry}` : ''}
+            {sp.goal ? ` · mục tiêu ${sp.goal}` : ''} — xem thực tế, dùng thử, rồi mua khi sẵn sàng.
+          </p>
+        </div>
+
+        <div className="hv-pills" role="navigation" aria-label="Lọc mục tiêu">
+          {GOAL_PILLS.map((p) => (
+            <Link
+              key={p.label}
+              href={facetHref(base, { goal: p.key })}
+              className={`hv-pill${(p.key || '') === (sp.goal || '') ? ' active' : ''}`}
+            >
+              {p.label}
+            </Link>
+          ))}
+          <Link
+            href={facetHref(base, { license: sp.license === 'free' ? undefined : 'free' })}
+            className={`hv-pill${sp.license === 'free' ? ' active' : ''}`}
+          >
+            Miễn phí
+          </Link>
+          <Link
+            href={facetHref(base, { license: sp.license === 'one_time' ? undefined : 'one_time' })}
+            className={`hv-pill${sp.license === 'one_time' ? ' active' : ''}`}
+          >
+            One-time
+          </Link>
+        </div>
+
+        <div className="hv-toolbar">
+          <p>
+            <strong>{countLabel}</strong> giao diện
+          </p>
+          <div className="hv-sort">
+            {(['cvr', 'mobile', 'seo'] as const).map((s) => (
               <Link
-                href={facetHref(base, { goal: undefined })}
-                className={`cat-side-item${!sp.goal ? ' active' : ''}`}
+                key={s}
+                href={facetHref(base, { sort: s })}
+                className={sort === s ? 'active' : ''}
               >
-                Tất cả
+                {s === 'cvr' ? 'Phổ biến' : s === 'mobile' ? 'Mobile' : 'SEO'}
               </Link>
-              {facets.goals.map((g) => (
-                <Link
-                  key={g}
-                  href={facetHref(base, { goal: g })}
-                  className={`cat-side-item${sp.goal === g ? ' active' : ''}`}
-                >
-                  {labelOf(GOAL_LABEL, g)}
-                </Link>
-              ))}
-            </div>
+            ))}
           </div>
+        </div>
 
-          <div className="cat-side-block">
-            <div className="cat-side-title">License</div>
-            <div className="cat-side-list">
-              <Link
-                href={facetHref(base, { license: undefined })}
-                className={`cat-side-item${!sp.license ? ' active' : ''}`}
-              >
-                Tất cả
-              </Link>
-              {facets.licenses.map((l) => (
-                <Link
-                  key={l}
-                  href={facetHref(base, { license: l })}
-                  className={`cat-side-item${sp.license === l ? ' active' : ''}`}
-                >
-                  {labelOf(LICENSE_LABEL, l)}
-                </Link>
-              ))}
-            </div>
+        {templates.length ? (
+          <div className="hv-grid">
+            {templates.map((t, idx) => (
+              <TemplateProductCard
+                key={t.id}
+                t={t}
+                badge={
+                  t.license === 'free'
+                    ? 'Miễn phí'
+                    : idx === 0
+                      ? 'Mới'
+                      : t.goal === 'conversion' && idx < 3
+                        ? 'One page'
+                        : undefined
+                }
+              />
+            ))}
           </div>
-        </aside>
-
-        <section className="cat-main">
-          <div className="cat-toolbar">
-            <div className="cat-toolbar-left">
-              <p className="cat-count">
-                <strong>{templates.length}</strong> template
-                {templates.length === 1 ? '' : 's'}
-                {activeFilters.length ? ' · đã lọc' : ''}
-              </p>
-              {activeFilters.length ? (
-                <div className="cat-active">
-                  {activeFilters.map((f) => (
-                    <Link key={f.key} href={f.href} className="cat-active-chip">
-                      {f.label}
-                      <span aria-hidden>×</span>
-                    </Link>
-                  ))}
-                  <Link href="/templates" className="cat-clear">
-                    Xóa lọc
-                  </Link>
-                </div>
-              ) : null}
-            </div>
-            <div className="cat-sort" role="group" aria-label="Sắp xếp">
-              <span>Sort</span>
-              {(['cvr', 'mobile', 'seo'] as const).map((s) => (
-                <Link
-                  key={s}
-                  href={facetHref(base, { sort: s })}
-                  className={`cat-sort-btn${sort === s ? ' active' : ''}`}
-                >
-                  {SORT_LABEL[s]}
-                </Link>
-              ))}
-            </div>
+        ) : (
+          <div className="hv-empty">
+            <h3>Chưa có giao diện khớp bộ lọc</h3>
+            <p>Thử đổi ngành hoặc mục tiêu khác.</p>
+            <Link href="/templates" className="hv-btn hv-btn-primary">
+              Xem tất cả
+            </Link>
           </div>
+        )}
+      </section>
 
-          {templates.length ? (
-            <div className="cat-grid">
-              {templates.map((t, idx) => (
-                <TemplateProductCard
-                  key={t.id}
-                  t={t}
-                  badge={idx === 0 ? 'Top CVR' : idx < 3 ? 'Popular' : undefined}
-                />
-              ))}
-            </div>
-          ) : (
-            <div className="cat-empty">
-              <h2>Không có template khớp bộ lọc</h2>
-              <p>Thử bỏ bớt ngành / mục tiêu, hoặc xem toàn bộ catalog.</p>
-              <Link href="/templates" className="tm-btn tm-btn-primary">
-                Xem tất cả templates
-              </Link>
-            </div>
-          )}
-        </section>
-      </div>
+      <section className="hv-cta">
+        <div className="hv-cta-inner">
+          <h2>Dễ dàng bắt đầu với giao diện WebCom</h2>
+          <p>Trial miễn phí trước — mua theme khi storefront đã chạy ổn.</p>
+          <div className="hv-cta-actions">
+            <Link href="/trial" className="hv-btn hv-btn-primary">
+              Bắt đầu miễn phí
+            </Link>
+            <Link href="/pricing" className="hv-btn hv-btn-outline-light">
+              Xem pricing
+            </Link>
+          </div>
+        </div>
+      </section>
     </main>
   );
 }
