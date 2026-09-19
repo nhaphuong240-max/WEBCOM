@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import type { TemplateCard } from '../lib/marketplace';
 import { buyUrl, demoUrl, trialUrl } from '../lib/marketplace';
+import { IconExternal, INDUSTRY_ICONS } from './ThemeIcons';
 
 const INDUSTRY_ACCENT: Record<string, [string, string]> = {
   beauty: ['#fce7f3', '#db2777'],
@@ -23,14 +24,14 @@ const INDUSTRY_ACCENT: Record<string, [string, string]> = {
   realestate: ['#f8fafc', '#475569'],
   services: ['#f1f5f9', '#334155'],
   agency: ['#0b1220', '#94a3b8'],
+  general: ['#f8fafc', '#475569'],
 };
 
-function previewGradient(_code: string, industry: string) {
+function previewGradient(industry: string) {
   const pair = INDUSTRY_ACCENT[industry] || ['#e2e8f0', '#64748b'];
   return `linear-gradient(165deg, ${pair[0]} 0%, ${pair[1]} 100%)`;
 }
 
-/** Visual price for catalog (Haravan-style VND) when no commerce price on card. */
 export function displayPrice(t: TemplateCard): string {
   if (t.license === 'free' || t.license_tier === 'free') return 'Miễn phí';
   let h = 0;
@@ -42,21 +43,29 @@ export function displayPrice(t: TemplateCard): string {
 export function TemplateProductCard({
   t,
   badge,
+  index = 0,
 }: {
   t: TemplateCard;
   badge?: string;
+  index?: number;
 }) {
   const href = `/templates/${encodeURIComponent(t.code)}`;
   const price = displayPrice(t);
   const isFree = price === 'Miễn phí';
+  const IndustryIcon = INDUSTRY_ICONS[t.industry];
 
   return (
-    <article className="hv-card">
-      <div
-        className="hv-card-media"
-        style={{ background: previewGradient(t.code, t.industry) }}
-      >
+    <article
+      className="hv-card hv-anim"
+      style={{ animationDelay: `${Math.min(index, 11) * 0.04}s` }}
+    >
+      <div className="hv-card-media" style={{ background: previewGradient(t.industry) }}>
         {badge ? <span className="hv-card-badge">{badge}</span> : null}
+        {IndustryIcon ? (
+          <span className="hv-card-industry-ico" aria-hidden>
+            <IndustryIcon />
+          </span>
+        ) : null}
         <div className="hv-card-mock" aria-hidden>
           <div className="hv-mock-top">
             <span />
@@ -73,8 +82,14 @@ export function TemplateProductCard({
           <div className="hv-mock-band" />
         </div>
         <div className="hv-card-overlay">
-          <a href={demoUrl(t.code)} target="_blank" rel="noreferrer" className="hv-btn hv-btn-primary">
+          <a
+            href={demoUrl(t.code)}
+            target="_blank"
+            rel="noreferrer"
+            className="hv-btn hv-btn-primary"
+          >
             Xem thực tế
+            <IconExternal />
           </a>
           <Link href={href} className="hv-btn hv-btn-light">
             Chi tiết
@@ -82,6 +97,7 @@ export function TemplateProductCard({
         </div>
       </div>
       <div className="hv-card-info">
+        <p className="hv-card-meta">{t.industry}</p>
         <h3>
           <Link href={href}>{t.name}</Link>
         </h3>
