@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { use, useEffect, useState } from 'react';
 
 const API =
   process.env.NEXT_PUBLIC_ADMIN_API_URL?.replace(/\/$/, '') || 'http://127.0.0.1:3001';
@@ -8,9 +8,9 @@ const API =
 export default function InviteAcceptPage({
   params,
 }: {
-  params: { token: string } | Promise<{ token: string }>;
+  params: Promise<{ token: string }>;
 }) {
-  const [token, setToken] = useState('');
+  const { token } = use(params);
   const [preview, setPreview] = useState<{ email: string; name: string | null; role_codes: string[] } | null>(
     null,
   );
@@ -19,10 +19,6 @@ export default function InviteAcceptPage({
   const [error, setError] = useState('');
   const [done, setDone] = useState(false);
   const [busy, setBusy] = useState(false);
-
-  useEffect(() => {
-    void Promise.resolve(params).then((p) => setToken(p.token));
-  }, [params]);
 
   useEffect(() => {
     if (!token) return;

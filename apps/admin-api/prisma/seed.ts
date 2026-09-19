@@ -1,10 +1,10 @@
 import { PrismaClient } from '@prisma/client';
+import * as bcrypt from 'bcryptjs';
 
 const prisma = new PrismaClient();
 
 /** Seed AURA Beauty — matches mockup 08 */
 async function main() {
-  const bcrypt = await import('bcryptjs');
   const adminPasswordHash = await bcrypt.hash('AuraAdmin1!', 10);
   const tenantId = 'ten_aura';
   const brandId = 'brd_aura';
