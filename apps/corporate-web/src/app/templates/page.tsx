@@ -1,11 +1,13 @@
 import Link from 'next/link';
 import { TemplateProductCard } from '../../components/TemplateProductCard';
+import { SectionStackPlatform } from '../../components/platform/SectionStackPlatform';
 import { INDUSTRY_ICONS, IconSearch, IconSpark } from '../../components/ThemeIcons';
 import {
   facetHref,
   fetchTemplateFacets,
   fetchTemplates,
 } from '../../lib/marketplace';
+import { fetchPlatformPage, isPlatformCmsEnabled } from '../../lib/platform-cms';
 
 export const dynamic = 'force-dynamic';
 
@@ -61,10 +63,13 @@ export default async function TemplatesPage({
     sort,
     q: sp.q,
   };
-  const [templates, facets] = await Promise.all([
+  const [templates, facets, catalogCms] = await Promise.all([
     fetchTemplates(filters),
     fetchTemplateFacets(),
+    fetchPlatformPage('templates'),
   ]);
+  const useCatalogIntro =
+    Boolean(catalogCms?.content_v1?.section_order?.length) && isPlatformCmsEnabled();
   const base = {
     industry: sp.industry,
     goal: sp.goal,
@@ -123,6 +128,9 @@ export default async function TemplatesPage({
 
   return (
     <main className="hv-page">
+      {useCatalogIntro && catalogCms?.content_v1 ? (
+        <SectionStackPlatform content={catalogCms.content_v1} />
+      ) : (
       <section className="hv-hero">
         <div className="hv-hero-inner">
           <div className="hv-hero-copy hv-anim">
@@ -186,6 +194,7 @@ export default async function TemplatesPage({
           </div>
         </div>
       </section>
+      )}
 
       <section className="hv-section" id="industries">
         <div className="hv-section-head hv-anim">

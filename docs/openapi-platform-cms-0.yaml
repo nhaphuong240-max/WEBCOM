@@ -1,0 +1,161 @@
+openapi: 3.0.3
+info:
+  title: WebCom Platform CMS-0
+  version: 0.1.0
+  description: |
+    CORP-CMS-0 foundation — interim Storefront `sf_platform_webcom` (ADR-008).
+    Permissions: platform.cms.read | write | publish.
+paths:
+  /api/v1/admin/platform/sites:
+    get:
+      summary: List platform sites (tenant-scoped)
+      security:
+        - TenantAuth: []
+      responses:
+        '200':
+          description: Site list
+        '403':
+          description: Missing platform.cms.read
+  /api/v1/admin/platform/sites/{siteKey}:
+    get:
+      summary: Platform site meta
+      parameters:
+        - in: path
+          name: siteKey
+          required: true
+          schema:
+            type: string
+            example: webcom_apex
+      responses:
+        '200':
+          description: Site meta
+        '404':
+          description: Unknown site_key
+  /api/v1/admin/platform/sites/{siteKey}/pages:
+    get:
+      summary: List platform pages
+      parameters:
+        - in: path
+          name: siteKey
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Pages
+  /api/v1/admin/platform/sites/{siteKey}/pages/{slug}:
+    get:
+      summary: Get draft (latest version)
+      parameters:
+        - in: path
+          name: siteKey
+          required: true
+          schema:
+            type: string
+        - in: path
+          name: slug
+          required: true
+          schema:
+            type: string
+            example: home
+      responses:
+        '200':
+          description: Draft ContentV1
+    put:
+      summary: Save draft (requires platform.cms.write)
+      parameters:
+        - in: path
+          name: siteKey
+          required: true
+          schema:
+            type: string
+        - in: path
+          name: slug
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [content]
+              properties:
+                title:
+                  type: string
+                content:
+                  type: object
+                seo:
+                  type: object
+                expected_version:
+                  type: integer
+                create_if_missing:
+                  type: boolean
+      responses:
+        '200':
+          description: Saved draft
+        '403':
+          description: Missing write
+  /api/v1/admin/platform/sites/{siteKey}/pages/{slug}/transition:
+    post:
+      summary: draft → review → published
+      description: |
+        target=review requires platform.cms.write.
+        target=published requires platform.cms.publish (Editor gets 403).
+      parameters:
+        - in: path
+          name: siteKey
+          required: true
+          schema:
+            type: string
+        - in: path
+          name: slug
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [target]
+              properties:
+                target:
+                  type: string
+                  enum: [draft, review, published]
+      responses:
+        '200':
+          description: Transitioned
+        '403':
+          description: Missing publish (or write)
+  /api/v1/public/platform/{siteKey}/pages/{slug}:
+    get:
+      summary: Published page only (no auth)
+      parameters:
+        - in: path
+          name: siteKey
+          required: true
+          schema:
+            type: string
+            example: webcom_apex
+        - in: path
+          name: slug
+          required: true
+          schema:
+            type: string
+            example: home
+            description: Use `home` for path `/`
+      responses:
+        '200':
+          description: Published ContentV1
+        '404':
+          description: Not published / unknown
+components:
+  securitySchemes:
+    TenantAuth:
+      type: apiKey
+      in: header
+      name: x-tenant-id
+      description: Also send x-actor-id (AUTH_DEV_BYPASS) or Bearer JWT

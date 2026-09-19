@@ -62,6 +62,20 @@ const WEBSITE_PUBLISHER_PERMS: HrPermission[] = [
   'hr.employee.read',
 ];
 
+/** CORP-CMS-0 — Editor ≠ Approver (AC-B7 / AC-P2) */
+const PLATFORM_CMS_EDITOR_PERMS: HrPermission[] = [
+  'platform.cms.read',
+  'platform.cms.write',
+  'hr.employee.read',
+];
+
+const PLATFORM_CMS_APPROVER_PERMS: HrPermission[] = [
+  'platform.cms.read',
+  'platform.cms.write',
+  'platform.cms.publish',
+  'hr.employee.read',
+];
+
 const ANALYST_PERMS: HrPermission[] = [
   'hr.user.read',
   'hr.employee.read',
@@ -134,6 +148,22 @@ export const ROLE_TEMPLATES: RoleTemplateDef[] = [
     system: true,
     permissions: WEBSITE_PUBLISHER_PERMS,
     defaultScopeType: 'brand',
+  },
+  {
+    code: 'platform_cms_editor',
+    name: 'Platform CMS Editor',
+    description: 'Sửa draft corporate pages — không publish',
+    system: true,
+    permissions: PLATFORM_CMS_EDITOR_PERMS,
+    defaultScopeType: 'tenant',
+  },
+  {
+    code: 'platform_cms_approver',
+    name: 'Platform CMS Approver',
+    description: 'Edit + duyệt / publish corporate pages',
+    system: true,
+    permissions: PLATFORM_CMS_APPROVER_PERMS,
+    defaultScopeType: 'tenant',
   },
   {
     code: 'analyst',

@@ -2,7 +2,10 @@ import { Injectable, Inject, forwardRef } from '@nestjs/common';
 import { AppError, createId } from '@ptt/shared-kernel';
 import {
   SECTION_REGISTRY,
+  PLATFORM_CTA_CODES,
+  PLATFORM_ICON_ALLOWLIST,
   getPackage,
+  getSectionScope,
   hasPackage,
   listPackageCodes,
   listPackages,
@@ -10,6 +13,7 @@ import {
   packageToLegacyPageContent,
   packageToPageContent,
   packageToThemeConfig,
+  sectionsForScope,
   toLegacyFlat,
   validateContentV1,
   validatePackageBundle,
@@ -749,17 +753,22 @@ export class PlatformService {
 
   // ─── Builder / CMS ─────────────────────────────────────────
 
-  sectionLibrary() {
+  sectionLibrary(scope?: string) {
+    const list = scope ? sectionsForScope(scope) : SECTION_REGISTRY;
     return {
-      sections: SECTION_REGISTRY.map((s) => ({
+      sections: list.map((s) => ({
         key: s.key,
         label: s.label,
         fields: [...s.fields],
         props_schema: s.props_schema,
+        scope: getSectionScope(s.key),
       })),
       schema_version: 1,
+      scope: scope || 'all',
       feature: this.feature('builder.v1'),
       cms_registry_v1: this.feature('cms.registry.v1'),
+      cms_platform_registry_v1: this.feature('cms.platform_registry.v1'),
+      builder_platform: this.feature('builder.platform'),
       cms_builder_canvas: this.feature('cms.builder_canvas'),
       cms_blog: this.feature('cms.blog'),
       cms_saved_blocks: this.feature('cms.saved_blocks'),
@@ -767,6 +776,8 @@ export class PlatformService {
       cms_creator: this.feature('cms.creator'),
       cms_reviews: this.feature('cms.reviews'),
       cms_page_ab: this.feature('cms.page_ab'),
+      platform_cta_codes: [...PLATFORM_CTA_CODES],
+      platform_icons: [...PLATFORM_ICON_ALLOWLIST],
     };
   }
 

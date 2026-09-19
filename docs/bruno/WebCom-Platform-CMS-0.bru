@@ -1,0 +1,88 @@
+meta {
+  name: WebCom-Platform-CMS-0
+}
+
+get {
+  url: {{baseUrl}}/v1/public/platform/webcom_apex/pages/home
+}
+
+get {
+  url: {{baseUrl}}/v1/admin/platform/sites
+  headers {
+    x-tenant-id: ten_platform
+    x-actor-id: usr_platform_approver
+  }
+}
+
+get {
+  url: {{baseUrl}}/v1/admin/platform/sites/webcom_apex/pages
+  headers {
+    x-tenant-id: ten_platform
+    x-actor-id: usr_platform_editor
+  }
+}
+
+get {
+  url: {{baseUrl}}/v1/admin/platform/sites/webcom_apex/pages/home
+  headers {
+    x-tenant-id: ten_platform
+    x-actor-id: usr_platform_editor
+  }
+}
+
+put {
+  url: {{baseUrl}}/v1/admin/platform/sites/webcom_apex/pages/home
+  headers {
+    x-tenant-id: ten_platform
+    x-actor-id: usr_platform_editor
+    content-type: application/json
+  }
+  body: json
+  {
+    "title": "WebCom Homepage",
+    "content": {
+      "schema_version": 1,
+      "section_order": ["hero"],
+      "sections": {
+        "hero": {
+          "type": "hero",
+          "id": "sec_bruno",
+          "props": { "headline": "Bruno draft", "sub": "Platform CMS-0" },
+          "style": {}
+        }
+      },
+      "hero": { "headline": "Bruno draft", "sub": "Platform CMS-0" }
+    },
+    "seo": { "title": "Bruno · WebCom" }
+  }
+}
+
+post {
+  url: {{baseUrl}}/v1/admin/platform/sites/webcom_apex/pages/home/transition
+  headers {
+    x-tenant-id: ten_platform
+    x-actor-id: usr_platform_editor
+    content-type: application/json
+  }
+  body: json
+  {
+    "target": "review"
+  }
+}
+
+post {
+  url: {{baseUrl}}/v1/admin/platform/sites/webcom_apex/pages/home/transition
+  headers {
+    x-tenant-id: ten_platform
+    x-actor-id: usr_platform_approver
+    content-type: application/json
+  }
+  body: json
+  {
+    "target": "published"
+  }
+}
+
+get {
+  url: {{baseUrl}}/v1/public/platform/webcom_apex/pages/pricing
+}

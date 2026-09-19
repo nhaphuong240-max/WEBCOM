@@ -1,6 +1,42 @@
 import { createId } from './id';
-import { SECTION_KEYS } from './registry';
+import {
+  PLATFORM_CTA_CODE_SET,
+  PLATFORM_ICON_ALLOWLIST,
+  SECTION_KEYS,
+} from './registry';
 import type { ContentV1, SectionNode } from './types';
+
+export type ValidateIssue = { path: string; message: string };
+
+const ICON_SET = new Set<string>(PLATFORM_ICON_ALLOWLIST);
+
+function walkCtaCodes(
+  value: unknown,
+  path: string,
+  issues: ValidateIssue[],
+): void {
+  if (Array.isArray(value)) {
+    value.forEach((v, i) => walkCtaCodes(v, `${path}[${i}]`, issues));
+    return;
+  }
+  if (!value || typeof value !== 'object') return;
+  const o = value as Record<string, unknown>;
+  if ('cta_code' in o) {
+    const code = o.cta_code;
+    if (code != null && code !== '') {
+      if (typeof code !== 'string' || !PLATFORM_CTA_CODE_SET.has(code)) {
+        issues.push({
+          path: `${path}.cta_code`,
+          message: `unknown cta_code: ${String(code)}`,
+        });
+      }
+    }
+  }
+  for (const [k, v] of Object.entries(o)) {
+    if (k === 'cta_code') continue;
+    walkCtaCodes(v, `${path}.${k}`, issues);
+  }
+}
 
 function isPlainObject(v: unknown): v is Record<string, unknown> {
   return !!v && typeof v === 'object' && !Array.isArray(v);
@@ -92,8 +128,6 @@ export function toLegacyFlat(content: ContentV1): Record<string, unknown> {
   return out;
 }
 
-export type ValidateIssue = { path: string; message: string };
-
 export function validateContentV1(content: ContentV1): ValidateIssue[] {
   const issues: ValidateIssue[] = [];
   if (content.schema_version !== 1) {
@@ -111,8 +145,52 @@ export function validateContentV1(content: ContentV1): ValidateIssue[] {
     if (!node.id) {
       issues.push({ path: `sections.${key}.id`, message: 'id required' });
     }
+    // AC-B1 — reject unknown cta_code anywhere in props
+    walkCtaCodes(node.props, `sections.${key}.props`, issues);
+    // AC-UI2 — icon allowlist on platform grids
+    if (node.type === 'module_grid' || node.type === 'industry_strip') {
+      const items = Array.isArray(node.props.items) ? node.props.items : [];
+      items.forEach((item, i) => {
+        if (!item || typeof item !== 'object') return;
+        const icon = (item as { icon?: unknown }).icon;
+        if (icon != null && icon !== '' && !ICON_SET.has(String(icon))) {
+          issues.push({
+            path: `sections.${key}.props.items[${i}].icon`,
+            message: `icon not in allowlist: ${String(icon)}`,
+          });
+        }
+      });
+    }
   }
   return issues;
+}
+
+/**
+ * Drop announce_bar sections whose ends_at is in the past (Asia/Ho_Chi_Minh wall clock).
+ * AC-B9 — used on public Platform CMS GET.
+ */
+export function filterExpiredAnnounceBars(
+  content: ContentV1,
+  now: Date = new Date(),
+): ContentV1 {
+  const order: string[] = [];
+  const sections = { ...content.sections };
+  for (const key of content.section_order) {
+    const node = sections[key];
+    if (!node) continue;
+    if (node.type === 'announce_bar') {
+      const ends = node.props.ends_at;
+      if (typeof ends === 'string' && ends.trim()) {
+        const endMs = Date.parse(ends);
+        if (!Number.isNaN(endMs) && endMs < now.getTime()) {
+          delete sections[key];
+          continue;
+        }
+      }
+    }
+    order.push(key);
+  }
+  return { schema_version: 1, section_order: order, sections };
 }
 
 export function assertValidContent(content: ContentV1): void {

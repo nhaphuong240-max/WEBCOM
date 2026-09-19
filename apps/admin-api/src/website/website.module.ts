@@ -8,6 +8,8 @@ import { AiGatewayClient } from '../ai/ai-gateway.client';
 import { WebsiteController } from './website.controller';
 import { WebsiteService } from './website.service';
 import { PlatformService } from './platform.service';
+import { PlatformCmsController } from './platform-cms.controller';
+import { PlatformCmsService } from './platform-cms.service';
 
 @Module({
   imports: [
@@ -17,8 +19,8 @@ import { PlatformService } from './platform.service';
     BillingModule,
     forwardRef(() => HrModule),
   ],
-  controllers: [WebsiteController],
-  providers: [WebsiteService, PlatformService, AiGatewayClient],
-  exports: [WebsiteService, PlatformService],
+  controllers: [WebsiteController, PlatformCmsController],
+  providers: [WebsiteService, PlatformService, PlatformCmsService, AiGatewayClient],
+  exports: [WebsiteService, PlatformService, PlatformCmsService],
 })
 export class WebsiteModule {}

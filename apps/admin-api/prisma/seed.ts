@@ -1,5 +1,6 @@
 import { PrismaClient } from '@prisma/client';
 import * as bcrypt from 'bcryptjs';
+import { getPlatformStarter, toLegacyFlat } from '@ptt/themes';
 
 const prisma = new PrismaClient();
 
@@ -860,6 +861,260 @@ async function main() {
     });
   }
 
+  // ─── CORP-CMS-0 — Platform CMS interim (ADR-008) ───────────
+  const platformTenantId = 'ten_platform';
+  const platformBrandId = 'brd_platform';
+  const platformSfId = 'sf_platform_webcom';
+  const platformEditorId = 'usr_platform_editor';
+  const platformApproverId = 'usr_platform_approver';
+  const platformPasswordHash = await bcrypt.hash('PlatformCms1!', 10);
+
+  await prisma.tenant.upsert({
+    where: { id: platformTenantId },
+    create: {
+      id: platformTenantId,
+      name: 'WebCom Platform',
+      slug: 'webcom-platform',
+      status: 'active',
+    },
+    update: { name: 'WebCom Platform', status: 'active' },
+  });
+
+  await prisma.brand.upsert({
+    where: { tenantId_code: { tenantId: platformTenantId, code: 'WEBCOM' } },
+    create: {
+      id: platformBrandId,
+      tenantId: platformTenantId,
+      name: 'WebCom',
+      code: 'WEBCOM',
+    },
+    update: { name: 'WebCom' },
+  });
+
+  await prisma.user.upsert({
+    where: { tenantId_email: { tenantId: platformTenantId, email: 'editor@webcom.local' } },
+    create: {
+      id: platformEditorId,
+      tenantId: platformTenantId,
+      email: 'editor@webcom.local',
+      name: 'Platform CMS Editor',
+      roles: ['platform_cms_editor'],
+      status: 'active',
+      passwordHash: platformPasswordHash,
+      activatedAt: new Date(),
+    },
+    update: {
+      roles: ['platform_cms_editor'],
+      status: 'active',
+      passwordHash: platformPasswordHash,
+    },
+  });
+  await prisma.userRoleAssignment.deleteMany({
+    where: { userId: platformEditorId, tenantId: platformTenantId },
+  });
+  await prisma.userRoleAssignment.create({
+    data: {
+      id: 'ura_platform_editor',
+      tenantId: platformTenantId,
+      userId: platformEditorId,
+      roleCode: 'platform_cms_editor',
+      scope: { type: 'tenant' },
+    },
+  });
+
+  await prisma.user.upsert({
+    where: { tenantId_email: { tenantId: platformTenantId, email: 'approver@webcom.local' } },
+    create: {
+      id: platformApproverId,
+      tenantId: platformTenantId,
+      email: 'approver@webcom.local',
+      name: 'Platform CMS Approver',
+      roles: ['platform_cms_approver'],
+      status: 'active',
+      passwordHash: platformPasswordHash,
+      activatedAt: new Date(),
+    },
+    update: {
+      roles: ['platform_cms_approver'],
+      status: 'active',
+      passwordHash: platformPasswordHash,
+    },
+  });
+  await prisma.userRoleAssignment.deleteMany({
+    where: { userId: platformApproverId, tenantId: platformTenantId },
+  });
+  await prisma.userRoleAssignment.create({
+    data: {
+      id: 'ura_platform_approver',
+      tenantId: platformTenantId,
+      userId: platformApproverId,
+      roleCode: 'platform_cms_approver',
+      scope: { type: 'tenant' },
+    },
+  });
+
+  await prisma.storefront.upsert({
+    where: { tenantId_slug: { tenantId: platformTenantId, slug: 'platform-webcom' } },
+    create: {
+      id: platformSfId,
+      tenantId: platformTenantId,
+      brandId: platformBrandId,
+      name: 'WebCom Corporate (interim PlatformSite)',
+      slug: 'platform-webcom',
+      status: 'published',
+      primaryDomain: 'webecom.ngoinhahomnay.vn',
+      seoTitle: 'WebCom · Website Commerce Platform',
+      seoDescription: 'Platform CMS interim storefront — ADR-008',
+    },
+    update: {
+      name: 'WebCom Corporate (interim PlatformSite)',
+      status: 'published',
+      primaryDomain: 'webecom.ngoinhahomnay.vn',
+      seoTitle: 'WebCom · Website Commerce Platform',
+      seoDescription: 'Platform CMS interim storefront — ADR-008',
+    },
+  });
+
+  const homeStarter = getPlatformStarter('gtm_home')!;
+  const pricingStarter = getPlatformStarter('gtm_pricing')!;
+  const catalogStarter = getPlatformStarter('gtm_catalog')!;
+
+  const platformHomeContent = {
+    ...toLegacyFlat(homeStarter.content),
+    schema_version: 1,
+    section_order: homeStarter.content.section_order,
+    sections: homeStarter.content.sections,
+  };
+
+  const platformPricingContent = {
+    ...toLegacyFlat(pricingStarter.content),
+    schema_version: 1,
+    section_order: pricingStarter.content.section_order,
+    sections: pricingStarter.content.sections,
+  };
+
+  const platformCatalogContent = {
+    ...toLegacyFlat(catalogStarter.content),
+    schema_version: 1,
+    section_order: catalogStarter.content.section_order,
+    sections: catalogStarter.content.sections,
+  };
+
+  await prisma.page.upsert({
+    where: { storefrontId_slug: { storefrontId: platformSfId, slug: 'home' } },
+    create: {
+      id: 'pg_platform_home',
+      tenantId: platformTenantId,
+      storefrontId: platformSfId,
+      slug: 'home',
+      title: 'WebCom Homepage',
+      templateKey: 'gtm_home',
+      status: 'published',
+    },
+    update: { title: 'WebCom Homepage', templateKey: 'gtm_home', status: 'published' },
+  });
+  await prisma.pageVersion.upsert({
+    where: { pageId_version: { pageId: 'pg_platform_home', version: 1 } },
+    create: {
+      id: 'pgv_platform_home_1',
+      tenantId: platformTenantId,
+      pageId: 'pg_platform_home',
+      version: 1,
+      status: 'published',
+      content: platformHomeContent,
+      seo: {
+        title: 'WebCom · Website Commerce Platform',
+        description: 'Platform homepage stub (CORP-CMS-0)',
+      },
+    },
+    update: {
+      status: 'published',
+      content: platformHomeContent,
+      seo: {
+        title: 'WebCom · Website Commerce Platform',
+        description: 'Platform homepage stub (CORP-CMS-0)',
+      },
+    },
+  });
+
+  await prisma.page.upsert({
+    where: { storefrontId_slug: { storefrontId: platformSfId, slug: 'pricing' } },
+    create: {
+      id: 'pg_platform_pricing',
+      tenantId: platformTenantId,
+      storefrontId: platformSfId,
+      slug: 'pricing',
+      title: 'WebCom Pricing',
+      templateKey: 'gtm_pricing',
+      status: 'published',
+    },
+    update: { title: 'WebCom Pricing', templateKey: 'gtm_pricing', status: 'published' },
+  });
+  await prisma.pageVersion.upsert({
+    where: { pageId_version: { pageId: 'pg_platform_pricing', version: 1 } },
+    create: {
+      id: 'pgv_platform_pricing_1',
+      tenantId: platformTenantId,
+      pageId: 'pg_platform_pricing',
+      version: 1,
+      status: 'published',
+      content: platformPricingContent,
+      seo: {
+        title: 'Bảng giá · WebCom',
+        description: 'Pricing stub (CORP-CMS-0)',
+      },
+    },
+    update: {
+      status: 'published',
+      content: platformPricingContent,
+      seo: {
+        title: 'Bảng giá · WebCom',
+        description: 'Pricing stub (CORP-CMS-0)',
+      },
+    },
+  });
+
+  await prisma.page.upsert({
+    where: { storefrontId_slug: { storefrontId: platformSfId, slug: 'templates' } },
+    create: {
+      id: 'pg_platform_templates',
+      tenantId: platformTenantId,
+      storefrontId: platformSfId,
+      slug: 'templates',
+      title: 'Templates Catalog Intro',
+      templateKey: 'gtm_catalog',
+      status: 'published',
+    },
+    update: {
+      title: 'Templates Catalog Intro',
+      templateKey: 'gtm_catalog',
+      status: 'published',
+    },
+  });
+  await prisma.pageVersion.upsert({
+    where: { pageId_version: { pageId: 'pg_platform_templates', version: 1 } },
+    create: {
+      id: 'pgv_platform_templates_1',
+      tenantId: platformTenantId,
+      pageId: 'pg_platform_templates',
+      version: 1,
+      status: 'published',
+      content: platformCatalogContent,
+      seo: {
+        title: 'Templates · WebCom',
+        description: 'Catalog intro (CORP-CMS-1)',
+      },
+    },
+    update: {
+      status: 'published',
+      content: platformCatalogContent,
+      seo: {
+        title: 'Templates · WebCom',
+        description: 'Catalog intro (CORP-CMS-1)',
+      },
+    },
+  });
+
   // eslint-disable-next-line no-console
   console.log(
     JSON.stringify(
@@ -882,6 +1137,14 @@ async function main() {
         discount_percent: 10,
         unit_price_after_discount: 413100,
         on_hand: 100,
+        platform_cms: {
+          tenant_id: platformTenantId,
+          storefront_id: platformSfId,
+          site_key: 'webcom_apex',
+          editor_user_id: platformEditorId,
+          approver_user_id: platformApproverId,
+          pages: ['home', 'pricing', 'templates'],
+        },
       },
       null,
       2,

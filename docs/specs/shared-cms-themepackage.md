@@ -23,7 +23,7 @@
 - Drag-drop canvas đầy đủ parity Webflow (CMS-2 đủ reorder + inspector; full polish sau).
 - Blog CMS đầy đủ + Creator Portal upload (CMS-3+ / T4).
 - 400 theme mỏng; arbitrary script ngoài app-block allowlist.
-- Corporate GTM CMS (FR-CORPWEB) — tách khỏi merchant CMS này.
+- Corporate GTM CMS (FR-CORPWEB) — xem [`webcom-corporate-cms.md`](./webcom-corporate-cms.md) (tái dùng engine này, không fork).
 
 ---
 

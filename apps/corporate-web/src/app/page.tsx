@@ -1,7 +1,9 @@
 import Link from 'next/link';
 import { HeroConcierge, LeadForm } from '../components/HeroConcierge';
 import { TemplateProductCard } from '../components/TemplateProductCard';
+import { SectionStackPlatform } from '../components/platform/SectionStackPlatform';
 import { fetchTemplates } from '../lib/marketplace';
+import { fetchPlatformPage, isPlatformCmsEnabled } from '../lib/platform-cms';
 
 export const dynamic = 'force-dynamic';
 
@@ -36,7 +38,19 @@ const CATEGORY_TILES = [
   },
 ];
 
-export default async function CorporateHome() {
+export default async function CorporateHome({
+  searchParams,
+}: {
+  searchParams?: Promise<{ preview?: string }>;
+}) {
+  const sp = (await searchParams) || {};
+  const platformPage = await fetchPlatformPage('home', {
+    previewToken: sp.preview,
+  });
+  const useCms =
+    Boolean(platformPage?.content_v1?.section_order?.length) &&
+    (isPlatformCmsEnabled() || Boolean(sp.preview));
+
   const templates = await fetchTemplates({ sort: 'cvr' });
   const hot = templates.slice(0, 5);
   const best = templates.slice(0, 5);
@@ -44,23 +58,28 @@ export default async function CorporateHome() {
 
   return (
     <main className="tm-home">
-      <HeroConcierge />
-
-      <section className="tm-section" id="categories">
-        <div className="tm-section-head">
-          <h2>Website Templates, Theme & Playbook Marketplace</h2>
-          <p>Catalog công khai — demo live, trial self-serve, mua license khi sẵn sàng.</p>
-        </div>
-        <div className="tm-cat-tiles">
-          {CATEGORY_TILES.map((c) => (
-            <Link key={c.title} href={c.href} className={`tm-cat-tile tone-${c.tone}`}>
-              <h3>{c.title}</h3>
-              <p>{c.body}</p>
-              <span>{c.count}</span>
-            </Link>
-          ))}
-        </div>
-      </section>
+      {useCms && platformPage?.content_v1 ? (
+        <SectionStackPlatform content={platformPage.content_v1} />
+      ) : (
+        <>
+          <HeroConcierge />
+          <section className="tm-section" id="categories">
+            <div className="tm-section-head">
+              <h2>Website Templates, Theme & Playbook Marketplace</h2>
+              <p>Catalog công khai — demo live, trial self-serve, mua license khi sẵn sàng.</p>
+            </div>
+            <div className="tm-cat-tiles">
+              {CATEGORY_TILES.map((c) => (
+                <Link key={c.title} href={c.href} className={`tm-cat-tile tone-${c.tone}`}>
+                  <h3>{c.title}</h3>
+                  <p>{c.body}</p>
+                  <span>{c.count}</span>
+                </Link>
+              ))}
+            </div>
+          </section>
+        </>
+      )}
 
       <section className="tm-section tm-section-muted" id="hot">
         <div className="tm-section-head row">
@@ -97,27 +116,29 @@ export default async function CorporateHome() {
         </div>
       </section>
 
-      <section className="tm-unlimited">
-        <div className="tm-unlimited-inner">
-          <div>
-            <p className="tm-hero-eyebrow">WebCom Unlimited</p>
-            <h2>Một gói — dùng cho mọi dự án sáng tạo</h2>
-            <ul>
-              <li>Unlimited projects</li>
-              <li>Product support</li>
-              <li>Theme mới mỗi tuần</li>
-              <li>Trial trước paywall · VietQR</li>
-            </ul>
-            <Link href="/pricing" className="tm-btn tm-btn-primary">
-              Xem Unlimited
-            </Link>
+      {!useCms ? (
+        <section className="tm-unlimited">
+          <div className="tm-unlimited-inner">
+            <div>
+              <p className="tm-hero-eyebrow">WebCom Unlimited</p>
+              <h2>Một gói — dùng cho mọi dự án sáng tạo</h2>
+              <ul>
+                <li>Unlimited projects</li>
+                <li>Product support</li>
+                <li>Theme mới mỗi tuần</li>
+                <li>Trial trước paywall · VietQR</li>
+              </ul>
+              <Link href="/pricing" className="tm-btn tm-btn-primary">
+                Xem Unlimited
+              </Link>
+            </div>
+            <div className="tm-unlimited-card" aria-hidden>
+              <div className="n">∞</div>
+              <div className="t">Downloads</div>
+            </div>
           </div>
-          <div className="tm-unlimited-card" aria-hidden>
-            <div className="n">∞</div>
-            <div className="t">Downloads</div>
-          </div>
-        </div>
-      </section>
+        </section>
+      ) : null}
 
       <section className="tm-section tm-section-muted" id="featured">
         <div className="tm-section-head row">
@@ -136,19 +157,7 @@ export default async function CorporateHome() {
         </div>
       </section>
 
-      <section className="tm-section" id="products-day">
-        <div className="tm-section-head">
-          <h2>Products of the Day</h2>
-          <p>Gợi ý hôm nay: theme + playbook sẵn sàng trial.</p>
-        </div>
-        <div className="tm-product-rail">
-          {templates.slice(0, 4).map((t) => (
-            <TemplateProductCard key={`d-${t.id}`} t={t} />
-          ))}
-        </div>
-      </section>
-
-      <section className="tm-cta-band">
+      <section className="tm-cta-band" id="lead">
         <h2>Sẵn sàng mở storefront?</h2>
         <p>Trial miễn phí trước — mua theme khi đã chạy được. Hoặc để sales đồng hành.</p>
         <div className="tm-cta-actions">
@@ -159,7 +168,7 @@ export default async function CorporateHome() {
             Xem templates
           </Link>
         </div>
-        <LeadForm />
+        <LeadForm ctaCode="cta_book_demo" landingSlug="/" />
       </section>
     </main>
   );

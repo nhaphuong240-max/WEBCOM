@@ -1062,7 +1062,8 @@ Browse /templates → Demo (demo. host) → Dùng thử (/console onboarding)
 | **P2** | Self-serve trial tenant/storefront + deep-link onboarding | **shipped** — `POST /api/v1/public/trial/signup` · `/trial` · console session JWT |
 | **P3** | Theme license checkout (VietQR/TRANSFER) tách khỏi cart hàng hóa | **shipped** — `PlatformInvoice` + `ThemeLicense` · simulate-paid · gate install |
 
-**Won't (phase 1):** subscription Starter/Growth; CMS corporate đầy đủ FR-CORPWEB; marketplace 400 theme.
+**Won't (phase 1):** subscription Starter/Growth; marketplace 400 theme.  
+**Platform CMS (FR-CORPWEB):** Spec [`docs/specs/webcom-corporate-cms.md`](../specs/webcom-corporate-cms.md) · Plan [`docs/specs/webcom-corporate-cms-implementation-plan.md`](../specs/webcom-corporate-cms-implementation-plan.md) — kickoff sau Shared CMS GA (đã đạt); chưa code.
 
 **SRS:** FR-CORPWEB · FR-WCP-002 · mockup `01-corporate-gtm.html`.
 
@@ -1129,6 +1130,26 @@ CMS per-template · fork editor Enterprise · arbitrary script · 400 theme mỏ
 **Kickoff:** Day 0 audit + CMS-0 (C0-1…C0-11) — xem implementation plan §3 · §4 · §15.
 
 **SRS:** FR-WCP-004…007 · FR-WCP-002 · mockup 05/06/07.
+
+---
+
+# 9r. WebCom Corporate CMS — Platform GTM (spec 2026-09-20)
+
+> **Spec:** [`docs/specs/webcom-corporate-cms.md`](../specs/webcom-corporate-cms.md)  
+> **Plan:** [`docs/specs/webcom-corporate-cms-implementation-plan.md`](../specs/webcom-corporate-cms-implementation-plan.md)
+
+**Vấn đề:** Apex `webecom.ngoinhahomnay.vn` (`corporate-web`) đang hardcode React — marketing không edit được qua CMS. Shared CMS GA chỉ cover **merchant storefront**.
+
+**Hướng:** Tái dùng ContentV1 + Builder; thêm **PlatformSite** owner; runtime corporate đọc published pages; `/templates` hybrid (intro CMS + catalog API). Spec **v1.2** = nghiệp vụ GTM chuyên sâu (§3: persona, funnel KPI, CTA taxonomy, lead SLA, pricing 3 lớp, compliance) + UI hiện đại (§9) + AC-B1…B10.
+
+| Wave | Scope | Status |
+|---|---|---|
+| CORP-CMS-0 | PlatformSite · API · RBAC · flag fallback | **Shipped** — ADR-008 · interim SF · API/RBAC/seed/e2e-0 |
+| CORP-CMS-1 | Content MVP · nghiệp vụ · UI runtime | **Shipped local** — registry/CTA/SectionStack/admin/e2e-1 |
+| CORP-CMS-2 | Solutions · Case · Industry · Nav · **GA** | Plan v2.0 |
+| CORP-CMS-3 | Resources gated · Tour · ROI · i18n | Backlog |
+
+**Ước lượng:** 6–8 tuần tới GA. Kickoff: Day 0 audit + chốt Q1–Q8 (defaults trong plan §2).
 
 ---
 

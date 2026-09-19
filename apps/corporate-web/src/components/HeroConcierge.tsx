@@ -123,13 +123,24 @@ export function HeroConcierge() {
   );
 }
 
-export function LeadForm() {
+export function LeadForm({
+  ctaCode = 'cta_book_demo',
+  landingSlug = '/',
+}: {
+  ctaCode?: string;
+  landingSlug?: string;
+}) {
   const API = process.env.NEXT_PUBLIC_ADMIN_API_URL?.replace(/\/$/, '') || 'http://127.0.0.1:3001';
   const [msg, setMsg] = useState('');
   const [busy, setBusy] = useState(false);
+  const [consent, setConsent] = useState(false);
 
   async function onSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
+    if (!consent) {
+      setMsg('Vui lòng đồng ý điều khoản / privacy để gửi lead.');
+      return;
+    }
     setBusy(true);
     setMsg('');
     const fd = new FormData(e.currentTarget);
@@ -138,7 +149,7 @@ export function LeadForm() {
         method: 'POST',
         headers: {
           'content-type': 'application/json',
-          'x-tenant-id': process.env.NEXT_PUBLIC_TENANT_ID || 'ten_aura',
+          'x-tenant-id': process.env.NEXT_PUBLIC_TENANT_ID || 'ten_platform',
         },
         body: JSON.stringify({
           name: fd.get('name'),
@@ -147,12 +158,16 @@ export function LeadForm() {
           company: fd.get('company'),
           channel: 'website',
           message: fd.get('message'),
+          cta_code: ctaCode,
+          landing_slug: landingSlug,
+          consent: true,
         }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data?.error?.message || 'Failed');
+      if (!res.ok) throw new Error(data?.error?.message || data?.message || 'Failed');
       setMsg('Đã gửi — sales sẽ liên hệ trong giờ làm việc.');
       e.currentTarget.reset();
+      setConsent(false);
     } catch (err) {
       setMsg(err instanceof Error ? err.message : 'Lỗi');
     } finally {
@@ -161,14 +176,23 @@ export function LeadForm() {
   }
 
   return (
-    <form className="tm-lead" onSubmit={onSubmit} id="lead">
+    <form className="tm-lead" onSubmit={onSubmit} id="lead-form">
       <div className="tm-lead-title">Đặt demo với sales</div>
       <input name="name" placeholder="Họ tên" required />
       <input name="email" type="email" placeholder="Email công việc" required />
       <input name="phone" placeholder="SĐT" />
       <input name="company" placeholder="Công ty" />
       <input name="message" placeholder="Nhu cầu" />
-      <button type="submit" className="tm-btn tm-btn-primary" disabled={busy}>
+      <label className="tm-lead-consent">
+        <input
+          type="checkbox"
+          checked={consent}
+          onChange={(e) => setConsent(e.target.checked)}
+          required
+        />
+        Tôi đồng ý để WebCom liên hệ theo thông tin đã gửi (privacy).
+      </label>
+      <button type="submit" className="tm-btn tm-btn-primary" disabled={busy || !consent}>
         {busy ? 'Đang gửi…' : 'Gửi lead'}
       </button>
       {msg ? <p className="tm-lead-msg">{msg}</p> : null}

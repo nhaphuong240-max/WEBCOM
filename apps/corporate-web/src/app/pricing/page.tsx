@@ -1,8 +1,13 @@
 import Link from 'next/link';
+import { SectionStackPlatform } from '../../components/platform/SectionStackPlatform';
+import { LeadForm } from '../../components/HeroConcierge';
+import { fetchPlatformPage, isPlatformCmsEnabled } from '../../lib/platform-cms';
 
-export default function PricingPage() {
+export const dynamic = 'force-dynamic';
+
+function LegacyPricing() {
   return (
-    <main className="corp-page">
+    <>
       <div className="corp-page-h">
         <div className="corp-eyebrow">Pricing</div>
         <h1>Gói phù hợp từng giai đoạn</h1>
@@ -15,25 +20,29 @@ export default function PricingPage() {
       <div className="corp-price-grid">
         {[
           {
-            name: 'Starter',
-            price: 'Liên hệ',
+            name: 'Theme license',
+            price: 'One-time',
             featured: false,
-            items: ['1 storefront', 'Aura Lite / free themes', 'Go-live gate & rollback'],
+            layer: 'theme',
+            items: ['Mua trên marketplace', 'Install storefront', 'Cập nhật theo license'],
           },
           {
-            name: 'Growth',
+            name: 'Platform Growth',
             price: 'Liên hệ',
             featured: true,
+            layer: 'platform',
             items: ['Analytics W4', 'Experiments', 'CRM / RFM / loyalty', 'Agency preview'],
           },
           {
-            name: 'Platform',
+            name: 'Platform Enterprise',
             price: 'Liên hệ',
             featured: false,
+            layer: 'platform',
             items: ['Headless API', 'SLA 99.9%', 'DR runbooks', 'Dedicated success'],
           },
         ].map((p) => (
           <div key={p.name} className={`corp-price-card${p.featured ? ' featured' : ''}`}>
+            <div className="pcms-price-layer">{p.layer}</div>
             <h2>{p.name}</h2>
             <div className="price">{p.price}</div>
             <ul>
@@ -42,7 +51,7 @@ export default function PricingPage() {
               ))}
             </ul>
             <Link
-              href="/#demo"
+              href="/#lead"
               className={`corp-btn ${p.featured ? 'corp-btn-primary' : 'corp-btn-ghost'}`}
               style={{ marginTop: 'auto', alignSelf: 'flex-start' }}
             >
@@ -59,6 +68,31 @@ export default function PricingPage() {
         </Link>
         .
       </p>
+    </>
+  );
+}
+
+export default async function PricingPage({
+  searchParams,
+}: {
+  searchParams?: Promise<{ preview?: string }>;
+}) {
+  const sp = (await searchParams) || {};
+  const platformPage = await fetchPlatformPage('pricing', { previewToken: sp.preview });
+  const useCms =
+    Boolean(platformPage?.content_v1?.section_order?.length) &&
+    (isPlatformCmsEnabled() || Boolean(sp.preview));
+
+  return (
+    <main className="corp-page">
+      {useCms && platformPage?.content_v1 ? (
+        <SectionStackPlatform content={platformPage.content_v1} />
+      ) : (
+        <LegacyPricing />
+      )}
+      <div style={{ marginTop: 48 }} id="lead">
+        <LeadForm ctaCode="cta_book_demo" landingSlug="/pricing" />
+      </div>
     </main>
   );
 }

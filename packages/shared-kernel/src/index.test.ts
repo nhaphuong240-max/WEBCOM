@@ -71,6 +71,8 @@ describe('HR-0 permission catalog', () => {
       'cashier',
       'website_editor',
       'website_publisher',
+      'platform_cms_editor',
+      'platform_cms_approver',
       'analyst',
       'readonly',
     ]) {

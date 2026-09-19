@@ -122,9 +122,15 @@ export class WebsiteController {
         company: z.string().optional(),
         channel: z.string().optional(),
         message: z.string().optional(),
+        cta_code: z.string().optional(),
+        landing_slug: z.string().optional(),
+        consent: z.boolean().optional(),
       })
       .safeParse(body);
     if (!parsed.success) throw AppError.validation('Invalid lead', parsed.error.flatten());
+    if (parsed.data.consent === false) {
+      throw AppError.validation('Consent required');
+    }
     return this.website.createLead(ctx.tenantId, parsed.data);
   }
 
@@ -251,8 +257,8 @@ export class WebsiteController {
 
   @Get('v1/admin/builder/sections')
   @UseGuards(TenantAuthGuard)
-  sections() {
-    return this.platform.sectionLibrary();
+  sections(@Query('scope') scope?: string) {
+    return this.platform.sectionLibrary(scope);
   }
 
   @Get('v1/admin/storefronts/:id/pages')

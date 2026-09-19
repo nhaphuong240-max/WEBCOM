@@ -66,6 +66,52 @@ function defaultProps(type: string): Record<string, unknown> {
       return { url: 'https://www.youtube.com/embed/dQw4w9WgXcQ', caption: '' };
     case 'product_grid':
       return { limit: 8, sort: 'manual', columns: 2 };
+    case 'announce_bar':
+      return {
+        text: 'Thông báo mới',
+        cta_label: 'Xem',
+        href: '/',
+        cta_code: 'cta_templates',
+        tone: 'info',
+        ends_at: null,
+      };
+    case 'platform_hero':
+      return {
+        headline: 'Headline GTM',
+        sub: 'Mô tả ngắn',
+        primary_cta: { label: 'Xem templates', href: '/templates', cta_code: 'cta_templates' },
+        search_enabled: false,
+      };
+    case 'social_proof':
+      return { items: [{ n: '30+', label: 'Themes' }] };
+    case 'module_grid':
+      return {
+        items: [{ title: 'Module', body: 'Mô tả', href: '/templates', icon: 'cart' }],
+      };
+    case 'industry_strip':
+      return {
+        items: [{ key: 'beauty', label: 'Mỹ phẩm', href: '/templates?industry=beauty', icon: 'beauty' }],
+      };
+    case 'pricing_table':
+      return {
+        plans: [
+          {
+            name: 'Theme',
+            price: 'One-time',
+            features: ['License'],
+            layer: 'theme',
+            cta: { label: 'Xem', href: '/templates', cta_code: 'cta_templates' },
+          },
+        ],
+      };
+    case 'catalog_intro':
+      return { headline: 'Template Marketplace', body: 'Intro catalog' };
+    case 'cta_band':
+      return {
+        headline: 'CTA',
+        body: '',
+        cta: { label: 'Đặt demo', href: '/#lead', cta_code: 'cta_book_demo' },
+      };
     default:
       return {};
   }

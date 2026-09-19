@@ -396,8 +396,19 @@ export class WebsiteService {
       company?: string;
       channel?: string;
       message?: string;
+      cta_code?: string;
+      landing_slug?: string;
+      consent?: boolean;
     },
   ) {
+    const meta = [
+      input.cta_code ? `cta_code=${input.cta_code}` : null,
+      input.landing_slug ? `landing=${input.landing_slug}` : null,
+      input.consent ? 'consent=1' : null,
+    ]
+      .filter(Boolean)
+      .join(' ');
+    const message = [meta, input.message ?? ''].filter(Boolean).join('\n').trim();
     const lead = await this.prisma.db.lead.create({
       data: {
         id: createId('lead'),
@@ -407,13 +418,18 @@ export class WebsiteService {
         phone: input.phone,
         company: input.company,
         channel: input.channel ?? 'corporate',
-        message: input.message ?? '',
+        message,
       },
     });
-    // Notify stub — log for sales
     // eslint-disable-next-line no-console
-    console.log('[lead.notify]', { id: lead.id, email: lead.email, channel: lead.channel });
-    return { id: lead.id, status: lead.status };
+    console.log('[lead.notify]', {
+      id: lead.id,
+      email: lead.email,
+      channel: lead.channel,
+      cta_code: input.cta_code,
+      landing_slug: input.landing_slug,
+    });
+    return { id: lead.id, status: lead.status, cta_code: input.cta_code || null };
   }
 
   // ─── A1 Domain connect ─────────────────────────────────────
