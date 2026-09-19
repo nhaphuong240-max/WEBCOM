@@ -4,7 +4,7 @@ import { revalidatePath } from 'next/cache';
 
 export const dynamic = 'force-dynamic';
 
-export const HRM_PAYROLL_TAX_DISCLAIMER =
+const HRM_PAYROLL_TAX_DISCLAIMER =
   'Công thức BHXH/PIT chỉ mang tính ước tính; merchant chịu trách nhiệm cấu hình rate và tuân thủ pháp luật. WebCom không thay thế tư vấn thuế.';
 
 async function setSalary(formData: FormData) {
