@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { Be_Vietnam_Pro, Syne } from 'next/font/google';
+import { Be_Vietnam_Pro, Plus_Jakarta_Sans } from 'next/font/google';
 import '@ptt/ui/styles.css';
 import './globals.css';
 import { SiteNav, SiteFooter } from '../components/SiteChrome';
@@ -9,16 +9,17 @@ const body = Be_Vietnam_Pro({
   weight: ['400', '500', '600', '700'],
   variable: '--font-body',
 });
-const display = Syne({
-  subsets: ['latin'],
-  weight: ['700', '800'],
+
+const display = Plus_Jakarta_Sans({
+  subsets: ['latin', 'latin-ext'],
+  weight: ['600', '700', '800'],
   variable: '--font-display',
 });
 
 export const metadata: Metadata = {
-  title: 'PTT — Giải pháp bán hàng đa kênh có lãi | Commerce Intelligence OS',
+  title: 'WebCom — Template & Theme Marketplace | Commerce OS',
   description:
-    'Website Commerce + Omnichannel + CRM + AI — điều hành theo contribution margin, không chỉ GMV.',
+    'Chọn theme → demo live → trial → mua. Marketplace template bán hàng đa kênh cho Việt Nam.',
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
@@ -27,8 +28,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body
         style={
           {
-            ['--ptt-font-body' as string]: 'var(--font-body), "Be Vietnam Pro", sans-serif',
-            ['--ptt-font-display' as string]: 'var(--font-display), Syne, sans-serif',
+            ['--ptt-font-body' as string]:
+              'var(--font-body), "Be Vietnam Pro", system-ui, sans-serif',
+            ['--ptt-font-display' as string]:
+              'var(--font-display), "Plus Jakarta Sans", system-ui, sans-serif',
           } as React.CSSProperties
         }
       >
