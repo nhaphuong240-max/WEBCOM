@@ -980,6 +980,7 @@ P6: Theme update compatibility warning blocks blind publish
 | Phụ thuộc | Owner | Cần trước |
 |---|---|---|
 | IAM / Tenant | Platform | W0 |
+| **HR (Users + Employee + Shift)** | Platform | Spec [`docs/specs/hr-iam-employee.md`](./specs/hr-iam-employee.md) · Plan [`docs/specs/hr-implementation-plan.md`](./specs/hr-implementation-plan.md) — HR-1 sau CMS GA |
 | PIM / Inventory / OMS | Commerce | W1–W2 |
 | Payment / Shipping connectors | Integrations | W2 soft · W3 GA |
 | CRM lead routing | Growth | Corporate GTM |
@@ -1103,6 +1104,11 @@ Một **Visual Builder + Page/CMS** dùng chung mọi template; template = **The
 | **CMS-3** | Section SRS · blog · saved blocks · AI · **Could:** Creator stub · reviews · page A/B | **shipped** — e2e-cms-3 · e2e-cms-3c |
 | **MKT-1** | Corporate gallery facets + `/templates/[code]` · supports · demo CTA | **shipped** — e2e-mkt-1 |
 | **CMS-GA** | Blog promote · OpenAPI/Bruno · e2e-cms-ga (P2/P3/golive) | **shipped** — cứng hóa GA |
+| **HR-0** | ADR-006 · permission/role catalog `@ptt/shared-kernel` · flags | **shipped** |
+| **HR-1** | Invite/Users/RBAC · Employee · UI `/hr/*` · e2e-hr-1 | **shipped** (code) |
+| **HR-2** | Sessions · Shift · scope OMS · PII gate | shipped (code) |
+| **HR-3** | Custom roles · dept · POS PIN · SCIM stub | shipped (code) |
+| **HRM-Pro** | HĐLĐ · công · phép · lương VN (Could) | backlog — spec §18 |
 
 ## Section MVP (CMS-0/1)
 `hero` · `collections` · `featured` · `trust` · (+ CMS-1: `rich_text`, `faq`, `cta_banner`)

@@ -1,0 +1,42 @@
+# OpenAPI — HR-1 IAM + Employee (rút gọn)
+openapi: 3.0.3
+info:
+  title: WebCom HR-1
+  version: 1.0.0
+paths:
+  /api/v1/admin/hr/catalog:
+    get:
+      summary: Permission + role templates
+      security: [{ tenantHeaders: [] }]
+  /api/v1/admin/hr/users:
+    get:
+      summary: List users
+    post: {}
+  /api/v1/admin/hr/users/invite:
+    post:
+      summary: Invite user (returns invite_token stub)
+  /api/v1/admin/hr/users/{id}/suspend:
+    post: {}
+  /api/v1/admin/hr/users/{id}/reactivate:
+    post: {}
+  /api/v1/admin/hr/users/{id}/roles:
+    post:
+      summary: Replace role assignments + scope
+  /api/v1/admin/hr/employees:
+    get: {}
+    post: {}
+  /api/v1/admin/hr/employees/{id}/link-user:
+    post: {}
+  /api/v1/public/invites/{token}:
+    get: {}
+  /api/v1/public/invites/{token}/accept:
+    post: {}
+  /api/v1/me:
+    get:
+      summary: Enriched with permissions, scopes, employee_id
+components:
+  securitySchemes:
+    tenantHeaders:
+      type: apiKey
+      in: header
+      name: x-tenant-id

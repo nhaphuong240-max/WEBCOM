@@ -10,6 +10,7 @@ export class JwtTokenService {
     storefrontId?: string;
     roles?: string[];
     name?: string;
+    sessionId?: string;
   }) {
     const secret = new TextEncoder().encode(
       process.env.JWT_SECRET ?? 'ptt-w0-dev-secret-change-me',
@@ -21,6 +22,7 @@ export class JwtTokenService {
       storefront_id: input.storefrontId,
       roles,
       name: input.name ?? 'User',
+      ...(input.sessionId ? { sid: input.sessionId } : {}),
     })
       .setProtectedHeader({ alg: 'HS256' })
       .setSubject(input.actorId)
@@ -33,12 +35,14 @@ export class JwtTokenService {
       access_token: token,
       token_type: 'Bearer' as const,
       expires_in: 43200,
+      session_id: input.sessionId ?? null,
       claims: {
         tenant_id: input.tenantId,
         actor_id: input.actorId,
         brand_id: input.brandId,
         storefront_id: input.storefrontId,
         roles,
+        sid: input.sessionId ?? null,
       },
     };
   }

@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { createHash } from 'crypto';
 import { AppError, createId } from '@ptt/shared-kernel';
 import * as bcrypt from 'bcryptjs';
 import { PrismaService } from '../prisma/prisma.service';
@@ -94,6 +95,16 @@ export class TrialService {
           passwordHash,
           roles: ['admin'],
           status: 'active',
+          activatedAt: new Date(),
+        },
+      });
+      await tx.userRoleAssignment.create({
+        data: {
+          id: createId('ura'),
+          tenantId,
+          userId,
+          roleCode: 'admin',
+          scope: { type: 'tenant' },
         },
       });
       await tx.storefront.create({
@@ -177,40 +188,111 @@ export class TrialService {
     };
   }
 
-  async login(input: { email: string; password: string }) {
+  async login(input: {
+    email: string;
+    password: string;
+    ip?: string;
+    userAgent?: string;
+  }) {
     const email = input.email.trim().toLowerCase();
     const user = await this.prisma.db.user.findFirst({
       where: { email, status: 'active' },
       orderBy: { createdAt: 'desc' },
     });
-    if (!user?.passwordHash) throw AppError.unauthorized('Invalid credentials');
-    const ok = await bcrypt.compare(input.password, user.passwordHash);
-    if (!ok) throw AppError.unauthorized('Invalid credentials');
+
+    const fail = async (reason: string) => {
+      await this.prisma.db.loginEvent.create({
+        data: {
+          id: createId('lge'),
+          tenantId: user?.tenantId || null,
+          userId: user?.id || null,
+          email,
+          success: false,
+          reason,
+          ip: input.ip || null,
+          userAgent: input.userAgent || null,
+        },
+      });
+      throw AppError.unauthorized('Invalid credentials');
+    };
+
+    if (!user?.passwordHash) await fail('no_password');
+    const ok = await bcrypt.compare(input.password, user!.passwordHash!);
+    if (!ok) await fail('bad_password');
+
+    if (user!.mfaEnabled && process.env.FEATURE_HR_MFA === 'true') {
+      // stub: production would require TOTP; HR-2 only records flag
+    }
+
+    await this.prisma.db.user.update({
+      where: { id: user!.id },
+      data: { lastLoginAt: new Date() },
+    });
+
+    const assignments = await this.prisma.db.userRoleAssignment.findMany({
+      where: { userId: user!.id, tenantId: user!.tenantId },
+    });
+    const roles = assignments.length
+      ? assignments.map((a) => a.roleCode)
+      : user!.roles.length
+        ? user!.roles
+        : ['admin'];
 
     const sf = await this.prisma.db.storefront.findFirst({
-      where: { tenantId: user.tenantId },
+      where: { tenantId: user!.tenantId },
       orderBy: { createdAt: 'asc' },
     });
     const brand = await this.prisma.db.brand.findFirst({
-      where: { tenantId: user.tenantId },
+      where: { tenantId: user!.tenantId },
       orderBy: { createdAt: 'asc' },
     });
 
+    const sessionId = createId('uss');
+    await this.prisma.db.userSession.create({
+      data: {
+        id: sessionId,
+        tenantId: user!.tenantId,
+        userId: user!.id,
+        ip: input.ip || null,
+        userAgent: input.userAgent || null,
+      },
+    });
+
     const token = await this.jwt.mint({
-      tenantId: user.tenantId,
-      actorId: user.id,
+      tenantId: user!.tenantId,
+      actorId: user!.id,
       brandId: brand?.id || sf?.brandId,
       storefrontId: sf?.id,
-      roles: user.roles.length ? user.roles : ['admin'],
-      name: user.name,
+      roles,
+      name: user!.name,
+      sessionId,
+    });
+
+    await this.prisma.db.userSession.update({
+      where: { id: sessionId },
+      data: {
+        tokenHash: createHash('sha256').update(token.access_token).digest('hex'),
+      },
+    });
+
+    await this.prisma.db.loginEvent.create({
+      data: {
+        id: createId('lge'),
+        tenantId: user!.tenantId,
+        userId: user!.id,
+        email,
+        success: true,
+        ip: input.ip || null,
+        userAgent: input.userAgent || null,
+      },
     });
 
     return {
       ...token,
-      tenant_id: user.tenantId,
+      tenant_id: user!.tenantId,
       brand_id: brand?.id || sf?.brandId || null,
       storefront_id: sf?.id || null,
-      user_id: user.id,
+      user_id: user!.id,
       redirect_url: '/console/auth/callback',
       onboarding_path: '/console/website/onboarding',
     };

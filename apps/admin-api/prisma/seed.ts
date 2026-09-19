@@ -4,6 +4,8 @@ const prisma = new PrismaClient();
 
 /** Seed AURA Beauty — matches mockup 08 */
 async function main() {
+  const bcrypt = await import('bcryptjs');
+  const adminPasswordHash = await bcrypt.hash('AuraAdmin1!', 10);
   const tenantId = 'ten_aura';
   const brandId = 'brd_aura';
   const storefrontId = 'sf_aura';
@@ -32,9 +34,28 @@ async function main() {
       tenantId,
       email: 'admin@aura.local',
       name: 'AURA Admin',
-      roles: ['admin'],
+      roles: ['owner', 'admin'],
+      status: 'active',
+      passwordHash: adminPasswordHash,
+      activatedAt: new Date(),
     },
-    update: { roles: ['admin'] },
+    update: {
+      roles: ['owner', 'admin'],
+      status: 'active',
+      passwordHash: adminPasswordHash,
+    },
+  });
+
+  // HR-1 role assignments for owner
+  await prisma.userRoleAssignment.deleteMany({ where: { userId: adminId, tenantId } });
+  await prisma.userRoleAssignment.create({
+    data: {
+      id: 'ura_aura_owner',
+      tenantId,
+      userId: adminId,
+      roleCode: 'owner',
+      scope: { type: 'tenant' },
+    },
   });
 
   await prisma.storefront.upsert({

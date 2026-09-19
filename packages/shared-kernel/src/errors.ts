@@ -34,6 +34,14 @@ export class AppError extends Error {
     return new AppError('FORBIDDEN', message, 403);
   }
 
+  /** HR / RBAC — thiếu permission cụ thể (ADR-006). */
+  static forbiddenPermission(permission: string, message?: string): AppError {
+    return new AppError('FORBIDDEN', message || `Missing permission: ${permission}`, 403, {
+      reason: 'FORBIDDEN_PERMISSION',
+      permission,
+    });
+  }
+
   static notFound(message = 'Not found'): AppError {
     return new AppError('NOT_FOUND', message, 404);
   }

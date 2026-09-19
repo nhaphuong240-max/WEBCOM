@@ -1,0 +1,36 @@
+# OpenAPI — HR-3 Custom roles · department · POS PIN · SCIM stub
+openapi: 3.0.3
+info:
+  title: WebCom HR-3
+  version: 1.0.0
+paths:
+  /api/v1/admin/hr/roles:
+    get:
+      summary: List custom tenant roles
+    post:
+      summary: Create custom role (no system code override)
+  /api/v1/admin/hr/roles/{id}:
+    patch: {}
+    delete:
+      summary: Delete if not assigned
+  /api/v1/admin/hr/catalog:
+    get:
+      summary: System + custom roles
+  /api/v1/admin/hr/employees:
+    get:
+      summary: Filter by department
+  /api/v1/admin/hr/employees/{id}/pos-pin:
+    post:
+      summary: Set POS PIN (4–8 digits, bcrypt)
+  /api/v1/admin/hr/employees/{id}/pos-pin/verify:
+    post: {}
+  /api/scim/v2/Users:
+    get:
+      summary: SCIM stub list users
+    post:
+      summary: SCIM stub create → invite
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer

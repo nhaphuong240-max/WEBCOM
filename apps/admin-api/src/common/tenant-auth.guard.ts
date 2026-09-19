@@ -6,6 +6,7 @@ import {
 } from '@nestjs/common';
 import { CONTEXT_HEADERS, AppError, type RequestContext, createId } from '@ptt/shared-kernel';
 import { jwtVerify } from 'jose';
+import { PrismaService } from '../prisma/prisma.service';
 
 type AuthedRequest = {
   headers: Record<string, string | string[] | undefined>;
@@ -19,6 +20,8 @@ function header(req: AuthedRequest, name: string): string | undefined {
 
 @Injectable()
 export class TenantAuthGuard implements CanActivate {
+  constructor(private readonly prisma: PrismaService) {}
+
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const req = context.switchToHttp().getRequest<AuthedRequest>();
     const correlationId =
@@ -32,6 +35,7 @@ export class TenantAuthGuard implements CanActivate {
     let actorId = header(req, CONTEXT_HEADERS.actorId) ?? 'anonymous';
     let brandId = header(req, CONTEXT_HEADERS.brandId);
     let roles: string[] = ['viewer'];
+    let sessionId: string | undefined;
 
     if (auth?.startsWith('Bearer ')) {
       const token = auth.slice('Bearer '.length);
@@ -46,10 +50,23 @@ export class TenantAuthGuard implements CanActivate {
         actorId = (payload.sub as string) || actorId;
         brandId = (payload.brand_id as string) || brandId;
         roles = Array.isArray(payload.roles) ? (payload.roles as string[]) : roles;
+        sessionId = typeof payload.sid === 'string' ? payload.sid : undefined;
       } catch {
         throw new UnauthorizedException(
           AppError.unauthorized('Invalid JWT').message,
         );
+      }
+
+      if (sessionId && this.prisma.isReady()) {
+        const session = await this.prisma.db.userSession.findFirst({
+          where: { id: sessionId, userId: actorId },
+        });
+        if (!session || session.revokedAt) {
+          throw new UnauthorizedException(AppError.unauthorized('Session revoked').message);
+        }
+        void this.prisma.db.userSession
+          .update({ where: { id: sessionId }, data: { lastSeenAt: new Date() } })
+          .catch(() => undefined);
       }
     } else if (!bypass) {
       throw new UnauthorizedException('Bearer token required');
@@ -66,6 +83,7 @@ export class TenantAuthGuard implements CanActivate {
       correlationId,
       traceId,
       roles,
+      sessionId,
     };
     return true;
   }

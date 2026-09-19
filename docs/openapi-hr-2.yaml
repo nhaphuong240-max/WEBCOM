@@ -1,0 +1,43 @@
+# OpenAPI — HR-2 Sessions · Shift · PII · MFA stub
+openapi: 3.0.3
+info:
+  title: WebCom HR-2
+  version: 1.0.0
+paths:
+  /api/v1/admin/hr/users/{id}/sessions:
+    get:
+      summary: List user sessions
+  /api/v1/admin/hr/sessions/{id}/revoke:
+    post:
+      summary: Revoke session (JWT sid)
+  /api/v1/admin/hr/login-events:
+    get:
+      summary: Login history
+  /api/v1/admin/hr/users/export:
+    post:
+      summary: CSV export users — requires pii.export + reason
+  /api/v1/admin/hr/users/{id}/mfa/enroll:
+    post:
+      summary: MFA TOTP stub (FEATURE_HR_MFA)
+  /api/v1/admin/hr/users/{id}/mfa/verify:
+    post: {}
+  /api/v1/admin/hr/users/{id}/mfa/disable:
+    post: {}
+  /api/v1/admin/hr/shifts:
+    get:
+      summary: List PosShift (FEATURE_HR_SHIFT)
+  /api/v1/admin/hr/shifts/open:
+    post: {}
+  /api/v1/admin/hr/shifts/{id}/close:
+    post: {}
+  /api/v1/admin/hr/pos-locations:
+    get:
+      summary: POS locations + registers for shift UI
+  /api/v1/admin/orders:
+    get:
+      summary: Filtered by actor store scope
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer

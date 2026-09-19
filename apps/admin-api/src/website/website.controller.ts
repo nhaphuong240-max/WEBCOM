@@ -6,12 +6,14 @@ import { TenantAuthGuard } from '../common/tenant-auth.guard';
 import { ReqContext } from '../common/req-context.decorator';
 import { WebsiteService } from './website.service';
 import { PlatformService } from './platform.service';
+import { HrIamService } from '../hr/hr-iam.service';
 
 @Controller()
 export class WebsiteController {
   constructor(
     private readonly website: WebsiteService,
     private readonly platform: PlatformService,
+    private readonly hr: HrIamService,
   ) {}
 
   @Get('v1/storefronts/:idOrSlug/runtime')
@@ -255,11 +257,12 @@ export class WebsiteController {
 
   @Get('v1/admin/storefronts/:id/pages')
   @UseGuards(TenantAuthGuard)
-  pages(
+  async pages(
     @ReqContext() ctx: RequestContext,
     @Param('id') id: string,
     @Query('template_key') templateKey?: string,
   ) {
+    await this.hr.assertStorefrontAccess(ctx, id);
     return this.platform.listPages(ctx.tenantId, id, {
       template_key: templateKey,
     });
@@ -267,7 +270,8 @@ export class WebsiteController {
 
   @Post('v1/admin/storefronts/:id/pages')
   @UseGuards(TenantAuthGuard)
-  createPage(@ReqContext() ctx: RequestContext, @Param('id') id: string, @Body() body: unknown) {
+  async createPage(@ReqContext() ctx: RequestContext, @Param('id') id: string, @Body() body: unknown) {
+    await this.hr.assertStorefrontAccess(ctx, id);
     const parsed = z
       .object({
         slug: z.string().min(1),
@@ -519,7 +523,9 @@ export class WebsiteController {
 
   @Post('v1/admin/storefronts/:id/publish')
   @UseGuards(TenantAuthGuard)
-  publish(@ReqContext() ctx: RequestContext, @Param('id') id: string) {
+  async publish(@ReqContext() ctx: RequestContext, @Param('id') id: string) {
+    await this.hr.assertWebsitePublish(ctx);
+    await this.hr.assertStorefrontAccess(ctx, id);
     return this.platform.publishStorefront(ctx.tenantId, id, ctx.actorId || 'admin');
   }
 

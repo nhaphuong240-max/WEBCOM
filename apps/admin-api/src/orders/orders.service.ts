@@ -34,9 +34,14 @@ export class OrdersService {
     return this.map(order);
   }
 
-  async list(tenantId: string) {
+  /** storefrontIds null = all; [] = none */
+  async list(tenantId: string, storefrontIds?: string[] | null) {
+    if (storefrontIds && storefrontIds.length === 0) return [];
     const orders = await this.prisma.db.order.findMany({
-      where: { tenantId },
+      where: {
+        tenantId,
+        ...(storefrontIds ? { storefrontId: { in: storefrontIds } } : {}),
+      },
       include: { lines: true },
       orderBy: { createdAt: 'desc' },
       take: 50,
@@ -76,6 +81,7 @@ export class OrdersService {
 
   private map(order: {
     id: string;
+    storefrontId: string;
     status: string;
     paymentMethod: string;
     paymentStatus: string;
@@ -106,6 +112,7 @@ export class OrdersService {
   }) {
     return {
       id: order.id,
+      storefront_id: order.storefrontId,
       status: order.status,
       payment_method: order.paymentMethod,
       payment_status: order.paymentStatus,

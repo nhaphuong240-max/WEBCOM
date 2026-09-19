@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { PrismaModule } from './prisma/prisma.module';
 import { RedisModule } from './redis/redis.module';
 import { AuditModule } from './audit/audit.module';
+import { CommonAuthModule } from './common/common-auth.module';
 import { CatalogModule } from './catalog/catalog.module';
 import { InventoryModule } from './inventory/inventory.module';
 import { CartModule } from './cart/cart.module';
@@ -28,6 +29,7 @@ import { JourneyModule } from './journey/journey.module';
 import { CxModule } from './cx/cx.module';
 import { IamModule } from './iam/iam.module';
 import { BillingModule } from './billing/billing.module';
+import { HrModule } from './hr/hr.module';
 import { HealthController } from './health/health.controller';
 import { MeController } from './iam/me.controller';
 import { TenancyController } from './tenancy/tenancy.controller';
@@ -37,6 +39,7 @@ import { TenancyController } from './tenancy/tenancy.controller';
     PrismaModule,
     RedisModule,
     AuditModule,
+    CommonAuthModule,
     CatalogModule,
     InventoryModule,
     CartModule,
@@ -63,6 +66,7 @@ import { TenancyController } from './tenancy/tenancy.controller';
     CxModule,
     IamModule,
     BillingModule,
+    HrModule,
   ],
   controllers: [HealthController, MeController, TenancyController],
 })

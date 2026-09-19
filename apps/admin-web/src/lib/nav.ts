@@ -10,6 +10,14 @@ export const websiteNav = [
   { href: '/website/agency', label: 'Agency / Headless', mockup: 'W5' },
 ] as const;
 
+export const hrNav = [
+  { href: '/hr/users', label: 'Users', mockup: 'HR' },
+  { href: '/hr/employees', label: 'Employees', mockup: 'HR' },
+  { href: '/hr/roles', label: 'Roles', mockup: 'HR' },
+  { href: '/hr/shifts', label: 'Shifts', mockup: 'HR' },
+  { href: '/hr/sessions', label: 'Login history', mockup: 'HR' },
+] as const;
+
 export const mainNav = [
   { href: '/', label: 'Command Center', section: 'Điều hành' },
   { href: '/products', label: 'Sản phẩm', section: 'Điều hành' },
@@ -21,6 +29,7 @@ export const mainNav = [
   { href: '/journeys', label: 'Journeys', section: 'Điều hành' },
   { href: '/recovery', label: 'Recovery', section: 'Điều hành' },
   { href: '/inventory', label: 'Tồn kho', section: 'Điều hành' },
+  ...hrNav.map((i) => ({ ...i, section: 'Nhân sự' as const })),
   ...websiteNav.map((i) => ({ ...i, section: 'Website' as const })),
   { href: '/design-system', label: 'Design system', section: 'Website' },
   { href: '/social', label: 'Social Inbox', section: 'Tăng trưởng' },

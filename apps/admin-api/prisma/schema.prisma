@@ -16,6 +16,12 @@ model Tenant {
   updatedAt   DateTime     @updatedAt @map("updated_at")
   brands      Brand[]
   users       User[]
+  userRoleAssignments UserRoleAssignment[]
+  userInvites UserInvite[]
+  userSessions UserSession[]
+  loginEvents LoginEvent[]
+  employees   Employee[]
+  tenantRoleTemplates TenantRoleTemplate[]
   storefronts Storefront[]
   products    Product[]
   priceLists  PriceList[]
@@ -102,21 +108,172 @@ model Brand {
 }
 
 model User {
-  id           String   @id @default(uuid())
-  tenantId     String   @map("tenant_id")
-  email        String
-  name         String
+  id              String   @id @default(uuid())
+  tenantId        String   @map("tenant_id")
+  email           String
+  name            String
   /// bcrypt hash for platform merchant login (P2 trial)
-  passwordHash String?  @map("password_hash")
-  roles        String[] @default([])
-  status       String   @default("active")
-  createdAt    DateTime @default(now()) @map("created_at")
-  tenant       Tenant   @relation(fields: [tenantId], references: [id])
+  passwordHash    String?  @map("password_hash")
+  /// legacy dual-write with UserRoleAssignment (HR-1)
+  roles           String[] @default([])
+  /// invited | active | suspended | deleted
+  status          String   @default("active")
+  invitedAt       DateTime? @map("invited_at")
+  activatedAt     DateTime? @map("activated_at")
+  lastLoginAt     DateTime? @map("last_login_at")
+  /// HR-2 MFA stub
+  mfaEnabled      Boolean   @default(false) @map("mfa_enabled")
+  mfaSecret       String?   @map("mfa_secret")
+  createdAt       DateTime @default(now()) @map("created_at")
+  tenant          Tenant   @relation(fields: [tenantId], references: [id])
+  employee        Employee?
+  roleAssignments UserRoleAssignment[]
+  invitesSent     UserInvite[] @relation("Inviter")
+  sessions        UserSession[]
+  loginEvents     LoginEvent[]
 
   @@unique([tenantId, email])
   @@index([tenantId])
   @@index([email])
   @@map("users")
+}
+
+/// HR-2 — login session (sid in JWT)
+model UserSession {
+  id         String    @id
+  tenantId   String    @map("tenant_id")
+  userId     String    @map("user_id")
+  tokenHash  String?   @map("token_hash")
+  ip         String?
+  userAgent  String?   @map("user_agent")
+  createdAt  DateTime  @default(now()) @map("created_at")
+  lastSeenAt DateTime  @default(now()) @map("last_seen_at")
+  revokedAt  DateTime? @map("revoked_at")
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tenant     Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, userId])
+  @@index([userId, revokedAt])
+  @@map("user_sessions")
+}
+
+/// HR-2 — login history
+model LoginEvent {
+  id        String   @id
+  tenantId  String?  @map("tenant_id")
+  userId    String?  @map("user_id")
+  email     String
+  success   Boolean
+  reason    String?
+  ip        String?
+  userAgent String?  @map("user_agent")
+  createdAt DateTime @default(now()) @map("created_at")
+  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  tenant    Tenant?  @relation(fields: [tenantId], references: [id], onDelete: SetNull)
+
+  @@index([tenantId, createdAt])
+  @@index([email, createdAt])
+  @@map("login_events")
+}
+
+/// HR-1 — role + data scope assignment
+model UserRoleAssignment {
+  id        String   @id
+  tenantId  String   @map("tenant_id")
+  userId    String   @map("user_id")
+  roleCode  String   @map("role_code")
+  /// { "type": "tenant" } | { "type": "store", "ids": ["sf_…"] } | brand|warehouse|channel
+  scope     Json     @default("{}")
+  createdAt DateTime @default(now()) @map("created_at")
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tenant    Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, userId])
+  @@index([userId])
+  @@map("user_role_assignments")
+}
+
+/// HR-1 — invite token (hash only)
+model UserInvite {
+  id          String    @id
+  tenantId    String    @map("tenant_id")
+  email       String
+  name        String?
+  roleCodes   String[]  @default([]) @map("role_codes")
+  scope       Json      @default("{}")
+  tokenHash   String    @map("token_hash")
+  expiresAt   DateTime  @map("expires_at")
+  acceptedAt  DateTime? @map("accepted_at")
+  invitedById String?   @map("invited_by_id")
+  /// pending | accepted | expired | revoked
+  status      String    @default("pending")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  tenant      Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  invitedBy   User?     @relation("Inviter", fields: [invitedById], references: [id], onDelete: SetNull)
+
+  @@index([tenantId, email])
+  @@index([tokenHash])
+  @@map("user_invites")
+}
+
+/// HR-3 — custom role per tenant (system roles stay in shared-kernel)
+model TenantRoleTemplate {
+  id          String   @id
+  tenantId    String   @map("tenant_id")
+  code        String
+  name        String
+  description String   @default("")
+  permissions String[]
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+  tenant      Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, code])
+  @@index([tenantId])
+  @@map("tenant_role_templates")
+}
+
+/// HR-1 — workforce profile (ops), optional link to User
+model Employee {
+  id           String   @id
+  tenantId     String   @map("tenant_id")
+  userId       String?  @unique @map("user_id")
+  code         String
+  displayName  String   @map("display_name")
+  title        String?
+  phone        String?
+  email        String?
+  /// HR-3 stub — free-text department label
+  department   String?
+  /// active | on_leave | terminated
+  status       String   @default("active")
+  hiredAt      DateTime? @map("hired_at")
+  terminatedAt DateTime? @map("terminated_at")
+  /// HR-3 POS PIN (bcrypt)
+  posPinHash   String?  @map("pos_pin_hash")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+  tenant       Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  user         User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  assignments  EmployeeStoreAssignment[]
+
+  @@unique([tenantId, code])
+  @@index([tenantId, status])
+  @@index([tenantId, department])
+  @@map("employees")
+}
+
+model EmployeeStoreAssignment {
+  id         String   @id
+  employeeId String   @map("employee_id")
+  /// Storefront.id (ADR-006)
+  storeId    String   @map("store_id")
+  isPrimary  Boolean  @default(false) @map("is_primary")
+  employee   Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+
+  @@unique([employeeId, storeId])
+  @@index([storeId])
+  @@map("employee_store_assignments")
 }
 
 model Storefront {

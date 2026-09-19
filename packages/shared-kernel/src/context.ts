@@ -6,6 +6,8 @@ export type RequestContext = {
   correlationId: string;
   traceId?: string;
   roles: string[];
+  /** HR-2 JWT sid */
+  sessionId?: string;
 };
 
 export const CONTEXT_HEADERS = {
