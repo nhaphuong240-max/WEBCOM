@@ -245,7 +245,7 @@ p { margin: 0; }
 .tm-section-muted > .tm-product-rail { padding-bottom: 8px; }
 .tm-section-head { margin-bottom: 28px; max-width: 640px; }
 .tm-section-head.row {
-  max-width: none; display: flex; justify-content: space-between; gap: 16px; align-items: end;
+  max-width: none; display: flex; justify-content: space-between; gap: 16px; align-items: flex-end;
 }
 .tm-section-head h2 { font-size: clamp(24px, 3vw, 32px); letter-spacing: -0.03em; margin-bottom: 8px; }
 .tm-section-head p { color: var(--tm-muted); font-size: 15px; }
