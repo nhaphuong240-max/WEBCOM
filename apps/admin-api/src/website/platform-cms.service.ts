@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { AppError, type RequestContext } from '@ptt/shared-kernel';
 import {
+  assertCasePublishReady,
   filterExpiredAnnounceBars,
   getPlatformStarter,
   normalizeContent,
@@ -15,7 +16,14 @@ import { PlatformService } from './platform.service';
 /** Interim PlatformSite registry (ADR-008). CORP-CMS-2 → PlatformSite table. */
 export const PLATFORM_SITES: Record<
   string,
-  { tenantId: string; storefrontId: string; name: string; primaryHost: string; status: 'draft' | 'live' }
+  {
+    tenantId: string;
+    storefrontId: string;
+    name: string;
+    primaryHost: string;
+    status: 'draft' | 'live';
+    locale?: string;
+  }
 > = {
   webcom_apex: {
     tenantId: 'ten_platform',
@@ -23,6 +31,7 @@ export const PLATFORM_SITES: Record<
     name: 'WebCom Platform',
     primaryHost: 'webecom.ngoinhahomnay.vn',
     status: 'live',
+    locale: 'vi',
   },
   webcom_staging: {
     tenantId: 'ten_platform',
@@ -30,6 +39,16 @@ export const PLATFORM_SITES: Record<
     name: 'WebCom Platform (staging)',
     primaryHost: 'staging-webecom.ngoinhahomnay.vn',
     status: 'draft',
+    locale: 'vi',
+  },
+  /** CORP-CMS-3 Could — EN locale stub (same interim SF until PlatformSite table) */
+  webcom_en: {
+    tenantId: 'ten_platform',
+    storefrontId: 'sf_platform_webcom',
+    name: 'WebCom Platform (EN stub)',
+    primaryHost: 'en.webecom.ngoinhahomnay.vn',
+    status: 'draft',
+    locale: 'en',
   },
 };
 
@@ -74,6 +93,7 @@ export class PlatformCmsService {
       tenant_id: s.tenantId,
       interim_storefront_id: s.storefrontId,
       owner: 'interim_storefront',
+      locale: s.locale || 'vi',
     }));
   }
 
@@ -125,7 +145,18 @@ export class PlatformCmsService {
     const site = this.assertCtxTenant(ctx, siteKey);
     const slug = normalizePlatformSlug(slugRaw);
     const draft = await this.platform.getPageDraft(site.tenantId, site.storefrontId, slug);
-    return { ...draft, site_key: siteKey, path: slug === 'home' ? '/' : `/${slug}` };
+    const page = await this.prisma.db.page.findFirst({
+      where: { tenantId: site.tenantId, storefrontId: site.storefrontId, slug },
+      include: {
+        versions: { orderBy: { version: 'desc' }, select: { version: true, status: true } },
+      },
+    });
+    return {
+      ...draft,
+      site_key: siteKey,
+      path: slug === 'home' ? '/' : `/${slug}`,
+      versions: (page?.versions || []).map((v) => ({ version: v.version, status: v.status })),
+    };
   }
 
   async savePageDraft(
@@ -176,6 +207,7 @@ export class PlatformCmsService {
 
   /**
    * draft → review (write) · review|draft → published (publish).
+   * Optional publish_at (ISO) → status scheduled until due (PC3-5).
    * Editor without publish gets 403 on published (AC-P2).
    */
   async transition(
@@ -184,6 +216,7 @@ export class PlatformCmsService {
     slugRaw: string,
     target: PlatformTransitionTarget,
     checklist?: Record<string, boolean> | null,
+    publishAt?: string | null,
   ) {
     const site = this.assertCtxTenant(ctx, siteKey);
     const slug = normalizePlatformSlug(slugRaw);
@@ -228,7 +261,7 @@ export class PlatformCmsService {
         data: { status: 'draft' },
       });
     } else {
-      if (from !== 'draft' && from !== 'review' && from !== 'published') {
+      if (from !== 'draft' && from !== 'review' && from !== 'published' && from !== 'scheduled') {
         throw AppError.validation(`Cannot transition ${from} → published`);
       }
       const raw = (latest.content as Record<string, unknown>) || {};
@@ -240,6 +273,13 @@ export class PlatformCmsService {
           { issues },
         );
       }
+      const caseGate = assertCasePublishReady(v1, {
+        templateKey: page.templateKey,
+        slug: page.slug,
+      });
+      if (caseGate) {
+        throw AppError.validation(caseGate, { code: 'CASE_KPI_GATE' });
+      }
       if (checklist) {
         for (const k of ['seo_ok', 'cta_codes_ok', 'legal_ok'] as const) {
           if (!checklist[k]) {
@@ -247,6 +287,48 @@ export class PlatformCmsService {
           }
         }
       }
+
+      const when = publishAt ? new Date(publishAt) : null;
+      if (when && Number.isNaN(when.getTime())) {
+        throw AppError.validation('Invalid publish_at');
+      }
+      const scheduleFuture = when && when.getTime() > Date.now() + 5_000;
+
+      if (scheduleFuture) {
+        const seo = {
+          ...((latest.seo as Record<string, unknown>) || {}),
+          publish_at: when!.toISOString(),
+        };
+        await this.prisma.db.pageVersion.update({
+          where: { id: latest.id },
+          data: { status: 'scheduled', seo },
+        });
+        await this.prisma.db.page.update({
+          where: { id: page.id },
+          data: { status: 'scheduled' },
+        });
+        await this.audit.write({
+          tenantId: site.tenantId,
+          actorId: ctx.actorId,
+          action: 'platform_cms.page_scheduled',
+          entity: 'page',
+          entityId: page.id,
+          payload: { site_key: siteKey, slug, publish_at: when!.toISOString(), version: latest.version },
+        });
+        return {
+          site_key: siteKey,
+          slug,
+          path: slug === 'home' ? '/' : `/${slug}`,
+          title: page.title,
+          template_key: page.templateKey,
+          status: 'scheduled',
+          version: latest.version,
+          from,
+          publish_at: when!.toISOString(),
+          checklist: checklist || null,
+        };
+      }
+
       await this.prisma.db.pageVersion.updateMany({
         where: { pageId: page.id, status: 'published', id: { not: latest.id } },
         data: { status: 'archived' },
@@ -259,6 +341,7 @@ export class PlatformCmsService {
         where: { id: page.id },
         data: { status: 'published' },
       });
+      await this.triggerCorporateRevalidate(siteKey, slug);
     }
 
     await this.audit.write({
@@ -290,16 +373,48 @@ export class PlatformCmsService {
     };
   }
 
-  /** Public published page — filters expired announce_bar (AC-B9). */
+  /** Public published page — filters expired announce_bar (AC-B9); auto-flush due schedules. */
   async getPublishedPage(siteKey: string, slugRaw: string) {
     const site = this.resolveSite(siteKey);
     const slug = normalizePlatformSlug(slugRaw);
-    const page = await this.prisma.db.page.findFirst({
+    let page = await this.prisma.db.page.findFirst({
       where: { tenantId: site.tenantId, storefrontId: site.storefrontId, slug },
       include: {
         versions: { where: { status: 'published' }, orderBy: { version: 'desc' }, take: 1 },
       },
     });
+    if (!page?.versions[0]) {
+      const scheduled = await this.prisma.db.page.findFirst({
+        where: { tenantId: site.tenantId, storefrontId: site.storefrontId, slug },
+        include: {
+          versions: { where: { status: 'scheduled' }, orderBy: { version: 'desc' }, take: 1 },
+        },
+      });
+      if (scheduled?.versions[0]) {
+        const seo = (scheduled.versions[0].seo as Record<string, unknown>) || {};
+        const at = seo.publish_at ? new Date(String(seo.publish_at)) : null;
+        if (at && !Number.isNaN(at.getTime()) && at.getTime() <= Date.now()) {
+          await this.prisma.db.pageVersion.updateMany({
+            where: { pageId: scheduled.id, status: 'published', id: { not: scheduled.versions[0].id } },
+            data: { status: 'archived' },
+          });
+          await this.prisma.db.pageVersion.update({
+            where: { id: scheduled.versions[0].id },
+            data: { status: 'published' },
+          });
+          await this.prisma.db.page.update({
+            where: { id: scheduled.id },
+            data: { status: 'published' },
+          });
+          page = await this.prisma.db.page.findFirst({
+            where: { id: scheduled.id },
+            include: {
+              versions: { where: { status: 'published' }, orderBy: { version: 'desc' }, take: 1 },
+            },
+          });
+        }
+      }
+    }
     if (!page || !page.versions[0]) throw AppError.notFound('Page not found');
     const raw = (page.versions[0].content as Record<string, unknown>) || {};
     const contentV1 = filterExpiredAnnounceBars(normalizeContent(raw));
@@ -315,7 +430,9 @@ export class PlatformCmsService {
       content_v1: contentV1,
       content: toLegacyFlat(contentV1),
       seo: page.versions[0].seo ?? {},
+      experiment_code: page.experimentCode || null,
       feature_platform_cms: featurePlatformCms(true),
+      locale: site.locale || 'vi',
     };
   }
 
@@ -357,7 +474,19 @@ export class PlatformCmsService {
   }
 
   listStarters() {
-    return (['gtm_home', 'gtm_pricing', 'gtm_catalog'] as const).map((key) => {
+    return (
+      [
+        'gtm_home',
+        'gtm_pricing',
+        'gtm_catalog',
+        'gtm_solution',
+        'gtm_industry',
+        'gtm_case',
+        'gtm_resources',
+        'gtm_resource_detail',
+        'gtm_tour',
+      ] as const
+    ).map((key) => {
       const s = getPlatformStarter(key);
       return { key, title: s?.title || key, section_order: s?.content.section_order || [] };
     });
@@ -368,6 +497,162 @@ export class PlatformCmsService {
     if (!s) throw AppError.notFound('Starter not found');
     return { key, title: s.title, content: s.content };
   }
+
+  /** PC3-5 — promote due scheduled versions to published. */
+  async flushScheduled(ctx: RequestContext, siteKey: string) {
+    await assertPermission(this.prisma, ctx, 'platform.cms.publish');
+    const site = this.assertCtxTenant(ctx, siteKey);
+    const rows = await this.prisma.db.pageVersion.findMany({
+      where: { tenantId: site.tenantId, status: 'scheduled' },
+      include: { page: true },
+      orderBy: { version: 'desc' },
+    });
+    const now = Date.now();
+    const flushed: Array<{ slug: string; version: number }> = [];
+    for (const v of rows) {
+      if (v.page.storefrontId !== site.storefrontId) continue;
+      const seo = (v.seo as Record<string, unknown>) || {};
+      const at = seo.publish_at ? new Date(String(seo.publish_at)) : null;
+      if (!at || Number.isNaN(at.getTime()) || at.getTime() > now) continue;
+      await this.prisma.db.pageVersion.updateMany({
+        where: { pageId: v.pageId, status: 'published', id: { not: v.id } },
+        data: { status: 'archived' },
+      });
+      await this.prisma.db.pageVersion.update({
+        where: { id: v.id },
+        data: { status: 'published' },
+      });
+      await this.prisma.db.page.update({
+        where: { id: v.pageId },
+        data: { status: 'published' },
+      });
+      await this.triggerCorporateRevalidate(siteKey, v.page.slug);
+      flushed.push({ slug: v.page.slug, version: v.version });
+    }
+    return { site_key: siteKey, flushed, count: flushed.length };
+  }
+
+  /** AC-P3 — republish archived/draft version N; archive current published. */
+  async rollback(
+    ctx: RequestContext,
+    siteKey: string,
+    slugRaw: string,
+    version: number,
+  ) {
+    await assertPermission(this.prisma, ctx, 'platform.cms.publish');
+    const site = this.assertCtxTenant(ctx, siteKey);
+    const slug = normalizePlatformSlug(slugRaw);
+    const page = await this.prisma.db.page.findFirst({
+      where: { tenantId: site.tenantId, storefrontId: site.storefrontId, slug },
+    });
+    if (!page) throw AppError.notFound('Page not found');
+    const target = await this.prisma.db.pageVersion.findFirst({
+      where: { pageId: page.id, version },
+    });
+    if (!target) throw AppError.notFound(`Version ${version} not found`);
+
+    await this.prisma.db.pageVersion.updateMany({
+      where: { pageId: page.id, status: 'published', id: { not: target.id } },
+      data: { status: 'archived' },
+    });
+    await this.prisma.db.pageVersion.update({
+      where: { id: target.id },
+      data: { status: 'published' },
+    });
+    await this.prisma.db.page.update({
+      where: { id: page.id },
+      data: { status: 'published' },
+    });
+
+    await this.audit.write({
+      tenantId: site.tenantId,
+      actorId: ctx.actorId,
+      action: 'platform_cms.page_rollback',
+      entity: 'page',
+      entityId: page.id,
+      payload: { site_key: siteKey, slug, version },
+    });
+    await this.triggerCorporateRevalidate(siteKey, slug);
+
+    const contentV1 = normalizeContent((target.content as object) || {});
+    return {
+      site_key: siteKey,
+      slug,
+      status: 'published',
+      version: target.version,
+      content_hash: simpleHash(JSON.stringify(contentV1)),
+      content_v1: contentV1,
+    };
+  }
+
+  async listNav(ctx: RequestContext, siteKey: string) {
+    await assertPermission(this.prisma, ctx, 'platform.cms.read');
+    const site = this.assertCtxTenant(ctx, siteKey);
+    return this.platform.listNavigation(site.tenantId, site.storefrontId);
+  }
+
+  async upsertNav(
+    ctx: RequestContext,
+    siteKey: string,
+    handle: string,
+    items: Array<{ label: string; href: string }>,
+  ) {
+    await assertPermission(this.prisma, ctx, 'platform.cms.write');
+    const site = this.assertCtxTenant(ctx, siteKey);
+    return this.platform.upsertNavigation(
+      site.tenantId,
+      site.storefrontId,
+      handle,
+      items,
+      ctx.actorId,
+    );
+  }
+
+  async getPublicNav(siteKey: string) {
+    const site = this.resolveSite(siteKey);
+    const menus = await this.platform.listNavigation(site.tenantId, site.storefrontId);
+    const out: Record<string, unknown> = { site_key: siteKey };
+    for (const m of menus as Array<{ handle: string; items: unknown }>) {
+      out[m.handle] = m.items;
+    }
+    return out;
+  }
+
+  /** Fire-and-forget Next on-demand revalidate (AC-P1). */
+  private async triggerCorporateRevalidate(siteKey: string, slug: string) {
+    const url =
+      process.env.CORPORATE_REVALIDATE_URL?.replace(/\/$/, '') ||
+      process.env.CORPORATE_PUBLIC_URL?.replace(/\/$/, '');
+    const secret = process.env.CORPORATE_REVALIDATE_SECRET || '';
+    if (!url) return;
+    const path = slug === 'home' ? '/' : `/${slug}`;
+    const endpoint = url.includes('/api/revalidate')
+      ? url
+      : `${url}/api/revalidate`;
+    try {
+      await fetch(endpoint, {
+        method: 'POST',
+        headers: {
+          'content-type': 'application/json',
+          ...(secret ? { 'x-revalidate-secret': secret } : {}),
+        },
+        body: JSON.stringify({
+          site_key: siteKey,
+          paths: [path, '/'],
+          tags: [`platform:${siteKey}`, `platform:${siteKey}:${slug}`],
+        }),
+      });
+    } catch (err) {
+      // eslint-disable-next-line no-console
+      console.warn('[platform-cms] revalidate failed', err);
+    }
+  }
+}
+
+function simpleHash(s: string): string {
+  let h = 0;
+  for (let i = 0; i < s.length; i++) h = (Math.imul(31, h) + s.charCodeAt(i)) | 0;
+  return `h${(h >>> 0).toString(16)}`;
 }
 
 export type { PlatformTransitionTarget };

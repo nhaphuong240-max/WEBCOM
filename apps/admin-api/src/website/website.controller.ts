@@ -125,6 +125,11 @@ export class WebsiteController {
         cta_code: z.string().optional(),
         landing_slug: z.string().optional(),
         consent: z.boolean().optional(),
+        /** CORP-CMS-3 — relative path or https URL unlocked after lead */
+        unlock_href: z.string().optional(),
+        utm_source: z.string().optional(),
+        utm_medium: z.string().optional(),
+        utm_campaign: z.string().optional(),
       })
       .safeParse(body);
     if (!parsed.success) throw AppError.validation('Invalid lead', parsed.error.flatten());

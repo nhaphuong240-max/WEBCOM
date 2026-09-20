@@ -7,6 +7,7 @@ export {
   PLATFORM_CTA_CODES,
   PLATFORM_CTA_CODE_SET,
   PLATFORM_ICON_ALLOWLIST,
+  PLATFORM_PEER_COLUMN_DEFAULT,
 } from './registry';
 export type { SectionKey, SectionScope, PlatformCtaCode } from './registry';
 export {
@@ -16,6 +17,8 @@ export {
   assertValidContent,
   ensureSectionIds,
   filterExpiredAnnounceBars,
+  countBeforeAfterMetrics,
+  assertCasePublishReady,
 } from './normalize';
 export type { ValidateIssue } from './normalize';
 export {

@@ -40,15 +40,18 @@ async function platformJson<T>(path: string, method = 'GET', body?: unknown): Pr
 export default async function PlatformPageEditor({
   params,
 }: {
-  params: Promise<{ slug: string }>;
+  params: Promise<{ slug: string[] }>;
 }) {
-  const { slug } = await params;
+  const { slug: slugParts } = await params;
+  const slug = (slugParts || []).map(decodeURIComponent).join('/') || 'home';
+  const slugEnc = encodeURIComponent(slug);
   let draft: {
     title?: string;
     version?: number;
     status?: string;
     content_v1?: ContentV1;
     seo?: { title?: string; description?: string };
+    versions?: Array<{ version: number; status: string }>;
   } | null = null;
   let sections: Array<{ key: string; label: string; fields: string[] }> = [];
   let loadErr = '';
@@ -61,7 +64,8 @@ export default async function PlatformPageEditor({
         status?: string;
         content_v1?: ContentV1;
         seo?: { title?: string; description?: string };
-      }>(`/v1/admin/platform/sites/${SITE}/pages/${encodeURIComponent(slug)}`),
+        versions?: Array<{ version: number; status: string }>;
+      }>(`/v1/admin/platform/sites/${SITE}/pages/${slugEnc}`),
       platformJson<{ sections: Array<{ key: string; label: string; fields: string[] }> }>(
         `/v1/admin/builder/sections?scope=platform`,
       ),
@@ -80,7 +84,7 @@ export default async function PlatformPageEditor({
     'use server';
     try {
       const res = await platformJson<{ version: number }>(
-        `/v1/admin/platform/sites/${SITE}/pages/${encodeURIComponent(slug)}`,
+        `/v1/admin/platform/sites/${SITE}/pages/${slugEnc}`,
         'PUT',
         {
           expected_version: payload.expected_version || undefined,
@@ -108,9 +112,22 @@ export default async function PlatformPageEditor({
       legal_ok: formData.get('legal_ok') === 'on',
     };
     await platformJson(
-      `/v1/admin/platform/sites/${SITE}/pages/${encodeURIComponent(slug)}/transition`,
+      `/v1/admin/platform/sites/${SITE}/pages/${slugEnc}/transition`,
       'POST',
       { target, checklist: target === 'published' ? checklist : undefined },
+    );
+    revalidatePath(`/platform/pages/${slug}`);
+    revalidatePath('/platform/pages');
+  }
+
+  async function rollbackAction(formData: FormData) {
+    'use server';
+    const version = Number(formData.get('version') || 0);
+    if (!version) throw new Error('version required');
+    await platformJson(
+      `/v1/admin/platform/sites/${SITE}/pages/${slugEnc}/rollback`,
+      'POST',
+      { version },
     );
     revalidatePath(`/platform/pages/${slug}`);
     revalidatePath('/platform/pages');
@@ -122,15 +139,18 @@ export default async function PlatformPageEditor({
     sections: {},
   };
 
+  const versions = draft?.versions || [];
+
   return (
     <div>
       <PageHeader
         title={draft?.title || slug}
-        description={`Platform · ${slug} · ${draft?.status || '—'}`}
+        description={`Platform · ${slug} · ${draft?.status || '—'} · v${draft?.version || '—'}`}
         actions={
           <>
             <Badge>{draft?.status || 'n/a'}</Badge>
             <Link href="/platform/pages">← Danh sách</Link>
+            <Link href="/platform/nav">Nav</Link>
           </>
         }
       />
@@ -157,6 +177,30 @@ export default async function PlatformPageEditor({
             Về draft
           </Button>
         </form>
+      </Panel>
+
+      <Panel title="Rollback (AC-P3)">
+        <form action={rollbackAction} style={{ display: 'flex', flexWrap: 'wrap', gap: 12, alignItems: 'center' }}>
+          <label>
+            Version{' '}
+            <select name="version" defaultValue="">
+              <option value="" disabled>
+                chọn…
+              </option>
+              {versions.map((v) => (
+                <option key={v.version} value={v.version}>
+                  v{v.version} ({v.status})
+                </option>
+              ))}
+            </select>
+          </label>
+          <Button type="submit">Rollback & publish</Button>
+        </form>
+        {!versions.length ? (
+          <p style={{ fontSize: 13, opacity: 0.7, marginTop: 8 }}>
+            Chưa có lịch sử version — publish thêm lần để rollback.
+          </p>
+        ) : null}
       </Panel>
 
       {!loadErr ? (

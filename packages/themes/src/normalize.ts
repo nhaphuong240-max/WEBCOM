@@ -193,6 +193,48 @@ export function filterExpiredAnnounceBars(
   return { schema_version: 1, section_order: order, sections };
 }
 
+/** AC-B6 — count before/after KPI metrics across content. */
+export function countBeforeAfterMetrics(content: ContentV1): number {
+  let n = 0;
+  for (const key of content.section_order) {
+    const node = content.sections[key];
+    if (!node || node.type !== 'before_after_kpi') continue;
+    const metrics = Array.isArray(node.props.metrics) ? node.props.metrics : [];
+    n += metrics.filter(
+      (m) =>
+        m &&
+        typeof m === 'object' &&
+        String((m as { label?: string }).label || '').trim() &&
+        String((m as { before?: string }).before || '').trim() &&
+        String((m as { after?: string }).after || '').trim(),
+    ).length;
+  }
+  return n;
+}
+
+/**
+ * Case pages (template_key gtm_case* or slug under case-studies) need ≥2 KPI pairs.
+ * Returns issue message or null if OK / not a case page.
+ */
+export function assertCasePublishReady(
+  content: ContentV1,
+  opts: { templateKey?: string; slug?: string },
+): string | null {
+  const tpl = (opts.templateKey || '').toLowerCase();
+  const slug = (opts.slug || '').toLowerCase();
+  const isCase =
+    tpl.startsWith('gtm_case') ||
+    slug.startsWith('case-studies') ||
+    slug.includes('/case') ||
+    content.section_order.some((k) => content.sections[k]?.type === 'before_after_kpi');
+  if (!isCase) return null;
+  const n = countBeforeAfterMetrics(content);
+  if (n < 2) {
+    return `Case publish requires ≥2 before/after KPI (found ${n})`;
+  }
+  return null;
+}
+
 export function assertValidContent(content: ContentV1): void {
   const issues = validateContentV1(content);
   if (issues.length) {

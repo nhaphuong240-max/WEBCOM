@@ -3,6 +3,7 @@ import { Be_Vietnam_Pro, Plus_Jakarta_Sans } from 'next/font/google';
 import '@ptt/ui/styles.css';
 import './globals.css';
 import { SiteNav, SiteFooter } from '../components/SiteChrome';
+import { fetchPlatformNav } from '../lib/platform-cms';
 
 const body = Be_Vietnam_Pro({
   subsets: ['vietnamese', 'latin'],
@@ -22,7 +23,8 @@ export const metadata: Metadata = {
     'Chọn theme → demo live → trial → mua. Marketplace template bán hàng đa kênh cho Việt Nam.',
 };
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
+  const nav = await fetchPlatformNav();
   return (
     <html lang="vi" className={`${body.variable} ${display.variable}`}>
       <body
@@ -35,9 +37,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           } as React.CSSProperties
         }
       >
-        <SiteNav />
+        <SiteNav navItems={nav.header} />
         {children}
-        <SiteFooter />
+        <SiteFooter footerItems={nav.footer} />
       </body>
     </html>
   );

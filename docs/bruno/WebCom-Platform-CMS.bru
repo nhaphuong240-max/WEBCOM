@@ -1,0 +1,98 @@
+meta {
+  name: WebCom Platform CMS GA
+  type: collection
+}
+
+# Public home
+get {
+  url: {{baseUrl}}/v1/public/platform/webcom_apex/pages/home
+}
+
+# Public nav
+get {
+  url: {{baseUrl}}/v1/public/platform/webcom_apex/nav
+}
+
+# Public solution (encode slash)
+get {
+  url: {{baseUrl}}/v1/public/platform/webcom_apex/pages/solutions%2Fwebsite
+}
+
+# Public case
+get {
+  url: {{baseUrl}}/v1/public/platform/webcom_apex/pages/case-studies%2Faura-beauty
+}
+
+# Admin sites
+get {
+  url: {{baseUrl}}/v1/admin/platform/sites
+  headers: {
+    x-tenant-id: ten_platform
+    x-actor-id: usr_platform_approver
+  }
+}
+
+# Starters
+get {
+  url: {{baseUrl}}/v1/admin/platform/starters
+  headers: {
+    x-tenant-id: ten_platform
+    x-actor-id: usr_platform_approver
+  }
+}
+
+# List pages
+get {
+  url: {{baseUrl}}/v1/admin/platform/sites/webcom_apex/pages
+  headers: {
+    x-tenant-id: ten_platform
+    x-actor-id: usr_platform_approver
+  }
+}
+
+# Nav upsert header
+put {
+  url: {{baseUrl}}/v1/admin/platform/sites/webcom_apex/nav/header
+  headers: {
+    content-type: application/json
+    x-tenant-id: ten_platform
+    x-actor-id: usr_platform_editor
+  }
+  body: {
+    items: [
+      { label: Solutions, href: /solutions/website },
+      { label: Cases, href: /case-studies }
+    ]
+  }
+}
+
+# Rollback (Approver)
+post {
+  url: {{baseUrl}}/v1/admin/platform/sites/webcom_apex/pages/case-studies%2Faura-beauty/rollback
+  headers: {
+    content-type: application/json
+    x-tenant-id: ten_platform
+    x-actor-id: usr_platform_approver
+  }
+  body: {
+    version: 1
+  }
+}
+
+# Transition publish
+post {
+  url: {{baseUrl}}/v1/admin/platform/sites/webcom_apex/pages/home/transition
+  headers: {
+    content-type: application/json
+    x-tenant-id: ten_platform
+    x-actor-id: usr_platform_approver
+  }
+  body: {
+    target: published
+    checklist: {
+      seo_ok: true
+      cta_codes_ok: true
+      legal_ok: true
+    }
+  }
+}

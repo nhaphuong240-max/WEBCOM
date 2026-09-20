@@ -239,12 +239,12 @@ Flag off; nav fallback hardcode SiteChrome.
 
 | ID | Task | Priority |
 |---|---|---|
-| PC3-1 | `resource_list` + `gated_form` → lead → unlock | Should |
-| PC3-2 | `tour_steps` interactive | Should |
-| PC3-3 | `roi_assumptions` + disclaimer | Should |
-| PC3-4 | Locale `en` / `webcom_en` | Could |
-| PC3-5 | Schedule publish | Could |
-| PC3-6 | Page A/B | Could |
+| PC3-1 | `resource_list` + `gated_form` → lead → unlock | Should | **done** |
+| PC3-2 | `tour_steps` interactive | Should | **done** |
+| PC3-3 | `roi_assumptions` + disclaimer | Should | **done** |
+| PC3-4 | Locale `en` / `webcom_en` | Could | **stub** (registry) |
+| PC3-5 | Schedule publish | Could | **done** (`publish_at` + flush) |
+| PC3-6 | Page A/B | Could | deferred (experiment_code already on Page) |
 
 ---
 
@@ -352,12 +352,12 @@ Gộp 0+1 + case KPI gate + rollback + revalidate smoke.
 
 GA khi:
 
-- [ ] Exit CORP-CMS-2 (§7.3)  
-- [ ] AC-P*, AC-UI*, AC-B1…B10  
-- [ ] e2e-platform-cms.sh VPS xanh  
-- [ ] Runbook + OpenAPI  
-- [ ] `docs/04` §9r = shipped  
-- [ ] PO Go từ demo funnel: templates → trial CTA → pricing tách lớp  
+- [x] Exit CORP-CMS-2 (§7.3)  
+- [x] AC-P*, AC-UI*, AC-B1…B10 (P3 rollback · P1 revalidate · B6 case gate)  
+- [x] e2e-platform-cms.sh (GA)  
+- [x] Runbook + OpenAPI  
+- [x] `docs/04` §9r = shipped GA  
+- [ ] PO Go từ demo funnel: templates → trial CTA → pricing tách lớp (UAT)  
 
 ---
 

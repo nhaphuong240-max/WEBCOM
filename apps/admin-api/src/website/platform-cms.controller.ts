@@ -5,6 +5,10 @@ import { TenantAuthGuard } from '../common/tenant-auth.guard';
 import { ReqContext } from '../common/req-context.decorator';
 import { PlatformCmsService } from './platform-cms.service';
 
+/**
+ * Nested CMS slugs (solutions/website) must be URL-encoded as a single path segment
+ * (solutions%2Fwebsite). normalizePlatformSlug decodes them.
+ */
 @Controller()
 export class PlatformCmsController {
   constructor(private readonly cms: PlatformCmsService) {}
@@ -89,6 +93,8 @@ export class PlatformCmsController {
             legal_ok: z.boolean().optional(),
           })
           .optional(),
+        /** CORP-CMS-3 Could — ISO datetime; future → status scheduled */
+        publish_at: z.string().optional(),
       })
       .safeParse(body);
     if (!parsed.success) throw AppError.validation('Invalid transition', parsed.error.flatten());
@@ -98,7 +104,14 @@ export class PlatformCmsController {
       slug,
       parsed.data.target,
       parsed.data.checklist || null,
+      parsed.data.publish_at || null,
     );
+  }
+
+  @Post('v1/admin/platform/sites/:siteKey/flush-scheduled')
+  @UseGuards(TenantAuthGuard)
+  flushScheduled(@ReqContext() ctx: RequestContext, @Param('siteKey') siteKey: string) {
+    return this.cms.flushScheduled(ctx, siteKey);
   }
 
   @Post('v1/admin/platform/sites/:siteKey/preview-token')
@@ -113,10 +126,51 @@ export class PlatformCmsController {
     return this.cms.createPreviewToken(ctx, siteKey, parsed.data.hours ?? 24);
   }
 
+  @Post('v1/admin/platform/sites/:siteKey/pages/:slug/rollback')
+  @UseGuards(TenantAuthGuard)
+  rollback(
+    @ReqContext() ctx: RequestContext,
+    @Param('siteKey') siteKey: string,
+    @Param('slug') slug: string,
+    @Body() body: unknown,
+  ) {
+    const parsed = z.object({ version: z.number().int().positive() }).safeParse(body);
+    if (!parsed.success) throw AppError.validation('Invalid rollback', parsed.error.flatten());
+    return this.cms.rollback(ctx, siteKey, slug, parsed.data.version);
+  }
+
+  @Get('v1/admin/platform/sites/:siteKey/nav')
+  @UseGuards(TenantAuthGuard)
+  listNav(@ReqContext() ctx: RequestContext, @Param('siteKey') siteKey: string) {
+    return this.cms.listNav(ctx, siteKey);
+  }
+
+  @Put('v1/admin/platform/sites/:siteKey/nav/:handle')
+  @UseGuards(TenantAuthGuard)
+  putNav(
+    @ReqContext() ctx: RequestContext,
+    @Param('siteKey') siteKey: string,
+    @Param('handle') handle: string,
+    @Body() body: unknown,
+  ) {
+    const parsed = z
+      .object({
+        items: z.array(z.object({ label: z.string(), href: z.string() })),
+      })
+      .safeParse(body);
+    if (!parsed.success) throw AppError.validation('Invalid nav', parsed.error.flatten());
+    return this.cms.upsertNav(ctx, siteKey, handle, parsed.data.items);
+  }
+
   /** Published only — no tenant header required. */
   @Get('v1/public/platform/:siteKey/pages/:slug')
   publicPage(@Param('siteKey') siteKey: string, @Param('slug') slug: string) {
     return this.cms.getPublishedPage(siteKey, slug);
+  }
+
+  @Get('v1/public/platform/:siteKey/nav')
+  publicNav(@Param('siteKey') siteKey: string) {
+    return this.cms.getPublicNav(siteKey);
   }
 
   /** Draft preview with token (AC-P7). */

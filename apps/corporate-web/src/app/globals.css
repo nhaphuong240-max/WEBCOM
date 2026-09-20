@@ -1232,8 +1232,129 @@ p { margin: 0; }
   display: flex; align-items: flex-start; gap: 8px; font-size: 13px; color: var(--hv-muted);
   text-align: left; margin: 8px 0;
 }
+
+/* ——— Platform CMS sections (CORP-CMS-2) ——— */
+.pcms-page-header, .pcms-workflow, .pcms-kpi-row, .pcms-showcase,
+.pcms-case-hero, .pcms-ba, .pcms-matrix {
+  padding: 40px clamp(16px, 4vw, 48px);
+}
+.pcms-eyebrow {
+  font-size: 12px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase;
+  color: var(--hv-blue); margin-bottom: 10px;
+}
+.pcms-page-header h1, .pcms-case-hero h1 {
+  font-family: var(--hv-font); font-size: clamp(28px, 3.5vw, 40px);
+  font-weight: 800; color: var(--hv-navy); margin: 0 0 12px; letter-spacing: -0.02em;
+}
+.pcms-page-header p, .pcms-showcase p { color: var(--hv-muted); max-width: 52ch; margin: 0; line-height: 1.55; }
+.pcms-workflow-problem {
+  font-size: 18px; font-weight: 600; color: var(--hv-navy); margin: 0 0 24px; max-width: 48ch;
+}
+.pcms-workflow-steps {
+  display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px;
+  list-style: none; margin: 0; padding: 0; counter-reset: step;
+}
+.pcms-workflow-steps li {
+  counter-increment: step; padding: 18px; border-radius: var(--hv-radius-card);
+  background: var(--hv-soft); display: flex; flex-direction: column; gap: 6px;
+}
+.pcms-workflow-steps li::before {
+  content: counter(step); width: 28px; height: 28px; border-radius: 50%;
+  background: #dbe6ff; color: var(--hv-navy); font-weight: 800; font-size: 13px;
+  display: flex; align-items: center; justify-content: center; margin-bottom: 4px;
+}
+.pcms-workflow-steps strong { color: var(--hv-navy); font-size: 15px; }
+.pcms-workflow-steps span { color: var(--hv-muted); font-size: 13px; line-height: 1.45; }
+.pcms-kpi-row {
+  display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px;
+  background: var(--hv-bg); border-top: 1px solid var(--hv-line); border-bottom: 1px solid var(--hv-line);
+}
+.pcms-kpi-item { text-align: left; }
+.pcms-showcase {
+  background: linear-gradient(165deg, #eef3ff 0%, var(--hv-soft) 50%, #fff 100%);
+}
+.pcms-showcase h2 { color: var(--hv-navy); margin: 0 0 10px; font-size: clamp(22px, 2.5vw, 28px); }
+.pcms-showcase ul { margin: 16px 0 0; padding-left: 18px; color: var(--hv-muted); }
+.pcms-case-metric {
+  display: inline-block; margin-top: 16px; padding: 10px 16px;
+  background: #dbe6ff; color: var(--hv-navy); font-weight: 800; font-size: 18px;
+  border-radius: var(--hv-radius-card);
+}
+.pcms-ba table, .pcms-matrix table {
+  width: 100%; max-width: 720px; border-collapse: collapse; font-size: 14px;
+}
+.pcms-ba th, .pcms-ba td, .pcms-matrix th, .pcms-matrix td {
+  text-align: left; padding: 12px 14px; border-bottom: 1px solid var(--hv-line);
+}
+.pcms-ba th, .pcms-matrix th {
+  font-size: 12px; text-transform: uppercase; letter-spacing: 0.04em;
+  color: var(--hv-muted); font-weight: 700;
+}
+.pcms-ba td.after { color: var(--hv-blue); font-weight: 700; }
+.pcms-matrix td:nth-child(2) { font-weight: 700; color: var(--hv-navy); }
+
+/* ——— Platform CMS sections (CORP-CMS-3) ——— */
+.pcms-roi, .pcms-resources, .pcms-gated, .pcms-tour {
+  padding: 40px clamp(16px, 4vw, 48px);
+}
+.pcms-roi h2, .pcms-resources h2, .pcms-gated h2, .pcms-tour h2 {
+  color: var(--hv-navy); margin: 0 0 16px; font-size: clamp(22px, 2.5vw, 28px);
+}
+.pcms-roi-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 12px; }
+.pcms-roi-list li {
+  display: grid; grid-template-columns: 1fr auto; gap: 4px 16px;
+  padding: 14px 16px; background: var(--hv-soft); border-radius: var(--hv-radius-card);
+}
+.pcms-roi-list strong { color: var(--hv-navy); }
+.pcms-roi-value { font-weight: 800; color: var(--hv-blue); }
+.pcms-roi-note { grid-column: 1 / -1; font-size: 13px; color: var(--hv-muted); }
+.pcms-roi-disclaimer {
+  margin-top: 16px; font-size: 13px; color: var(--hv-muted); max-width: 60ch; line-height: 1.5;
+  border-left: 3px solid var(--hv-line); padding-left: 12px;
+}
+.pcms-resources-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 12px; }
+.pcms-resources-list li {
+  display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap;
+  padding: 18px 20px; background: #fff; border: 1px solid var(--hv-line); border-radius: var(--hv-radius-card);
+}
+.pcms-resources-list li.gated { background: var(--hv-soft); }
+.pcms-res-type {
+  font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: var(--hv-blue);
+}
+.pcms-resources-list h3 { margin: 4px 0; color: var(--hv-navy); font-size: 17px; }
+.pcms-resources-list p { margin: 0; color: var(--hv-muted); font-size: 14px; }
+.pcms-gated { background: linear-gradient(165deg, #eef3ff 0%, var(--hv-soft) 55%, #fff 100%); }
+.pcms-gated p { color: var(--hv-muted); max-width: 48ch; }
+.pcms-gated-form { max-width: 420px; margin-top: 16px; }
+.pcms-gated-unlocked { margin-top: 16px; }
+.pcms-tour-nav {
+  display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 20px;
+}
+.pcms-tour-nav button {
+  border: 1px solid var(--hv-line); background: #fff; color: var(--hv-text);
+  padding: 8px 12px; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer;
+}
+.pcms-tour-nav button.active {
+  background: var(--hv-navy); color: #fff; border-color: var(--hv-navy);
+}
+.pcms-tour-panel {
+  padding: 24px; background: var(--hv-soft); border-radius: var(--hv-radius-card); max-width: 640px;
+}
+.pcms-tour-panel h3 { margin: 0 0 8px; color: var(--hv-navy); }
+.pcms-tour-panel p { color: var(--hv-muted); margin: 0 0 16px; line-height: 1.55; }
+.pcms-tour-media { max-width: 100%; border-radius: 8px; margin-bottom: 16px; }
+.pcms-tour-controls {
+  display: flex; align-items: center; gap: 16px; margin-top: 20px; font-size: 14px; color: var(--hv-muted);
+}
+.pcms-tour-controls button {
+  border: 1px solid var(--hv-line); background: #fff; padding: 8px 14px; border-radius: 8px;
+  cursor: pointer; font-weight: 600;
+}
+.pcms-tour-controls button:disabled { opacity: 0.4; cursor: not-allowed; }
+
 @media (max-width: 900px) {
-  .pcms-proof, .pcms-modules-grid, .pcms-pricing-grid { grid-template-columns: 1fr; }
+  .pcms-proof, .pcms-modules-grid, .pcms-pricing-grid,
+  .pcms-workflow-steps, .pcms-kpi-row { grid-template-columns: 1fr; }
   .pcms-industry-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 

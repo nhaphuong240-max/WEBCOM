@@ -1063,7 +1063,7 @@ Browse /templates → Demo (demo. host) → Dùng thử (/console onboarding)
 | **P3** | Theme license checkout (VietQR/TRANSFER) tách khỏi cart hàng hóa | **shipped** — `PlatformInvoice` + `ThemeLicense` · simulate-paid · gate install |
 
 **Won't (phase 1):** subscription Starter/Growth; marketplace 400 theme.  
-**Platform CMS (FR-CORPWEB):** Spec [`docs/specs/webcom-corporate-cms.md`](../specs/webcom-corporate-cms.md) · Plan [`docs/specs/webcom-corporate-cms-implementation-plan.md`](../specs/webcom-corporate-cms-implementation-plan.md) — kickoff sau Shared CMS GA (đã đạt); chưa code.
+**Platform CMS (FR-CORPWEB):** Spec [`docs/specs/webcom-corporate-cms.md`](../specs/webcom-corporate-cms.md) · Plan [`docs/specs/webcom-corporate-cms-implementation-plan.md`](../specs/webcom-corporate-cms-implementation-plan.md) — **GA shipped** (CORP-CMS-2); flag `FEATURE_PLATFORM_CMS` off by default.
 
 **SRS:** FR-CORPWEB · FR-WCP-002 · mockup `01-corporate-gtm.html`.
 
@@ -1145,11 +1145,11 @@ CMS per-template · fork editor Enterprise · arbitrary script · 400 theme mỏ
 | Wave | Scope | Status |
 |---|---|---|
 | CORP-CMS-0 | PlatformSite · API · RBAC · flag fallback | **Shipped** — ADR-008 · interim SF · API/RBAC/seed/e2e-0 |
-| CORP-CMS-1 | Content MVP · nghiệp vụ · UI runtime | **Shipped local** — registry/CTA/SectionStack/admin/e2e-1 |
-| CORP-CMS-2 | Solutions · Case · Industry · Nav · **GA** | Plan v2.0 |
-| CORP-CMS-3 | Resources gated · Tour · ROI · i18n | Backlog |
+| CORP-CMS-1 | Content MVP · nghiệp vụ · UI runtime | **Shipped** — registry/CTA/SectionStack/admin/e2e-1 |
+| CORP-CMS-2 | Solutions · Case · Industry · Nav · **GA** | **Shipped GA** — case KPI gate · rollback · revalidate · nav · e2e-platform-cms.sh |
+| CORP-CMS-3 | Resources gated · Tour · ROI · i18n | **Shipped** — gated unlock · tour_steps · roi_assumptions · schedule · webcom_en stub · e2e-platform-cms-3 |
 
-**Ước lượng:** 6–8 tuần tới GA. Kickoff: Day 0 audit + chốt Q1–Q8 (defaults trong plan §2).
+**Ước lượng:** GA đạt (CORP-CMS-2); CORP-CMS-3 backlog Should đã code. Rollout: seed + deploy flag `FEATURE_PLATFORM_CMS` theo runbook `platform-cms.md`.
 
 ---
 

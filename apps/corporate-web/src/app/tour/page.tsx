@@ -4,13 +4,13 @@ import { fetchPlatformPage, isPlatformCmsEnabled } from '../../lib/platform-cms'
 
 export const dynamic = 'force-dynamic';
 
-export default async function ResourcesPage({
+export default async function TourPage({
   searchParams,
 }: {
   searchParams?: Promise<{ preview?: string }>;
 }) {
   const sp = (await searchParams) || {};
-  const page = await fetchPlatformPage('resources', { previewToken: sp.preview });
+  const page = await fetchPlatformPage('tour', { previewToken: sp.preview });
   const useCms =
     Boolean(page?.content_v1?.section_order?.length) &&
     (isPlatformCmsEnabled() || Boolean(sp.preview));
@@ -26,18 +26,13 @@ export default async function ResourcesPage({
   return (
     <main className="corp-page">
       <div className="corp-page-h">
-        <div className="corp-eyebrow">Resources</div>
-        <h1>Tài nguyên vận hành</h1>
-        <p>Runbook, playbook và checklist — bật Platform CMS để sửa không cần deploy.</p>
-      </div>
-      <p>
-        <Link href="/resources/golive-checklist" className="corp-btn corp-btn-primary">
-          Go-live checklist
-        </Link>{' '}
-        <Link href="/tour" className="corp-btn corp-btn-ghost">
-          Product tour
+        <div className="corp-eyebrow">Tour</div>
+        <h1>Product tour</h1>
+        <p>Theme → Brand Kit → Go-live → Live/POS → CRM.</p>
+        <Link href="/templates" className="corp-btn corp-btn-primary">
+          Xem templates
         </Link>
-      </p>
+      </div>
     </main>
   );
 }

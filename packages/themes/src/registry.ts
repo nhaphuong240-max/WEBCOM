@@ -401,6 +401,260 @@ export const SECTION_REGISTRY = [
       required: ['headline', 'cta'],
     },
   },
+  // ─── Platform CMS CORP-CMS-2 ───────────────────────────────
+  {
+    key: 'page_header',
+    label: 'Page header (Platform)',
+    fields: ['eyebrow', 'title', 'body'],
+    props_schema: {
+      type: 'object',
+      properties: {
+        eyebrow: { type: 'string' },
+        title: { type: 'string' },
+        body: { type: 'string' },
+      },
+      required: ['title'],
+    },
+  },
+  {
+    key: 'problem_workflow',
+    label: 'Problem workflow (Platform)',
+    fields: ['problem', 'steps', 'ui_media'],
+    props_schema: {
+      type: 'object',
+      properties: {
+        problem: { type: 'string' },
+        steps: {
+          type: 'array',
+          items: {
+            type: 'object',
+            properties: { title: { type: 'string' }, body: { type: 'string' } },
+            required: ['title'],
+          },
+        },
+        ui_media: { type: 'string' },
+      },
+      required: ['problem', 'steps'],
+    },
+  },
+  {
+    key: 'kpi_row',
+    label: 'KPI row (Platform)',
+    fields: ['items'],
+    props_schema: {
+      type: 'object',
+      properties: {
+        items: {
+          type: 'array',
+          items: {
+            type: 'object',
+            properties: { label: { type: 'string' }, value: { type: 'string' } },
+            required: ['label', 'value'],
+          },
+        },
+      },
+      required: ['items'],
+    },
+  },
+  {
+    key: 'ui_showcase',
+    label: 'UI showcase (Platform)',
+    fields: ['title', 'body', 'media_url', 'bullets'],
+    props_schema: {
+      type: 'object',
+      properties: {
+        title: { type: 'string' },
+        body: { type: 'string' },
+        media_url: { type: 'string' },
+        bullets: { type: 'array', items: { type: 'string' } },
+      },
+      required: ['title'],
+    },
+  },
+  {
+    key: 'use_case_cards',
+    label: 'Use case cards (Platform)',
+    fields: ['items'],
+    props_schema: {
+      type: 'object',
+      properties: {
+        items: {
+          type: 'array',
+          items: {
+            type: 'object',
+            properties: {
+              title: { type: 'string' },
+              body: { type: 'string' },
+              href: { type: 'string' },
+              icon: { type: 'string' },
+            },
+            required: ['title', 'body'],
+          },
+        },
+      },
+      required: ['items'],
+    },
+  },
+  {
+    key: 'case_hero',
+    label: 'Case hero (Platform)',
+    fields: ['title', 'customer', 'industry', 'hero_metric'],
+    props_schema: {
+      type: 'object',
+      properties: {
+        title: { type: 'string' },
+        customer: { type: 'string' },
+        industry: { type: 'string' },
+        hero_metric: { type: 'string' },
+      },
+      required: ['title', 'customer'],
+    },
+  },
+  {
+    key: 'before_after_kpi',
+    label: 'Before/After KPI (Platform)',
+    fields: ['metrics'],
+    props_schema: {
+      type: 'object',
+      properties: {
+        metrics: {
+          type: 'array',
+          items: {
+            type: 'object',
+            properties: {
+              label: { type: 'string' },
+              before: { type: 'string' },
+              after: { type: 'string' },
+            },
+            required: ['label', 'before', 'after'],
+          },
+        },
+      },
+      required: ['metrics'],
+    },
+  },
+  {
+    key: 'capability_matrix',
+    label: 'Capability matrix (Platform)',
+    fields: ['rows', 'peer_column_label'],
+    props_schema: {
+      type: 'object',
+      properties: {
+        peer_column_label: { type: 'string' },
+        rows: {
+          type: 'array',
+          items: {
+            type: 'object',
+            properties: {
+              feature: { type: 'string' },
+              webcom: { type: 'string' },
+              peer_label: { type: 'string' },
+            },
+            required: ['feature', 'webcom', 'peer_label'],
+          },
+        },
+      },
+      required: ['rows'],
+    },
+  },
+  // ─── Platform CMS CORP-CMS-3 ───────────────────────────────
+  {
+    key: 'roi_assumptions',
+    label: 'ROI assumptions (Platform)',
+    fields: ['assumptions', 'disclaimer'],
+    props_schema: {
+      type: 'object',
+      properties: {
+        assumptions: {
+          type: 'array',
+          items: {
+            type: 'object',
+            properties: {
+              label: { type: 'string' },
+              value: { type: 'string' },
+              note: { type: 'string' },
+            },
+            required: ['label', 'value'],
+          },
+        },
+        disclaimer: { type: 'string' },
+      },
+      required: ['assumptions', 'disclaimer'],
+    },
+  },
+  {
+    key: 'resource_list',
+    label: 'Resource list (Platform)',
+    fields: ['items', 'headline'],
+    props_schema: {
+      type: 'object',
+      properties: {
+        headline: { type: 'string' },
+        items: {
+          type: 'array',
+          items: {
+            type: 'object',
+            properties: {
+              title: { type: 'string' },
+              type: { type: 'string' },
+              href: { type: 'string' },
+              gated: { type: 'boolean' },
+              summary: { type: 'string' },
+            },
+            required: ['title', 'type', 'href'],
+          },
+        },
+      },
+      required: ['items'],
+    },
+  },
+  {
+    key: 'gated_form',
+    label: 'Gated form (Platform)',
+    fields: ['headline', 'body', 'fields', 'submit_label', 'unlock_href', 'cta_code'],
+    props_schema: {
+      type: 'object',
+      properties: {
+        headline: { type: 'string' },
+        body: { type: 'string' },
+        fields: {
+          type: 'array',
+          items: { type: 'string' },
+        },
+        submit_label: { type: 'string' },
+        unlock_href: { type: 'string' },
+        cta_code: { type: 'string' },
+        consent_label: { type: 'string' },
+      },
+      required: ['headline', 'unlock_href'],
+    },
+  },
+  {
+    key: 'tour_steps',
+    label: 'Product tour (Platform)',
+    fields: ['title', 'steps'],
+    props_schema: {
+      type: 'object',
+      properties: {
+        title: { type: 'string' },
+        steps: {
+          type: 'array',
+          items: {
+            type: 'object',
+            properties: {
+              title: { type: 'string' },
+              body: { type: 'string' },
+              media: { type: 'string' },
+              cta_label: { type: 'string' },
+              cta_href: { type: 'string' },
+            },
+            required: ['title', 'body'],
+          },
+        },
+      },
+      required: ['steps'],
+    },
+  },
 ] as const;
 
 export type SectionKey = (typeof SECTION_REGISTRY)[number]['key'];
@@ -415,6 +669,7 @@ export const PLATFORM_CTA_CODES = [
   'cta_buy_theme',
   'cta_book_demo',
   'cta_pricing',
+  'cta_resource_unlock',
 ] as const;
 
 export type PlatformCtaCode = (typeof PLATFORM_CTA_CODES)[number];
@@ -433,7 +688,22 @@ const PLATFORM_ONLY = new Set([
   'pricing_table',
   'catalog_intro',
   'cta_band',
+  'page_header',
+  'problem_workflow',
+  'kpi_row',
+  'ui_showcase',
+  'use_case_cards',
+  'case_hero',
+  'before_after_kpi',
+  'capability_matrix',
+  'roi_assumptions',
+  'resource_list',
+  'gated_form',
+  'tour_steps',
 ]);
+
+/** Q3 default — no competitor brand names */
+export const PLATFORM_PEER_COLUMN_DEFAULT = 'Omnichannel phổ biến';
 
 const SHARED = new Set(['faq', 'rich_text']);
 

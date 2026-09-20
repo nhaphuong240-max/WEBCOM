@@ -4,19 +4,24 @@ import { FormEvent, useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 
-const NAV = [
+const DEFAULT_NAV = [
   { label: 'Website bán hàng', href: '/templates?goal=conversion' },
   { label: 'Beauty & Live', href: '/templates?industry=beauty' },
   { label: 'Doanh nghiệp', href: '/templates?industry=b2b' },
   { label: 'Giao diện miễn phí', href: '/templates?license=free' },
 ];
 
-export function SiteNav() {
+export function SiteNav({
+  navItems,
+}: {
+  navItems?: Array<{ label: string; href: string }>;
+}) {
   const router = useRouter();
   const pathname = usePathname() || '/';
   const light = pathname.startsWith('/templates') || pathname.startsWith('/trial');
   const [q, setQ] = useState('');
   const [menuOpen, setMenuOpen] = useState(false);
+  const NAV = navItems?.length ? navItems : DEFAULT_NAV;
 
   function onSearch(e: FormEvent) {
     e.preventDefault();
@@ -157,7 +162,11 @@ export function SiteNav() {
   );
 }
 
-export function SiteFooter() {
+export function SiteFooter({
+  footerItems,
+}: {
+  footerItems?: Array<{ label: string; href: string }>;
+}) {
   return (
     <footer className="hv-footer">
       <div className="hv-footer-inner">
@@ -176,18 +185,28 @@ export function SiteFooter() {
         <div>
           <h4>Giao diện</h4>
           <ul>
-            <li>
-              <Link href="/templates">Tất cả giao diện</Link>
-            </li>
-            <li>
-              <Link href="/templates?license=free">Miễn phí</Link>
-            </li>
-            <li>
-              <Link href="/templates?goal=conversion">Website bán hàng</Link>
-            </li>
-            <li>
-              <a href="https://themes.ngoinhahomnay.vn/">Demo storefront</a>
-            </li>
+            {footerItems?.length
+              ? footerItems.map((l) => (
+                  <li key={l.href}>
+                    <Link href={l.href}>{l.label}</Link>
+                  </li>
+                ))
+              : (
+                <>
+                  <li>
+                    <Link href="/templates">Tất cả giao diện</Link>
+                  </li>
+                  <li>
+                    <Link href="/templates?license=free">Miễn phí</Link>
+                  </li>
+                  <li>
+                    <Link href="/templates?goal=conversion">Website bán hàng</Link>
+                  </li>
+                  <li>
+                    <a href="https://themes.ngoinhahomnay.vn/">Demo storefront</a>
+                  </li>
+                </>
+              )}
           </ul>
         </div>
         <div>
@@ -198,6 +217,9 @@ export function SiteFooter() {
             </li>
             <li>
               <Link href="/pricing">Pricing</Link>
+            </li>
+            <li>
+              <Link href="/solutions/website">Solutions</Link>
             </li>
             <li>
               <a href="https://webecom.ngoinhahomnay.vn/console">Admin console</a>

@@ -1,0 +1,54 @@
+meta {
+  name: WebCom Platform CMS-3
+  type: collection
+}
+
+get {
+  url: {{baseUrl}}/v1/public/platform/webcom_apex/pages/resources
+}
+
+get {
+  url: {{baseUrl}}/v1/public/platform/webcom_apex/pages/tour
+}
+
+post {
+  url: {{baseUrl}}/v1/leads
+  headers: {
+    content-type: application/json
+    x-tenant-id: ten_platform
+  }
+  body: {
+    name: Bruno
+    email: bruno@webcom.local
+    consent: true
+    cta_code: cta_resource_unlock
+    landing_slug: /resources
+    unlock_href: /resources/golive-checklist
+  }
+}
+
+post {
+  url: {{baseUrl}}/v1/admin/platform/sites/webcom_apex/pages/tour/transition
+  headers: {
+    content-type: application/json
+    x-tenant-id: ten_platform
+    x-actor-id: usr_platform_approver
+  }
+  body: {
+    target: published
+    checklist: {
+      seo_ok: true
+      cta_codes_ok: true
+      legal_ok: true
+    }
+    publish_at: 2099-01-01T00:00:00Z
+  }
+}
+
+post {
+  url: {{baseUrl}}/v1/admin/platform/sites/webcom_apex/flush-scheduled
+  headers: {
+    x-tenant-id: ten_platform
+    x-actor-id: usr_platform_approver
+  }
+}

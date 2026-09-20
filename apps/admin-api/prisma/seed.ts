@@ -978,6 +978,12 @@ async function main() {
   const homeStarter = getPlatformStarter('gtm_home')!;
   const pricingStarter = getPlatformStarter('gtm_pricing')!;
   const catalogStarter = getPlatformStarter('gtm_catalog')!;
+  const solutionStarter = getPlatformStarter('gtm_solution')!;
+  const industryStarter = getPlatformStarter('gtm_industry')!;
+  const caseStarter = getPlatformStarter('gtm_case')!;
+  const resourcesStarter = getPlatformStarter('gtm_resources')!;
+  const resourceDetailStarter = getPlatformStarter('gtm_resource_detail')!;
+  const tourStarter = getPlatformStarter('gtm_tour')!;
 
   const platformHomeContent = {
     ...toLegacyFlat(homeStarter.content),
@@ -985,19 +991,53 @@ async function main() {
     section_order: homeStarter.content.section_order,
     sections: homeStarter.content.sections,
   };
-
   const platformPricingContent = {
     ...toLegacyFlat(pricingStarter.content),
     schema_version: 1,
     section_order: pricingStarter.content.section_order,
     sections: pricingStarter.content.sections,
   };
-
   const platformCatalogContent = {
     ...toLegacyFlat(catalogStarter.content),
     schema_version: 1,
     section_order: catalogStarter.content.section_order,
     sections: catalogStarter.content.sections,
+  };
+  const platformSolutionContent = {
+    ...toLegacyFlat(solutionStarter.content),
+    schema_version: 1,
+    section_order: solutionStarter.content.section_order,
+    sections: solutionStarter.content.sections,
+  };
+  const platformIndustryContent = {
+    ...toLegacyFlat(industryStarter.content),
+    schema_version: 1,
+    section_order: industryStarter.content.section_order,
+    sections: industryStarter.content.sections,
+  };
+  const platformCaseContent = {
+    ...toLegacyFlat(caseStarter.content),
+    schema_version: 1,
+    section_order: caseStarter.content.section_order,
+    sections: caseStarter.content.sections,
+  };
+  const platformResourcesContent = {
+    ...toLegacyFlat(resourcesStarter.content),
+    schema_version: 1,
+    section_order: resourcesStarter.content.section_order,
+    sections: resourcesStarter.content.sections,
+  };
+  const platformResourceDetailContent = {
+    ...toLegacyFlat(resourceDetailStarter.content),
+    schema_version: 1,
+    section_order: resourceDetailStarter.content.section_order,
+    sections: resourceDetailStarter.content.sections,
+  };
+  const platformTourContent = {
+    ...toLegacyFlat(tourStarter.content),
+    schema_version: 1,
+    section_order: tourStarter.content.section_order,
+    sections: tourStarter.content.sections,
   };
 
   await prisma.page.upsert({
@@ -1115,6 +1155,289 @@ async function main() {
     },
   });
 
+  // CORP-CMS-2 — solution / industry / case + nav
+  await prisma.page.upsert({
+    where: { storefrontId_slug: { storefrontId: platformSfId, slug: 'solutions/website' } },
+    create: {
+      id: 'pg_platform_sol_website',
+      tenantId: platformTenantId,
+      storefrontId: platformSfId,
+      slug: 'solutions/website',
+      title: 'Solution · Website Commerce',
+      templateKey: 'gtm_solution',
+      status: 'published',
+    },
+    update: {
+      title: 'Solution · Website Commerce',
+      templateKey: 'gtm_solution',
+      status: 'published',
+    },
+  });
+  await prisma.pageVersion.upsert({
+    where: { pageId_version: { pageId: 'pg_platform_sol_website', version: 1 } },
+    create: {
+      id: 'pgv_platform_sol_website_1',
+      tenantId: platformTenantId,
+      pageId: 'pg_platform_sol_website',
+      version: 1,
+      status: 'published',
+      content: platformSolutionContent,
+      seo: {
+        title: 'Website Commerce · WebCom',
+        description: 'Solution module (CORP-CMS-2)',
+      },
+    },
+    update: {
+      status: 'published',
+      content: platformSolutionContent,
+      seo: {
+        title: 'Website Commerce · WebCom',
+        description: 'Solution module (CORP-CMS-2)',
+      },
+    },
+  });
+
+  await prisma.page.upsert({
+    where: { storefrontId_slug: { storefrontId: platformSfId, slug: 'industries/beauty' } },
+    create: {
+      id: 'pg_platform_ind_beauty',
+      tenantId: platformTenantId,
+      storefrontId: platformSfId,
+      slug: 'industries/beauty',
+      title: 'Industry · Beauty',
+      templateKey: 'gtm_industry',
+      status: 'published',
+    },
+    update: {
+      title: 'Industry · Beauty',
+      templateKey: 'gtm_industry',
+      status: 'published',
+    },
+  });
+  await prisma.pageVersion.upsert({
+    where: { pageId_version: { pageId: 'pg_platform_ind_beauty', version: 1 } },
+    create: {
+      id: 'pgv_platform_ind_beauty_1',
+      tenantId: platformTenantId,
+      pageId: 'pg_platform_ind_beauty',
+      version: 1,
+      status: 'published',
+      content: platformIndustryContent,
+      seo: {
+        title: 'Beauty · WebCom',
+        description: 'Industry playbook (CORP-CMS-2)',
+      },
+    },
+    update: {
+      status: 'published',
+      content: platformIndustryContent,
+      seo: {
+        title: 'Beauty · WebCom',
+        description: 'Industry playbook (CORP-CMS-2)',
+      },
+    },
+  });
+
+  await prisma.page.upsert({
+    where: {
+      storefrontId_slug: { storefrontId: platformSfId, slug: 'case-studies/aura-beauty' },
+    },
+    create: {
+      id: 'pg_platform_case_aura',
+      tenantId: platformTenantId,
+      storefrontId: platformSfId,
+      slug: 'case-studies/aura-beauty',
+      title: 'Case · AURA Beauty',
+      templateKey: 'gtm_case',
+      status: 'published',
+    },
+    update: {
+      title: 'Case · AURA Beauty',
+      templateKey: 'gtm_case',
+      status: 'published',
+    },
+  });
+  await prisma.pageVersion.upsert({
+    where: { pageId_version: { pageId: 'pg_platform_case_aura', version: 1 } },
+    create: {
+      id: 'pgv_platform_case_aura_1',
+      tenantId: platformTenantId,
+      pageId: 'pg_platform_case_aura',
+      version: 1,
+      status: 'published',
+      content: platformCaseContent,
+      seo: {
+        title: 'AURA Beauty case · WebCom',
+        description: 'Case study ≥2 KPI (CORP-CMS-2)',
+      },
+    },
+    update: {
+      status: 'published',
+      content: platformCaseContent,
+      seo: {
+        title: 'AURA Beauty case · WebCom',
+        description: 'Case study ≥2 KPI (CORP-CMS-2)',
+      },
+    },
+  });
+
+  // CORP-CMS-3 — resources / gated detail / tour
+  await prisma.page.upsert({
+    where: { storefrontId_slug: { storefrontId: platformSfId, slug: 'resources' } },
+    create: {
+      id: 'pg_platform_resources',
+      tenantId: platformTenantId,
+      storefrontId: platformSfId,
+      slug: 'resources',
+      title: 'Resources hub',
+      templateKey: 'gtm_resources',
+      status: 'published',
+    },
+    update: {
+      title: 'Resources hub',
+      templateKey: 'gtm_resources',
+      status: 'published',
+    },
+  });
+  await prisma.pageVersion.upsert({
+    where: { pageId_version: { pageId: 'pg_platform_resources', version: 1 } },
+    create: {
+      id: 'pgv_platform_resources_1',
+      tenantId: platformTenantId,
+      pageId: 'pg_platform_resources',
+      version: 1,
+      status: 'published',
+      content: platformResourcesContent,
+      seo: { title: 'Resources · WebCom', description: 'Gated resources (CORP-CMS-3)' },
+    },
+    update: {
+      status: 'published',
+      content: platformResourcesContent,
+      seo: { title: 'Resources · WebCom', description: 'Gated resources (CORP-CMS-3)' },
+    },
+  });
+
+  await prisma.page.upsert({
+    where: {
+      storefrontId_slug: { storefrontId: platformSfId, slug: 'resources/golive-checklist' },
+    },
+    create: {
+      id: 'pg_platform_res_golive',
+      tenantId: platformTenantId,
+      storefrontId: platformSfId,
+      slug: 'resources/golive-checklist',
+      title: 'Go-live checklist',
+      templateKey: 'gtm_resource_detail',
+      status: 'published',
+    },
+    update: {
+      title: 'Go-live checklist',
+      templateKey: 'gtm_resource_detail',
+      status: 'published',
+    },
+  });
+  await prisma.pageVersion.upsert({
+    where: { pageId_version: { pageId: 'pg_platform_res_golive', version: 1 } },
+    create: {
+      id: 'pgv_platform_res_golive_1',
+      tenantId: platformTenantId,
+      pageId: 'pg_platform_res_golive',
+      version: 1,
+      status: 'published',
+      content: platformResourceDetailContent,
+      seo: { title: 'Go-live checklist · WebCom', description: 'Gated detail (CORP-CMS-3)' },
+    },
+    update: {
+      status: 'published',
+      content: platformResourceDetailContent,
+      seo: { title: 'Go-live checklist · WebCom', description: 'Gated detail (CORP-CMS-3)' },
+    },
+  });
+
+  await prisma.page.upsert({
+    where: { storefrontId_slug: { storefrontId: platformSfId, slug: 'tour' } },
+    create: {
+      id: 'pg_platform_tour',
+      tenantId: platformTenantId,
+      storefrontId: platformSfId,
+      slug: 'tour',
+      title: 'Product tour',
+      templateKey: 'gtm_tour',
+      status: 'published',
+    },
+    update: { title: 'Product tour', templateKey: 'gtm_tour', status: 'published' },
+  });
+  await prisma.pageVersion.upsert({
+    where: { pageId_version: { pageId: 'pg_platform_tour', version: 1 } },
+    create: {
+      id: 'pgv_platform_tour_1',
+      tenantId: platformTenantId,
+      pageId: 'pg_platform_tour',
+      version: 1,
+      status: 'published',
+      content: platformTourContent,
+      seo: { title: 'Tour · WebCom', description: 'Interactive tour (CORP-CMS-3)' },
+    },
+    update: {
+      status: 'published',
+      content: platformTourContent,
+      seo: { title: 'Tour · WebCom', description: 'Interactive tour (CORP-CMS-3)' },
+    },
+  });
+
+  await prisma.navigationMenu.upsert({
+    where: { storefrontId_handle: { storefrontId: platformSfId, handle: 'header' } },
+    create: {
+      id: 'nav_platform_header',
+      tenantId: platformTenantId,
+      storefrontId: platformSfId,
+      handle: 'header',
+      items: [
+        { label: 'Website bán hàng', href: '/templates?goal=conversion' },
+        { label: 'Beauty & Live', href: '/templates?industry=beauty' },
+        { label: 'Solutions', href: '/solutions/website' },
+        { label: 'Resources', href: '/resources' },
+        { label: 'Tour', href: '/tour' },
+        { label: 'Case studies', href: '/case-studies' },
+      ],
+    },
+    update: {
+      items: [
+        { label: 'Website bán hàng', href: '/templates?goal=conversion' },
+        { label: 'Beauty & Live', href: '/templates?industry=beauty' },
+        { label: 'Solutions', href: '/solutions/website' },
+        { label: 'Resources', href: '/resources' },
+        { label: 'Tour', href: '/tour' },
+        { label: 'Case studies', href: '/case-studies' },
+      ],
+    },
+  });
+  await prisma.navigationMenu.upsert({
+    where: { storefrontId_handle: { storefrontId: platformSfId, handle: 'footer' } },
+    create: {
+      id: 'nav_platform_footer',
+      tenantId: platformTenantId,
+      storefrontId: platformSfId,
+      handle: 'footer',
+      items: [
+        { label: 'Templates', href: '/templates' },
+        { label: 'Pricing', href: '/pricing' },
+        { label: 'Resources', href: '/resources' },
+        { label: 'Tour', href: '/tour' },
+        { label: 'Trial', href: '/trial' },
+      ],
+    },
+    update: {
+      items: [
+        { label: 'Templates', href: '/templates' },
+        { label: 'Pricing', href: '/pricing' },
+        { label: 'Resources', href: '/resources' },
+        { label: 'Tour', href: '/tour' },
+        { label: 'Trial', href: '/trial' },
+      ],
+    },
+  });
+
   // eslint-disable-next-line no-console
   console.log(
     JSON.stringify(
@@ -1143,7 +1466,17 @@ async function main() {
           site_key: 'webcom_apex',
           editor_user_id: platformEditorId,
           approver_user_id: platformApproverId,
-          pages: ['home', 'pricing', 'templates'],
+          pages: [
+            'home',
+            'pricing',
+            'templates',
+            'solutions/website',
+            'industries/beauty',
+            'case-studies/aura-beauty',
+            'resources',
+            'resources/golive-checklist',
+            'tour',
+          ],
         },
       },
       null,

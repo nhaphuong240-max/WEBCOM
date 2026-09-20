@@ -4,6 +4,7 @@ export const websiteNav = [
   { href: '/website/themes', label: 'Theme Library', mockup: '05' },
   { href: '/website/builder', label: 'Site Builder', mockup: '06' },
   { href: '/platform/pages', label: 'Platform CMS', mockup: 'PCMS' },
+  { href: '/platform/nav', label: 'Platform Nav', mockup: 'PCMS' },
   { href: '/website/creator', label: 'Creator Portal', mockup: 'C3' },
   { href: '/website/domains', label: 'Domain / SSL', mockup: 'A1' },
   { href: '/website/golive', label: 'Go-live', mockup: '07' },

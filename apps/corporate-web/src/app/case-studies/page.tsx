@@ -7,24 +7,27 @@ export default function CaseStudiesPage() {
         <div className="corp-eyebrow">Case / ROI</div>
         <h1>Case studies & ROI</h1>
         <p>
-          Merchant beauty tăng contribution margin +18% sau 90 ngày với WebCom go-live gate + funnel
-          analytics.
+          Merchant beauty tăng contribution margin sau Go-live với WebCom — KPI before/after công
+          khai.
         </p>
       </div>
 
       <article className="corp-card" style={{ maxWidth: 560 }}>
         <div className="meta">
           <span className="tag tag-accent">Beauty</span>
-          <span className="tag">90 ngày</span>
+          <span className="tag">AURA</span>
         </div>
         <h3>AURA Beauty VN</h3>
         <ul style={{ margin: 0, paddingLeft: 18, color: 'var(--ink-3)', fontSize: 14, lineHeight: 1.7 }}>
-          <li>Time-to-first-order: 11 ngày</li>
-          <li>Publish rollback &lt; 5 phút</li>
-          <li>Page contribution hiển thị theo landing</li>
+          <li>CVR mobile: 1.8% → 2.3%</li>
+          <li>LCP p75: 3.4s → 1.9s</li>
         </ul>
-        <Link href="/#demo" className="corp-btn corp-btn-primary" style={{ alignSelf: 'flex-start' }}>
-          Đặt demo tương tự
+        <Link
+          href="/case-studies/aura-beauty"
+          className="corp-btn corp-btn-primary"
+          style={{ alignSelf: 'flex-start' }}
+        >
+          Xem case đầy đủ
         </Link>
       </article>
     </main>

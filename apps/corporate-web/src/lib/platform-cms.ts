@@ -61,7 +61,9 @@ export async function fetchPlatformPage(
   if (!isPlatformCmsEnabled()) return null;
   const url = `${API}/api/v1/public/platform/${encodeURIComponent(siteKey)}/pages/${encodeURIComponent(pathSlug)}`;
   try {
-    const res = await fetch(url, { next: { revalidate: 60 } });
+    const res = await fetch(url, {
+      next: { revalidate: 60, tags: [`platform:${siteKey}`, `platform:${siteKey}:${pathSlug}`] },
+    });
     if (!res.ok) {
       // eslint-disable-next-line no-console
       console.warn('[platform-cms] public GET failed', res.status, url);
@@ -72,5 +74,44 @@ export async function fetchPlatformPage(
     // eslint-disable-next-line no-console
     console.warn('[platform-cms] fetch error', err);
     return null;
+  }
+}
+
+export type PlatformNavItem = { label: string; href: string };
+
+export async function fetchPlatformNav(
+  siteKey = PLATFORM_SITE_KEY,
+): Promise<{ header: PlatformNavItem[]; footer: PlatformNavItem[] }> {
+  const fallback = {
+    header: [
+      { label: 'Website bán hàng', href: '/templates?goal=conversion' },
+      { label: 'Beauty & Live', href: '/templates?industry=beauty' },
+      { label: 'Solutions', href: '/solutions/website' },
+      { label: 'Resources', href: '/resources' },
+      { label: 'Tour', href: '/tour' },
+      { label: 'Case studies', href: '/case-studies' },
+    ],
+    footer: [
+      { label: 'Templates', href: '/templates' },
+      { label: 'Pricing', href: '/pricing' },
+      { label: 'Resources', href: '/resources' },
+      { label: 'Trial', href: '/trial' },
+    ],
+  };
+  try {
+    const res = await fetch(
+      `${API}/api/v1/public/platform/${encodeURIComponent(siteKey)}/nav`,
+      { next: { revalidate: 60, tags: [`platform:${siteKey}:nav`] } },
+    );
+    if (!res.ok) return fallback;
+    const data = (await res.json()) as Record<string, unknown>;
+    const header = Array.isArray(data.header) ? (data.header as PlatformNavItem[]) : fallback.header;
+    const footer = Array.isArray(data.footer) ? (data.footer as PlatformNavItem[]) : fallback.footer;
+    return {
+      header: header.length ? header : fallback.header,
+      footer: footer.length ? footer : fallback.footer,
+    };
+  } catch {
+    return fallback;
   }
 }

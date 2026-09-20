@@ -41,8 +41,13 @@ export default async function PlatformPagesList() {
     <div>
       <PageHeader
         title="Platform CMS"
-        description={`site_key=${SITE} · CORP-CMS-1`}
-        actions={<Badge>{pages.length} pages</Badge>}
+        description={`site_key=${SITE} · CORP-CMS-2 GA`}
+        actions={
+          <>
+            <Badge>{pages.length} pages</Badge>
+            <Link href="/platform/nav">Navigation</Link>
+          </>
+        }
       />
       {err ? <Panel title="Lỗi">{err}</Panel> : null}
       <Panel title="Pages">
@@ -66,7 +71,7 @@ export default async function PlatformPagesList() {
                 <td>{p.template_key}</td>
                 <td>{p.status}</td>
                 <td>
-                  <Link href={`/platform/pages/${encodeURIComponent(p.slug)}`}>Sửa</Link>
+                  <Link href={`/platform/pages/${p.slug}`}>Sửa</Link>
                 </td>
               </tr>
             ))}

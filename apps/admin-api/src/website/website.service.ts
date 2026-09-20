@@ -399,12 +399,30 @@ export class WebsiteService {
       cta_code?: string;
       landing_slug?: string;
       consent?: boolean;
+      unlock_href?: string;
+      utm_source?: string;
+      utm_medium?: string;
+      utm_campaign?: string;
     },
   ) {
+    let unlockHref: string | null = null;
+    if (input.unlock_href) {
+      const u = input.unlock_href.trim();
+      if (u.startsWith('/') || /^https:\/\//i.test(u)) {
+        unlockHref = u;
+      } else {
+        throw AppError.validation('unlock_href must be relative path or https URL');
+      }
+    }
     const meta = [
       input.cta_code ? `cta_code=${input.cta_code}` : null,
       input.landing_slug ? `landing=${input.landing_slug}` : null,
       input.consent ? 'consent=1' : null,
+      unlockHref ? `unlock=${unlockHref}` : null,
+      input.utm_source ? `utm_source=${input.utm_source}` : null,
+      input.utm_medium ? `utm_medium=${input.utm_medium}` : null,
+      input.utm_campaign ? `utm_campaign=${input.utm_campaign}` : null,
+      `consent_at=${new Date().toISOString()}`,
     ]
       .filter(Boolean)
       .join(' ');
@@ -428,8 +446,15 @@ export class WebsiteService {
       channel: lead.channel,
       cta_code: input.cta_code,
       landing_slug: input.landing_slug,
+      unlock_href: unlockHref,
     });
-    return { id: lead.id, status: lead.status, cta_code: input.cta_code || null };
+    return {
+      id: lead.id,
+      status: lead.status,
+      cta_code: input.cta_code || null,
+      unlock_href: unlockHref,
+      unlocked: Boolean(unlockHref),
+    };
   }
 
   // ─── A1 Domain connect ─────────────────────────────────────
