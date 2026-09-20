@@ -22,7 +22,8 @@ echo "==> pnpm install"
 CI=true NODE_ENV=development pnpm install --frozen-lockfile </dev/null
 
 echo "==> build packages + apps"
-rm -f packages/shared-kernel/tsconfig.tsbuildinfo packages/ui/tsconfig.tsbuildinfo
+rm -f packages/shared-kernel/tsconfig.tsbuildinfo packages/ui/tsconfig.tsbuildinfo packages/themes/tsconfig.tsbuildinfo
+rm -rf packages/themes/dist
 pnpm --filter @ptt/shared-kernel build
 pnpm --filter @ptt/ui build
 pnpm --filter @ptt/themes build
