@@ -221,7 +221,7 @@ Solutions / industry / case (+ capability matrix Legal) + platform nav + revalid
 | PC2-7 | Capability matrix peer label per Q3 | Legal |
 | PC2-8 | OpenAPI full + Bruno + runbook complete | — |
 | PC2-9 | `scripts/e2e-platform-cms.sh` (full GA) | DoD §17 |
-| PC2-10 | Migrate Page `owner_type` (nếu interim SF ở CMS-0) | Spec §5.2 |
+| PC2-10 | Migrate Page `owner_type` + PlatformSite table | **done** (dual-write interim SF) |
 | PC2-11 | Staging `webcom_staging` optional | Q4 |
 | PC2-12 | Update `docs/04` §9r status → **shipped GA** | — |
 
@@ -242,9 +242,9 @@ Flag off; nav fallback hardcode SiteChrome.
 | PC3-1 | `resource_list` + `gated_form` → lead → unlock | Should | **done** |
 | PC3-2 | `tour_steps` interactive | Should | **done** |
 | PC3-3 | `roi_assumptions` + disclaimer | Should | **done** |
-| PC3-4 | Locale `en` / `webcom_en` | Could | **stub** (registry) |
+| PC3-4 | Locale `en` / `webcom_en` | Could | **done** (EN seed + `/en` · `/en/pricing`) |
 | PC3-5 | Schedule publish | Could | **done** (`publish_at` + flush) |
-| PC3-6 | Page A/B | Could | deferred (experiment_code already on Page) |
+| PC3-6 | Page A/B | Could | **done** (admin panel + corporate hero assign) |
 
 ---
 

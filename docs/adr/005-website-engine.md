@@ -14,7 +14,7 @@
    - **Brand Kit** = overlay design tokens (không thay CMS schema).
    - **Enterprise / Agency custom** = cùng CMS + app embed / section allowlist theo tenant — không fork CMS.
 5. **Listing ≠ Package ≠ Install:** `TemplateCatalog` (bán) → `ThemePackage` (chạy/demo) → tenant `Theme`/`PageVersion` (sau install).
-6. **Platform CMS (amended 2026-09-20 · ADR-008):** Corporate apex pages reuse the same Page/PageVersion engine under interim Storefront `sf_platform_*` + API `/platform/...` until `PlatformSite` / `owner_type` lands in CORP-CMS-2.
+6. **Platform CMS (amended 2026-09-20 · ADR-008 · PC2-10):** Corporate apex pages reuse the same Page/PageVersion engine under `PlatformSite` + Page `owner_type=platform` with interim Storefront `sf_platform_*` for nav/experiments until NavigationMenu is fully platform-scoped.
 
 ## Consequences
 - Preview/staging/rollback trở thành first-class trên một pipeline.

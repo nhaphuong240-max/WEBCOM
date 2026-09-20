@@ -244,6 +244,8 @@ export class WebsiteService {
           id: createId('pg'),
           tenantId,
           storefrontId,
+          ownerType: 'storefront',
+          ownerId: storefrontId,
           slug: 'home',
           title: 'AURA Home',
           templateKey: 'home',

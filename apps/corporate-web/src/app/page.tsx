@@ -59,7 +59,12 @@ export default async function CorporateHome({
   return (
     <main className="tm-home">
       {useCms && platformPage?.content_v1 ? (
-        <SectionStackPlatform content={platformPage.content_v1} />
+        <SectionStackPlatform
+          content={platformPage.content_v1}
+          experimentCode={platformPage.experiment_code}
+          experiment={platformPage.experiment}
+          storefrontId={platformPage.interim_storefront_id}
+        />
       ) : (
         <>
           <HeroConcierge />

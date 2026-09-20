@@ -581,6 +581,8 @@ async function main() {
       id: pageId,
       tenantId,
       storefrontId,
+      ownerType: 'storefront',
+      ownerId: storefrontId,
       slug: 'home',
       title: 'AURA Home',
       templateKey: 'home',
@@ -865,6 +867,10 @@ async function main() {
   const platformTenantId = 'ten_platform';
   const platformBrandId = 'brd_platform';
   const platformSfId = 'sf_platform_webcom';
+  const platformSfEnId = 'sf_platform_webcom_en';
+  const platformSiteApexId = 'psite_webcom_apex';
+  const platformSiteStagingId = 'psite_webcom_staging';
+  const platformSiteEnId = 'psite_webcom_en';
   const platformEditorId = 'usr_platform_editor';
   const platformApproverId = 'usr_platform_approver';
   const platformPasswordHash = await bcrypt.hash('PlatformCms1!', 10);
@@ -1046,6 +1052,8 @@ async function main() {
       id: 'pg_platform_home',
       tenantId: platformTenantId,
       storefrontId: platformSfId,
+      ownerType: 'platform',
+      ownerId: 'psite_webcom_apex',
       slug: 'home',
       title: 'WebCom Homepage',
       templateKey: 'gtm_home',
@@ -1083,6 +1091,8 @@ async function main() {
       id: 'pg_platform_pricing',
       tenantId: platformTenantId,
       storefrontId: platformSfId,
+      ownerType: 'platform',
+      ownerId: 'psite_webcom_apex',
       slug: 'pricing',
       title: 'WebCom Pricing',
       templateKey: 'gtm_pricing',
@@ -1120,6 +1130,8 @@ async function main() {
       id: 'pg_platform_templates',
       tenantId: platformTenantId,
       storefrontId: platformSfId,
+      ownerType: 'platform',
+      ownerId: 'psite_webcom_apex',
       slug: 'templates',
       title: 'Templates Catalog Intro',
       templateKey: 'gtm_catalog',
@@ -1162,6 +1174,8 @@ async function main() {
       id: 'pg_platform_sol_website',
       tenantId: platformTenantId,
       storefrontId: platformSfId,
+      ownerType: 'platform',
+      ownerId: 'psite_webcom_apex',
       slug: 'solutions/website',
       title: 'Solution · Website Commerce',
       templateKey: 'gtm_solution',
@@ -1203,6 +1217,8 @@ async function main() {
       id: 'pg_platform_ind_beauty',
       tenantId: platformTenantId,
       storefrontId: platformSfId,
+      ownerType: 'platform',
+      ownerId: 'psite_webcom_apex',
       slug: 'industries/beauty',
       title: 'Industry · Beauty',
       templateKey: 'gtm_industry',
@@ -1246,6 +1262,8 @@ async function main() {
       id: 'pg_platform_case_aura',
       tenantId: platformTenantId,
       storefrontId: platformSfId,
+      ownerType: 'platform',
+      ownerId: 'psite_webcom_apex',
       slug: 'case-studies/aura-beauty',
       title: 'Case · AURA Beauty',
       templateKey: 'gtm_case',
@@ -1288,6 +1306,8 @@ async function main() {
       id: 'pg_platform_resources',
       tenantId: platformTenantId,
       storefrontId: platformSfId,
+      ownerType: 'platform',
+      ownerId: 'psite_webcom_apex',
       slug: 'resources',
       title: 'Resources hub',
       templateKey: 'gtm_resources',
@@ -1325,6 +1345,8 @@ async function main() {
       id: 'pg_platform_res_golive',
       tenantId: platformTenantId,
       storefrontId: platformSfId,
+      ownerType: 'platform',
+      ownerId: 'psite_webcom_apex',
       slug: 'resources/golive-checklist',
       title: 'Go-live checklist',
       templateKey: 'gtm_resource_detail',
@@ -1360,6 +1382,8 @@ async function main() {
       id: 'pg_platform_tour',
       tenantId: platformTenantId,
       storefrontId: platformSfId,
+      ownerType: 'platform',
+      ownerId: 'psite_webcom_apex',
       slug: 'tour',
       title: 'Product tour',
       templateKey: 'gtm_tour',
@@ -1399,6 +1423,7 @@ async function main() {
         { label: 'Resources', href: '/resources' },
         { label: 'Tour', href: '/tour' },
         { label: 'Case studies', href: '/case-studies' },
+        { label: 'EN', href: '/en' },
       ],
     },
     update: {
@@ -1409,6 +1434,7 @@ async function main() {
         { label: 'Resources', href: '/resources' },
         { label: 'Tour', href: '/tour' },
         { label: 'Case studies', href: '/case-studies' },
+        { label: 'EN', href: '/en' },
       ],
     },
   });
@@ -1425,6 +1451,7 @@ async function main() {
         { label: 'Resources', href: '/resources' },
         { label: 'Tour', href: '/tour' },
         { label: 'Trial', href: '/trial' },
+        { label: 'English', href: '/en' },
       ],
     },
     update: {
@@ -1434,6 +1461,452 @@ async function main() {
         { label: 'Resources', href: '/resources' },
         { label: 'Tour', href: '/tour' },
         { label: 'Trial', href: '/trial' },
+        { label: 'English', href: '/en' },
+      ],
+    },
+  });
+
+  // PC2-10 — PlatformSite rows (first-class site registry)
+  await prisma.platformSite.upsert({
+    where: { siteKey: 'webcom_apex' },
+    create: {
+      id: platformSiteApexId,
+      tenantId: platformTenantId,
+      siteKey: 'webcom_apex',
+      name: 'WebCom Platform',
+      primaryHost: 'webecom.ngoinhahomnay.vn',
+      defaultLocale: 'vi',
+      status: 'live',
+      interimStorefrontId: platformSfId,
+      seoDefaults: {
+        title: 'WebCom · Website Commerce Platform',
+        description: 'Theme marketplace · Brand Kit · Go-live gate',
+      },
+      featureFlags: { cms: true, page_ab: true },
+    },
+    update: {
+      name: 'WebCom Platform',
+      primaryHost: 'webecom.ngoinhahomnay.vn',
+      defaultLocale: 'vi',
+      status: 'live',
+      interimStorefrontId: platformSfId,
+    },
+  });
+  await prisma.platformSite.upsert({
+    where: { siteKey: 'webcom_staging' },
+    create: {
+      id: platformSiteStagingId,
+      tenantId: platformTenantId,
+      siteKey: 'webcom_staging',
+      name: 'WebCom Platform (staging)',
+      primaryHost: 'staging-webecom.ngoinhahomnay.vn',
+      defaultLocale: 'vi',
+      status: 'draft',
+      interimStorefrontId: platformSfId,
+    },
+    update: {
+      name: 'WebCom Platform (staging)',
+      primaryHost: 'staging-webecom.ngoinhahomnay.vn',
+      status: 'draft',
+      interimStorefrontId: platformSfId,
+    },
+  });
+  await prisma.platformSite.upsert({
+    where: { siteKey: 'webcom_en' },
+    create: {
+      id: platformSiteEnId,
+      tenantId: platformTenantId,
+      siteKey: 'webcom_en',
+      name: 'WebCom Platform (EN)',
+      primaryHost: 'en.webecom.ngoinhahomnay.vn',
+      defaultLocale: 'en',
+      status: 'live',
+      interimStorefrontId: platformSfEnId,
+      seoDefaults: {
+        title: 'WebCom · Website Commerce for Vietnam retail',
+        description: 'Theme marketplace · Brand Kit · Go-live gate · Omnichannel POS',
+      },
+      featureFlags: { cms: true, page_ab: true },
+    },
+    update: {
+      name: 'WebCom Platform (EN)',
+      primaryHost: 'en.webecom.ngoinhahomnay.vn',
+      defaultLocale: 'en',
+      status: 'live',
+      interimStorefrontId: platformSfEnId,
+    },
+  });
+
+  // Tag all apex pages with platform owner (PC2-10)
+  await prisma.page.updateMany({
+    where: { tenantId: platformTenantId, storefrontId: platformSfId },
+    data: { ownerType: 'platform', ownerId: platformSiteApexId },
+  });
+
+  // PC3-6 — homepage A/B experiment on interim SF
+  await prisma.experiment.upsert({
+    where: { storefrontId_code: { storefrontId: platformSfId, code: 'platform_home_hero_v1' } },
+    create: {
+      id: 'exp_platform_home_hero_v1',
+      tenantId: platformTenantId,
+      storefrontId: platformSfId,
+      code: 'platform_home_hero_v1',
+      name: 'Platform homepage hero A/B',
+      status: 'running',
+      metric: 'purchase_cvr',
+      variants: [
+        {
+          key: 'control',
+          weight: 1,
+          headline: 'Website Commerce cho bán lẻ Việt Nam',
+          cta: 'Xem templates',
+          cta_href: '/templates',
+        },
+        {
+          key: 'benefit',
+          weight: 1,
+          headline: 'Go-live nhanh — theme, Brand Kit, gate sẵn sàng',
+          cta: 'Bắt đầu trial',
+          cta_href: '/trial',
+        },
+      ],
+      startedAt: new Date(),
+    },
+    update: { status: 'running' },
+  });
+  await prisma.page.update({
+    where: { id: 'pg_platform_home' },
+    data: { experimentCode: 'platform_home_hero_v1' },
+  });
+
+  // ─── webcom_en — real EN content (separate SF for unique slug) ───
+  await prisma.storefront.upsert({
+    where: { tenantId_slug: { tenantId: platformTenantId, slug: 'platform-webcom-en' } },
+    create: {
+      id: platformSfEnId,
+      tenantId: platformTenantId,
+      brandId: platformBrandId,
+      name: 'WebCom Corporate EN (interim)',
+      slug: 'platform-webcom-en',
+      status: 'published',
+      primaryDomain: 'en.webecom.ngoinhahomnay.vn',
+      seoTitle: 'WebCom · Website Commerce Platform',
+      seoDescription: 'Theme marketplace for Vietnam retail — English',
+    },
+    update: {
+      name: 'WebCom Corporate EN (interim)',
+      status: 'published',
+      primaryDomain: 'en.webecom.ngoinhahomnay.vn',
+      seoTitle: 'WebCom · Website Commerce Platform',
+      seoDescription: 'Theme marketplace for Vietnam retail — English',
+    },
+  });
+
+  const platformHomeEnContent = {
+    schema_version: 1,
+    section_order: ['announce', 'hero', 'proof', 'modules', 'cta'],
+    sections: {
+      announce: {
+        type: 'announce_bar',
+        id: 'sec_announce_en',
+        props: {
+          text: 'Self-serve trial — no credit card required',
+          cta_label: 'Start trial',
+          href: '/trial',
+          cta_code: 'cta_trial',
+          tone: 'promo',
+          ends_at: null,
+        },
+        style: {},
+      },
+      hero: {
+        type: 'platform_hero',
+        id: 'sec_hero_en',
+        props: {
+          headline: 'Website Commerce for Vietnam retail',
+          sub: 'Theme marketplace · Brand Kit · Go-live gate · Omnichannel POS',
+          primary_cta: {
+            label: 'Browse templates',
+            href: '/templates',
+            cta_code: 'cta_templates',
+          },
+          secondary_cta: {
+            label: 'Book a demo',
+            href: '/en#lead',
+            cta_code: 'cta_book_demo',
+          },
+          search_enabled: true,
+        },
+        style: {},
+      },
+      proof: {
+        type: 'social_proof',
+        id: 'sec_proof_en',
+        props: {
+          items: [
+            { n: '30+', label: 'Theme playbooks' },
+            { n: '1', label: 'Shared CMS engine' },
+            { n: 'VN', label: 'Checkout & logistics' },
+          ],
+        },
+        style: {},
+      },
+      modules: {
+        type: 'module_grid',
+        id: 'sec_modules_en',
+        props: {
+          items: [
+            {
+              title: 'Website Commerce',
+              body: 'HTML/Next themes · Brand Kit · Go-live gate',
+              href: '/templates?goal=conversion',
+              icon: 'cart',
+            },
+            {
+              title: 'Live & Social',
+              body: 'Live drops, keyword orders, attribution',
+              href: '/templates?goal=live',
+              icon: 'live',
+            },
+            {
+              title: 'Omnichannel POS',
+              body: 'Price · stock · customers web ↔ counter',
+              href: '/templates?goal=omnichannel',
+              icon: 'pos',
+            },
+          ],
+        },
+        style: {},
+      },
+      cta: {
+        type: 'cta_band',
+        id: 'sec_cta_en',
+        props: {
+          headline: 'Ready to try WebCom?',
+          body: 'Start a self-serve trial or book a demo with sales.',
+          cta: { label: 'Start trial', href: '/trial', cta_code: 'cta_trial' },
+        },
+        style: {},
+      },
+    },
+  };
+
+  const platformPricingEnContent = {
+    schema_version: 1,
+    section_order: ['hero', 'pricing', 'faq', 'cta'],
+    sections: {
+      hero: {
+        type: 'platform_hero',
+        id: 'sec_pricing_hero_en',
+        props: {
+          headline: 'Plans that match your stage',
+          sub: 'Theme licenses are one-time. Platform plans are separate. Trial first — upgrade when ready.',
+          primary_cta: {
+            label: 'Book a demo',
+            href: '/en#lead',
+            cta_code: 'cta_book_demo',
+          },
+          search_enabled: false,
+        },
+        style: {},
+      },
+      pricing: {
+        type: 'pricing_table',
+        id: 'sec_pricing_en',
+        props: {
+          theme_note:
+            'Theme license (one_time) is paid via VietQR on the Template Marketplace — not bundled into a Platform plan.',
+          plans: [
+            {
+              name: 'Theme license',
+              price: 'One-time',
+              layer: 'theme',
+              featured: false,
+              features: [
+                'Buy themes on the marketplace',
+                'Install into your storefront',
+                'Package updates per license',
+              ],
+              cta: {
+                label: 'Browse templates',
+                href: '/templates',
+                cta_code: 'cta_templates',
+              },
+            },
+            {
+              name: 'Platform Growth',
+              price: 'Contact',
+              layer: 'platform',
+              featured: true,
+              features: [
+                'Analytics & experiments',
+                'CRM / RFM / loyalty',
+                'Agency preview',
+              ],
+              cta: {
+                label: 'Book a demo',
+                href: '/en#lead',
+                cta_code: 'cta_book_demo',
+              },
+            },
+            {
+              name: 'Platform Enterprise',
+              price: 'Contact',
+              layer: 'platform',
+              featured: false,
+              features: ['Headless API', 'SLA 99.9%', 'Dedicated success'],
+              cta: {
+                label: 'Contact sales',
+                href: '/en#lead',
+                cta_code: 'cta_book_demo',
+              },
+            },
+          ],
+        },
+        style: {},
+      },
+      faq: {
+        type: 'faq',
+        id: 'sec_pricing_faq_en',
+        props: {
+          items: [
+            {
+              q: 'Are theme and Platform the same purchase?',
+              a: 'No — themes are one-time on the marketplace; Platform plans cover ops (analytics, SLA…).',
+            },
+            {
+              q: 'Is there a trial?',
+              a: 'Yes — self-serve trial before buying a theme or upgrading Platform.',
+            },
+          ],
+        },
+        style: {},
+      },
+      cta: {
+        type: 'cta_band',
+        id: 'sec_pricing_cta_en',
+        props: {
+          headline: 'Need a Platform quote?',
+          body: 'Sales responds during business hours (first-touch SLA 4h).',
+          cta: { label: 'Book a demo', href: '/en#lead', cta_code: 'cta_book_demo' },
+        },
+        style: {},
+      },
+    },
+  };
+
+  await prisma.page.upsert({
+    where: { storefrontId_slug: { storefrontId: platformSfEnId, slug: 'home' } },
+    create: {
+      id: 'pg_platform_en_home',
+      tenantId: platformTenantId,
+      storefrontId: platformSfEnId,
+      ownerType: 'platform',
+      ownerId: platformSiteEnId,
+      slug: 'home',
+      title: 'WebCom Homepage (EN)',
+      templateKey: 'gtm_home',
+      status: 'published',
+    },
+    update: {
+      title: 'WebCom Homepage (EN)',
+      templateKey: 'gtm_home',
+      status: 'published',
+      ownerType: 'platform',
+      ownerId: platformSiteEnId,
+    },
+  });
+  await prisma.pageVersion.upsert({
+    where: { pageId_version: { pageId: 'pg_platform_en_home', version: 1 } },
+    create: {
+      id: 'pgv_platform_en_home_1',
+      tenantId: platformTenantId,
+      pageId: 'pg_platform_en_home',
+      version: 1,
+      status: 'published',
+      content: platformHomeEnContent,
+      seo: {
+        title: 'WebCom · Website Commerce for Vietnam retail',
+        description: 'Theme marketplace · Brand Kit · Go-live gate · Omnichannel POS',
+      },
+    },
+    update: {
+      status: 'published',
+      content: platformHomeEnContent,
+      seo: {
+        title: 'WebCom · Website Commerce for Vietnam retail',
+        description: 'Theme marketplace · Brand Kit · Go-live gate · Omnichannel POS',
+      },
+    },
+  });
+
+  await prisma.page.upsert({
+    where: { storefrontId_slug: { storefrontId: platformSfEnId, slug: 'pricing' } },
+    create: {
+      id: 'pg_platform_en_pricing',
+      tenantId: platformTenantId,
+      storefrontId: platformSfEnId,
+      ownerType: 'platform',
+      ownerId: platformSiteEnId,
+      slug: 'pricing',
+      title: 'WebCom Pricing (EN)',
+      templateKey: 'gtm_pricing',
+      status: 'published',
+    },
+    update: {
+      title: 'WebCom Pricing (EN)',
+      templateKey: 'gtm_pricing',
+      status: 'published',
+      ownerType: 'platform',
+      ownerId: platformSiteEnId,
+    },
+  });
+  await prisma.pageVersion.upsert({
+    where: { pageId_version: { pageId: 'pg_platform_en_pricing', version: 1 } },
+    create: {
+      id: 'pgv_platform_en_pricing_1',
+      tenantId: platformTenantId,
+      pageId: 'pg_platform_en_pricing',
+      version: 1,
+      status: 'published',
+      content: platformPricingEnContent,
+      seo: {
+        title: 'WebCom Pricing · Theme vs Platform plans',
+        description: 'Theme one-time licenses and Platform plans explained.',
+      },
+    },
+    update: {
+      status: 'published',
+      content: platformPricingEnContent,
+      seo: {
+        title: 'WebCom Pricing · Theme vs Platform plans',
+        description: 'Theme one-time licenses and Platform plans explained.',
+      },
+    },
+  });
+
+  await prisma.navigationMenu.upsert({
+    where: { storefrontId_handle: { storefrontId: platformSfEnId, handle: 'header' } },
+    create: {
+      id: 'nav_platform_en_header',
+      tenantId: platformTenantId,
+      storefrontId: platformSfEnId,
+      handle: 'header',
+      items: [
+        { label: 'Home', href: '/en' },
+        { label: 'Templates', href: '/templates' },
+        { label: 'Pricing', href: '/en/pricing' },
+        { label: 'Trial', href: '/trial' },
+        { label: 'Tiếng Việt', href: '/' },
+      ],
+    },
+    update: {
+      items: [
+        { label: 'Home', href: '/en' },
+        { label: 'Templates', href: '/templates' },
+        { label: 'Pricing', href: '/en/pricing' },
+        { label: 'Trial', href: '/trial' },
+        { label: 'Tiếng Việt', href: '/' },
       ],
     },
   });
@@ -1463,7 +1936,10 @@ async function main() {
         platform_cms: {
           tenant_id: platformTenantId,
           storefront_id: platformSfId,
+          storefront_en_id: platformSfEnId,
           site_key: 'webcom_apex',
+          site_keys: ['webcom_apex', 'webcom_staging', 'webcom_en'],
+          experiment: 'platform_home_hero_v1',
           editor_user_id: platformEditorId,
           approver_user_id: platformApproverId,
           pages: [
@@ -1477,6 +1953,7 @@ async function main() {
             'resources/golive-checklist',
             'tour',
           ],
+          pages_en: ['home', 'pricing'],
         },
       },
       null,

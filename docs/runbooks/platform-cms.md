@@ -2,9 +2,10 @@
 
 | | |
 |---|---|
-| Wave | CORP-CMS-2 GA + **CORP-CMS-3** backlog Should |
-| Site key | `webcom_apex` (`webcom_en` locale stub) |
-| Interim SF | `sf_platform_webcom` · tenant `ten_platform` |
+| Wave | CORP-CMS-2 GA + CORP-CMS-3 + **debt PC2-10 / PC3-6 / webcom_en** |
+| Site keys | `webcom_apex` (vi) · `webcom_staging` · `webcom_en` (en) |
+| PlatformSite | table `platform_sites` · Page `owner_type=platform` |
+| Interim SF | `sf_platform_webcom` · `sf_platform_webcom_en` · tenant `ten_platform` |
 | ADR | `docs/adr/008-platform-cms.md` |
 | OpenAPI | `docs/openapi-platform-cms.yaml` |
 | Bruno | `docs/bruno/WebCom-Platform-CMS.bru` |
@@ -14,42 +15,34 @@
 | Env | Default | Meaning |
 |---|---|---|
 | `FEATURE_PLATFORM_CMS` | `false` | Corporate dual-path: on → render CMS; off → legacy React |
-| `FEATURE_CMS_PLATFORM_REGISTRY_V1` | on if unset | Platform section types in registry |
+| `FEATURE_CMS_PAGE_AB` | on if unset | Page `experiment_code` + hero variant |
+| `FEATURE_CMS_PLATFORM_REGISTRY_V1` | on if unset | Platform section types |
 | `FEATURE_BUILDER_PLATFORM` | on if unset | Admin canvas scope=platform |
-| `CORPORATE_REVALIDATE_URL` | — | Full URL to Next `/api/revalidate` |
+| `CORPORATE_REVALIDATE_URL` | — | Next `/api/revalidate` |
 | `CORPORATE_REVALIDATE_SECRET` | — | Header `x-revalidate-secret` |
 
-Hot rollback: set `FEATURE_PLATFORM_CMS=false` and restart `webecom-corporate`. Nav falls back to SiteChrome defaults.
+Hot rollback: `FEATURE_PLATFORM_CMS=false` + restart `webecom-corporate`.
 
 ## Edit & publish
 
-1. Console → **Platform CMS** (`/console/platform/pages`) with tenant `ten_platform`.
-2. Pages: `home`, `pricing`, `templates`, `solutions/website`, `industries/beauty`, `case-studies/aura-beauty`, `resources`, `resources/golive-checklist`, `tour`.
-3. **Navigation** → `/console/platform/nav`.
-4. Editor saves draft / sends **review**.
+1. Console → **Platform CMS** (`/console/platform/pages`) tenant `ten_platform`.
+2. Pages VI: `home`, `pricing`, `templates`, `solutions/website`, `industries/beauty`, `case-studies/aura-beauty`, `resources`, `tour`.
+3. Pages EN (`webcom_en`): set `NEXT_PUBLIC_PLATFORM_SITE_KEY=webcom_en` or edit via API; public at `/en`, `/en/pricing`.
+4. **A/B (PC3-6):** editor panel → `experiment_code` (seed `platform_home_hero_v1`).
 5. Approver checklist → **Publish** (revalidate).
-6. Optional **schedule**: `publish_at` ISO on transition → `scheduled`; `POST …/flush-scheduled` or public GET auto-promotes when due.
-7. **Rollback** in editor (AC-P3).
-8. Public: `GET /api/v1/public/platform/webcom_apex/pages/{slug}` (encode `/` as `%2F`).
+6. **Rollback** in editor (AC-P3).
 
-## CORP-CMS-3 — Resources · Tour · ROI
+## Locale EN
 
-| Type | Behavior |
-|---|---|
-| `resource_list` | Items; `gated:true` locked until session unlock |
-| `gated_form` | Lead → `unlock_href`; sessionStorage unlock |
-| `tour_steps` | Interactive step tabs |
-| `roi_assumptions` | Assumptions + mandatory disclaimer |
+- Site: `webcom_en` · SF `sf_platform_webcom_en` · owner `psite_webcom_en`
+- Corporate routes: `/en`, `/en/pricing`
+- Public: `GET /api/v1/public/platform/webcom_en/pages/home`
 
-Lead: `POST /api/v1/leads` + `unlock_href` (`/` or `https://`) → `{ unlocked, unlock_href }`. CTA: `cta_resource_unlock`.
+## A/B
 
-## Case KPI gate (AC-B6)
-
-`gtm_case*` / `case-studies/*` need ≥2 `before_after_kpi` metrics on publish.
-
-## Capability matrix
-
-Peer default: **Omnichannel phổ biến** — no competitor brand names.
+Seed experiment `platform_home_hero_v1` (running) on `sf_platform_webcom`.
+Homepage page linked via `experiment_code`. Corporate `PlatformHero` assigns
+variant (API or client sticky) and emits `experiment_exposed` to dataLayer.
 
 ## Roles
 
@@ -58,22 +51,13 @@ Peer default: **Omnichannel phổ biến** — no competitor brand names.
 | `usr_platform_editor` | `platform_cms_editor` | read/write |
 | `usr_platform_approver` | `platform_cms_approver` | publish + rollback + flush-scheduled |
 
-## CTA codes
-
-`cta_templates` · `cta_demo_live` · `cta_trial` · `cta_buy_theme` · `cta_book_demo` · `cta_pricing` · `cta_resource_unlock`
-
 ## Seed / e2e
 
 ```bash
-cd apps/admin-api && pnpm exec prisma db seed
+cd apps/admin-api && pnpm exec prisma migrate deploy && pnpm exec prisma db seed
 ./scripts/e2e-platform-cms-0.sh
 ./scripts/e2e-platform-cms-1.sh
 ./scripts/e2e-platform-cms.sh
 ./scripts/e2e-platform-cms-3.sh
+./scripts/e2e-platform-cms-debt.sh   # PC2-10 / PC3-6 / webcom_en
 ```
-
-## Deferred
-
-- PC2-10 `owner_type` / PlatformSite table
-- PC3-6 A/B UI (column `experiment_code` exists)
-- Full EN content for `webcom_en`

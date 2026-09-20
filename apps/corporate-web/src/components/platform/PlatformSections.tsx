@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { FormEvent, useCallback, useEffect, useState } from 'react';
+import { usePlatformAb, type PlatformExperimentPayload } from '../../lib/platform-ab';
 
 type Cta = { label?: string; href?: string; cta_code?: string };
 
@@ -54,10 +55,26 @@ export function AnnounceBar({ props }: { props: Record<string, unknown> }) {
   );
 }
 
-export function PlatformHero({ props }: { props: Record<string, unknown> }) {
-  const headline = String(props.headline || '');
+export function PlatformHero({
+  props,
+  ab,
+}: {
+  props: Record<string, unknown>;
+  ab?: {
+    code?: string | null;
+    experiment?: PlatformExperimentPayload | null;
+    storefrontId?: string | null;
+  };
+}) {
+  const variant = usePlatformAb(ab?.code, ab?.experiment, ab?.storefrontId);
+  const headline = String(variant?.headline || props.headline || '');
   const sub = String(props.sub || '');
-  const primary = (props.primary_cta || {}) as Cta;
+  const primaryBase = (props.primary_cta || {}) as Cta;
+  const primary: Cta = {
+    ...primaryBase,
+    label: variant?.cta || primaryBase.label,
+    href: variant?.cta_href || primaryBase.href,
+  };
   const secondary = props.secondary_cta as Cta | undefined;
   return (
     <section className="pcms-hero">

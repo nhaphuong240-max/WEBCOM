@@ -11,17 +11,34 @@ const DEFAULT_NAV = [
   { label: 'Giao diện miễn phí', href: '/templates?license=free' },
 ];
 
+const DEFAULT_NAV_EN = [
+  { label: 'Home', href: '/en' },
+  { label: 'Templates', href: '/templates' },
+  { label: 'Pricing', href: '/en/pricing' },
+  { label: 'Trial', href: '/trial' },
+  { label: 'Tiếng Việt', href: '/' },
+];
+
 export function SiteNav({
   navItems,
+  navItemsEn,
 }: {
   navItems?: Array<{ label: string; href: string }>;
+  navItemsEn?: Array<{ label: string; href: string }>;
 }) {
   const router = useRouter();
   const pathname = usePathname() || '/';
+  const isEn = pathname === '/en' || pathname.startsWith('/en/');
   const light = pathname.startsWith('/templates') || pathname.startsWith('/trial');
   const [q, setQ] = useState('');
   const [menuOpen, setMenuOpen] = useState(false);
-  const NAV = navItems?.length ? navItems : DEFAULT_NAV;
+  const NAV = isEn
+    ? navItemsEn?.length
+      ? navItemsEn
+      : DEFAULT_NAV_EN
+    : navItems?.length
+      ? navItems
+      : DEFAULT_NAV;
 
   function onSearch(e: FormEvent) {
     e.preventDefault();
@@ -92,9 +109,17 @@ export function SiteNav({
     <div className="tm-chrome">
       <div className="tm-promo">
         <p>
-          <strong>WebCom Unlimited</strong> — tải theme không giới hạn · trial trước paywall · VietQR
+          {isEn ? (
+            <>
+              <strong>WebCom Unlimited</strong> — unlimited theme downloads · trial before paywall · VietQR
+            </>
+          ) : (
+            <>
+              <strong>WebCom Unlimited</strong> — tải theme không giới hạn · trial trước paywall · VietQR
+            </>
+          )}
         </p>
-        <Link href="/pricing" className="tm-promo-cta">
+        <Link href={isEn ? '/en/pricing' : '/pricing'} className="tm-promo-cta">
           Unlimited Downloads
         </Link>
       </div>
@@ -112,7 +137,7 @@ export function SiteNav({
             <span />
           </button>
 
-          <Link href="/" className="tm-logo" aria-label="WebCom trang chủ">
+          <Link href={isEn ? '/en' : '/'} className="tm-logo" aria-label="WebCom home">
             <span className="tm-logo-mark" aria-hidden>
               W
             </span>
@@ -122,7 +147,7 @@ export function SiteNav({
           </Link>
 
           <form className="tm-search" onSubmit={onSearch} role="search">
-            <Link href="/templates" className="tm-search-cats" title="Danh mục">
+            <Link href="/templates" className="tm-search-cats" title="Categories">
               Categories
             </Link>
             <input
@@ -130,8 +155,8 @@ export function SiteNav({
               name="q"
               value={q}
               onChange={(e) => setQ(e.target.value)}
-              placeholder='vd. "beauty", "live drop", "pos"'
-              aria-label="Tìm template"
+              placeholder={isEn ? 'e.g. beauty, live drop, pos' : 'vd. "beauty", "live drop", "pos"'}
+              aria-label={isEn ? 'Search templates' : 'Tìm template'}
             />
             <button type="submit" className="tm-search-submit" aria-label="Search">
               ⌕
@@ -139,23 +164,27 @@ export function SiteNav({
           </form>
 
           <div className="tm-header-actions">
-            <Link href="/pricing" className="tm-btn tm-btn-unlimited">
+            <Link href={isEn ? '/en/pricing' : '/pricing'} className="tm-btn tm-btn-unlimited">
               Unlimited
             </Link>
             <Link href="/trial" className="tm-btn tm-btn-account">
-              Đăng nhập
+              {isEn ? 'Sign in' : 'Đăng nhập'}
             </Link>
           </div>
         </div>
 
-        <nav className={`tm-cat-nav${menuOpen ? ' open' : ''}`} aria-label="Danh mục sản phẩm">
+        <nav className={`tm-cat-nav${menuOpen ? ' open' : ''}`} aria-label={isEn ? 'Product categories' : 'Danh mục sản phẩm'}>
           {NAV.map((c) => (
             <Link key={c.href} href={c.href} onClick={() => setMenuOpen(false)}>
               {c.label}
             </Link>
           ))}
-          <Link href="/case-studies">Case / ROI</Link>
-          <Link href="/resources">Resources</Link>
+          {!isEn ? (
+            <>
+              <Link href="/case-studies">Case / ROI</Link>
+              <Link href="/resources">Resources</Link>
+            </>
+          ) : null}
         </nav>
       </header>
     </div>

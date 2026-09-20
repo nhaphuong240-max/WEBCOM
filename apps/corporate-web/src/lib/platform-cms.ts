@@ -38,6 +38,22 @@ export type PlatformPublishedPage = {
   content?: unknown;
   seo?: unknown;
   preview?: boolean;
+  experiment_code?: string | null;
+  experiment?: {
+    code: string;
+    status?: string;
+    variants?: Array<{
+      key: string;
+      weight?: number;
+      headline?: string;
+      cta?: string;
+      cta_href?: string;
+    }>;
+  } | null;
+  interim_storefront_id?: string | null;
+  locale?: string;
+  owner_type?: string;
+  owner_id?: string;
 };
 
 export async function fetchPlatformPage(

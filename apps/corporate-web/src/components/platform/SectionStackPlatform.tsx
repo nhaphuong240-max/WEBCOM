@@ -21,6 +21,7 @@ import {
   UiShowcase,
   UseCaseCards,
 } from './PlatformSections';
+import type { PlatformExperimentPayload } from '../../lib/platform-ab';
 
 type ContentV1 = {
   schema_version: number;
@@ -34,10 +35,23 @@ type ContentV1 = {
 /** Render Platform CMS ContentV1 — unknown types hidden (AC-P6). */
 export function SectionStackPlatform({
   content,
+  experimentCode,
+  experiment,
+  storefrontId,
 }: {
   content: ContentV1 | null | undefined;
+  /** PC3-6 */
+  experimentCode?: string | null;
+  experiment?: PlatformExperimentPayload | null;
+  storefrontId?: string | null;
 }) {
   if (!content?.section_order?.length) return null;
+
+  const ab = {
+    code: experimentCode,
+    experiment: experiment || null,
+    storefrontId: storefrontId || null,
+  };
 
   return (
     <div className="pcms-stack">
@@ -50,7 +64,7 @@ export function SectionStackPlatform({
             return <AnnounceBar key={key} props={props} />;
           case 'platform_hero':
           case 'hero':
-            return <PlatformHero key={key} props={props} />;
+            return <PlatformHero key={key} props={props} ab={ab} />;
           case 'social_proof':
           case 'trust':
             return <ProofStrip key={key} props={normalizeTrust(props)} />;

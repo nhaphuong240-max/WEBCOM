@@ -24,7 +24,10 @@ export const metadata: Metadata = {
 };
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
-  const nav = await fetchPlatformNav();
+  const [nav, navEn] = await Promise.all([
+    fetchPlatformNav(),
+    fetchPlatformNav('webcom_en'),
+  ]);
   return (
     <html lang="vi" className={`${body.variable} ${display.variable}`}>
       <body
@@ -37,7 +40,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           } as React.CSSProperties
         }
       >
-        <SiteNav navItems={nav.header} />
+        <SiteNav navItems={nav.header} navItemsEn={navEn.header} />
         {children}
         <SiteFooter footerItems={nav.footer} />
       </body>

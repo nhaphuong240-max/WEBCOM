@@ -23,6 +23,7 @@ model Tenant {
   employees   Employee[]
   tenantRoleTemplates TenantRoleTemplate[]
   storefronts Storefront[]
+  platformSites PlatformSite[]
   products    Product[]
   priceLists  PriceList[]
   carts       Cart[]
@@ -1125,11 +1126,15 @@ model Page {
   id             String        @id @default(uuid())
   tenantId       String        @map("tenant_id")
   storefrontId   String        @map("storefront_id")
+  /// storefront | platform (PC2-10)
+  ownerType      String        @default("storefront") @map("owner_type")
+  /// storefrontId | platformSiteId
+  ownerId        String        @map("owner_id")
   slug           String
   title          String
   templateKey    String        @default("home") @map("template_key") // home|collection|system
   status         String        @default("draft")
-  /// CMS-3 Could — link to Experiment.code for A/B on this page
+  /// CMS-3 / PC3-6 — link to Experiment.code for A/B on this page
   experimentCode String?       @map("experiment_code")
   createdAt      DateTime      @default(now()) @map("created_at")
   updatedAt      DateTime      @updatedAt @map("updated_at")
@@ -1137,8 +1142,32 @@ model Page {
   versions       PageVersion[]
 
   @@unique([storefrontId, slug])
+  @@unique([ownerType, ownerId, slug])
   @@index([tenantId])
+  @@index([ownerType, ownerId])
   @@map("pages")
+}
+
+/// CORP-CMS PC2-10 — first-class platform GTM site (replaces code-only registry)
+model PlatformSite {
+  id                   String   @id
+  tenantId             String   @map("tenant_id")
+  siteKey              String   @unique @map("site_key")
+  name                 String
+  primaryHost          String   @map("primary_host")
+  defaultLocale        String   @default("vi") @map("default_locale")
+  /// draft | live
+  status               String   @default("draft")
+  seoDefaults          Json     @default("{}") @map("seo_defaults")
+  featureFlags         Json     @default("{}") @map("feature_flags")
+  /// Legacy SF for nav/media until NavigationMenu is fully platform-scoped
+  interimStorefrontId  String?  @map("interim_storefront_id")
+  createdAt            DateTime @default(now()) @map("created_at")
+  updatedAt            DateTime @updatedAt @map("updated_at")
+  tenant               Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, status])
+  @@map("platform_sites")
 }
 
 model PageVersion {

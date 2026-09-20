@@ -69,6 +69,7 @@ export class PlatformCmsController {
         expected_version: z.number().optional(),
         create_if_missing: z.boolean().optional(),
         template_key: z.string().optional(),
+        experiment_code: z.string().nullable().optional(),
       })
       .safeParse(body);
     if (!parsed.success) throw AppError.validation('Invalid page draft', parsed.error.flatten());

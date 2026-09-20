@@ -1147,9 +1147,9 @@ CMS per-template · fork editor Enterprise · arbitrary script · 400 theme mỏ
 | CORP-CMS-0 | PlatformSite · API · RBAC · flag fallback | **Shipped** — ADR-008 · interim SF · API/RBAC/seed/e2e-0 |
 | CORP-CMS-1 | Content MVP · nghiệp vụ · UI runtime | **Shipped** — registry/CTA/SectionStack/admin/e2e-1 |
 | CORP-CMS-2 | Solutions · Case · Industry · Nav · **GA** | **Shipped GA** — case KPI gate · rollback · revalidate · nav · e2e-platform-cms.sh |
-| CORP-CMS-3 | Resources gated · Tour · ROI · i18n | **Shipped** — gated unlock · tour_steps · roi_assumptions · schedule · webcom_en stub · e2e-platform-cms-3 |
+| CORP-CMS-3 | Resources gated · Tour · ROI · i18n | **Shipped** — gated · tour · ROI · schedule · **webcom_en EN** · **PC3-6 A/B** · e2e-3 + e2e-debt |
 
-**Ước lượng:** GA đạt (CORP-CMS-2); CORP-CMS-3 backlog Should đã code. Rollout: seed + deploy flag `FEATURE_PLATFORM_CMS` theo runbook `platform-cms.md`.
+**Ước lượng:** GA đạt (CORP-CMS-2). Debt PC2-10 (`PlatformSite`/`owner_type`) + PC3-6 A/B + EN content đã code. Rollout: migrate + seed + flag theo runbook `platform-cms.md`.
 
 ---
 

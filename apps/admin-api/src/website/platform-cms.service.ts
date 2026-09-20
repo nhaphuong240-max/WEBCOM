@@ -13,19 +13,21 @@ import { AuditService } from '../audit/audit.service';
 import { assertPermission } from '../hr/hr-access';
 import { PlatformService } from './platform.service';
 
-/** Interim PlatformSite registry (ADR-008). CORP-CMS-2 → PlatformSite table. */
-export const PLATFORM_SITES: Record<
+/** Seed bootstrap / fallback when PlatformSite row missing (PC2-10). */
+export const PLATFORM_SITES_FALLBACK: Record<
   string,
   {
+    id: string;
     tenantId: string;
     storefrontId: string;
     name: string;
     primaryHost: string;
     status: 'draft' | 'live';
-    locale?: string;
+    locale: string;
   }
 > = {
   webcom_apex: {
+    id: 'psite_webcom_apex',
     tenantId: 'ten_platform',
     storefrontId: 'sf_platform_webcom',
     name: 'WebCom Platform',
@@ -34,6 +36,7 @@ export const PLATFORM_SITES: Record<
     locale: 'vi',
   },
   webcom_staging: {
+    id: 'psite_webcom_staging',
     tenantId: 'ten_platform',
     storefrontId: 'sf_platform_webcom',
     name: 'WebCom Platform (staging)',
@@ -41,21 +44,43 @@ export const PLATFORM_SITES: Record<
     status: 'draft',
     locale: 'vi',
   },
-  /** CORP-CMS-3 Could — EN locale stub (same interim SF until PlatformSite table) */
   webcom_en: {
+    id: 'psite_webcom_en',
     tenantId: 'ten_platform',
-    storefrontId: 'sf_platform_webcom',
-    name: 'WebCom Platform (EN stub)',
+    storefrontId: 'sf_platform_webcom_en',
+    name: 'WebCom Platform (EN)',
     primaryHost: 'en.webecom.ngoinhahomnay.vn',
-    status: 'draft',
+    status: 'live',
     locale: 'en',
   },
+};
+
+/** @deprecated use PLATFORM_SITES_FALLBACK — kept for import compatibility */
+export const PLATFORM_SITES = PLATFORM_SITES_FALLBACK;
+
+export type ResolvedPlatformSite = {
+  siteKey: string;
+  id: string;
+  tenantId: string;
+  storefrontId: string;
+  name: string;
+  primaryHost: string;
+  status: string;
+  locale: string;
+  ownerType: 'platform';
+  ownerId: string;
 };
 
 type PlatformTransitionTarget = 'draft' | 'review' | 'published';
 
 function featurePlatformCms(fallback = true): boolean {
   const raw = process.env.FEATURE_PLATFORM_CMS;
+  if (raw === undefined) return fallback;
+  return raw === '1' || raw === 'true';
+}
+
+function featureCmsPageAb(fallback = true): boolean {
+  const raw = process.env.FEATURE_CMS_PAGE_AB;
   if (raw === undefined) return fallback;
   return raw === '1' || raw === 'true';
 }
@@ -78,41 +103,105 @@ export class PlatformCmsService {
     private readonly platform: PlatformService,
   ) {}
 
-  resolveSite(siteKey: string) {
-    const site = PLATFORM_SITES[siteKey];
-    if (!site) throw AppError.notFound(`Unknown platform site_key: ${siteKey}`);
-    return { siteKey, ...site };
+  /** Resolve PlatformSite from DB (PC2-10), fallback to code registry. */
+  async resolveSiteAsync(siteKey: string): Promise<ResolvedPlatformSite> {
+    const row = await this.prisma.db.platformSite.findUnique({ where: { siteKey } });
+    if (row) {
+      const fb = PLATFORM_SITES_FALLBACK[siteKey];
+      const storefrontId = row.interimStorefrontId || fb?.storefrontId || 'sf_platform_webcom';
+      return {
+        siteKey,
+        id: row.id,
+        tenantId: row.tenantId,
+        storefrontId,
+        name: row.name,
+        primaryHost: row.primaryHost,
+        status: row.status,
+        locale: row.defaultLocale || 'vi',
+        ownerType: 'platform',
+        ownerId: row.id,
+      };
+    }
+    const fb = PLATFORM_SITES_FALLBACK[siteKey];
+    if (!fb) throw AppError.notFound(`Unknown platform site_key: ${siteKey}`);
+    return {
+      siteKey,
+      id: fb.id,
+      tenantId: fb.tenantId,
+      storefrontId: fb.storefrontId,
+      name: fb.name,
+      primaryHost: fb.primaryHost,
+      status: fb.status,
+      locale: fb.locale,
+      ownerType: 'platform',
+      ownerId: fb.id,
+    };
   }
 
-  listSites() {
-    return Object.entries(PLATFORM_SITES).map(([site_key, s]) => ({
+  /** Sync resolve for legacy callers — prefer resolveSiteAsync. */
+  resolveSite(siteKey: string): ResolvedPlatformSite {
+    const fb = PLATFORM_SITES_FALLBACK[siteKey];
+    if (!fb) throw AppError.notFound(`Unknown platform site_key: ${siteKey}`);
+    return {
+      siteKey,
+      id: fb.id,
+      tenantId: fb.tenantId,
+      storefrontId: fb.storefrontId,
+      name: fb.name,
+      primaryHost: fb.primaryHost,
+      status: fb.status,
+      locale: fb.locale,
+      ownerType: 'platform',
+      ownerId: fb.id,
+    };
+  }
+
+  async listSites() {
+    const rows = await this.prisma.db.platformSite.findMany({ orderBy: { siteKey: 'asc' } });
+    if (rows.length) {
+      return rows.map((r) => ({
+        site_key: r.siteKey,
+        name: r.name,
+        primary_host: r.primaryHost,
+        status: r.status,
+        tenant_id: r.tenantId,
+        interim_storefront_id: r.interimStorefrontId,
+        owner: 'platform_site',
+        owner_id: r.id,
+        locale: r.defaultLocale || 'vi',
+      }));
+    }
+    return Object.entries(PLATFORM_SITES_FALLBACK).map(([site_key, s]) => ({
       site_key,
       name: s.name,
       primary_host: s.primaryHost,
       status: s.status,
       tenant_id: s.tenantId,
       interim_storefront_id: s.storefrontId,
-      owner: 'interim_storefront',
-      locale: s.locale || 'vi',
+      owner: 'platform_site_fallback',
+      owner_id: s.id,
+      locale: s.locale,
     }));
   }
 
   async listSitesForActor(ctx: RequestContext) {
     await assertPermission(this.prisma, ctx, 'platform.cms.read');
-    return this.listSites().filter((s) => s.tenant_id === ctx.tenantId);
+    const all = await this.listSites();
+    return all.filter((s) => s.tenant_id === ctx.tenantId);
   }
 
-  getSite(siteKey: string) {
-    const s = this.resolveSite(siteKey);
+  async getSite(siteKey: string) {
+    const s = await this.resolveSiteAsync(siteKey);
     return {
       site_key: siteKey,
       name: s.name,
       primary_host: s.primaryHost,
       status: s.status,
-      default_locale: 'vi',
+      default_locale: s.locale,
       tenant_id: s.tenantId,
       interim_storefront_id: s.storefrontId,
-      owner: 'interim_storefront',
+      owner: 'platform_site',
+      owner_id: s.ownerId,
       seo_defaults: {
         title_template: '%s · WebCom',
         og_image: null,
@@ -122,27 +211,40 @@ export class PlatformCmsService {
 
   async getSiteForActor(ctx: RequestContext, siteKey: string) {
     await assertPermission(this.prisma, ctx, 'platform.cms.read');
-    this.assertCtxTenant(ctx, siteKey);
+    await this.assertCtxTenant(ctx, siteKey);
     return this.getSite(siteKey);
   }
 
-  private assertCtxTenant(ctx: RequestContext, siteKey: string) {
-    const site = this.resolveSite(siteKey);
+  private async assertCtxTenant(ctx: RequestContext, siteKey: string) {
+    const site = await this.resolveSiteAsync(siteKey);
     if (ctx.tenantId !== site.tenantId) {
       throw AppError.forbidden('Platform site belongs to a different tenant');
     }
     return site;
   }
 
+  /** Ensure page rows carry platform owner (PC2-10). */
+  private async tagPlatformOwner(site: ResolvedPlatformSite, slug: string) {
+    await this.prisma.db.page.updateMany({
+      where: { tenantId: site.tenantId, storefrontId: site.storefrontId, slug },
+      data: { ownerType: 'platform', ownerId: site.ownerId },
+    });
+  }
+
   async listPages(ctx: RequestContext, siteKey: string) {
     await assertPermission(this.prisma, ctx, 'platform.cms.read');
-    const site = this.assertCtxTenant(ctx, siteKey);
-    return this.platform.listPages(site.tenantId, site.storefrontId);
+    const site = await this.assertCtxTenant(ctx, siteKey);
+    const pages = await this.platform.listPages(site.tenantId, site.storefrontId);
+    return (pages as Array<Record<string, unknown>>).map((p) => ({
+      ...p,
+      owner_type: 'platform',
+      owner_id: site.ownerId,
+    }));
   }
 
   async getPageDraft(ctx: RequestContext, siteKey: string, slugRaw: string) {
     await assertPermission(this.prisma, ctx, 'platform.cms.read');
-    const site = this.assertCtxTenant(ctx, siteKey);
+    const site = await this.assertCtxTenant(ctx, siteKey);
     const slug = normalizePlatformSlug(slugRaw);
     const draft = await this.platform.getPageDraft(site.tenantId, site.storefrontId, slug);
     const page = await this.prisma.db.page.findFirst({
@@ -155,6 +257,8 @@ export class PlatformCmsService {
       ...draft,
       site_key: siteKey,
       path: slug === 'home' ? '/' : `/${slug}`,
+      owner_type: 'platform',
+      owner_id: site.ownerId,
       versions: (page?.versions || []).map((v) => ({ version: v.version, status: v.status })),
     };
   }
@@ -170,10 +274,11 @@ export class PlatformCmsService {
       expected_version?: number;
       create_if_missing?: boolean;
       template_key?: string;
+      experiment_code?: string | null;
     },
   ) {
     await assertPermission(this.prisma, ctx, 'platform.cms.write');
-    const site = this.assertCtxTenant(ctx, siteKey);
+    const site = await this.assertCtxTenant(ctx, siteKey);
     const slug = normalizePlatformSlug(slugRaw);
     const result = await this.platform.savePageDraft(
       site.tenantId,
@@ -182,9 +287,11 @@ export class PlatformCmsService {
       {
         ...input,
         template_key: input.template_key || (slug === 'home' ? 'gtm_home' : 'gtm_static'),
+        experiment_code: featureCmsPageAb() ? input.experiment_code : undefined,
       },
       ctx.actorId,
     );
+    await this.tagPlatformOwner(site, slug);
     const page = await this.prisma.db.page.findFirst({
       where: { tenantId: site.tenantId, storefrontId: site.storefrontId, slug },
     });
@@ -200,9 +307,15 @@ export class PlatformCmsService {
       action: 'platform_cms.page_save',
       entity: 'page',
       entityId: result.page_id,
-      payload: { site_key: siteKey, slug },
+      payload: { site_key: siteKey, slug, owner_id: site.ownerId },
     });
-    return { ...result, site_key: siteKey, path: slug === 'home' ? '/' : `/${slug}` };
+    return {
+      ...result,
+      site_key: siteKey,
+      path: slug === 'home' ? '/' : `/${slug}`,
+      owner_type: 'platform',
+      owner_id: site.ownerId,
+    };
   }
 
   /**
@@ -218,7 +331,7 @@ export class PlatformCmsService {
     checklist?: Record<string, boolean> | null,
     publishAt?: string | null,
   ) {
-    const site = this.assertCtxTenant(ctx, siteKey);
+    const site = await this.assertCtxTenant(ctx, siteKey);
     const slug = normalizePlatformSlug(slugRaw);
 
     if (target === 'published') {
@@ -375,7 +488,7 @@ export class PlatformCmsService {
 
   /** Public published page — filters expired announce_bar (AC-B9); auto-flush due schedules. */
   async getPublishedPage(siteKey: string, slugRaw: string) {
-    const site = this.resolveSite(siteKey);
+    const site = await this.resolveSiteAsync(siteKey);
     const slug = normalizePlatformSlug(slugRaw);
     let page = await this.prisma.db.page.findFirst({
       where: { tenantId: site.tenantId, storefrontId: site.storefrontId, slug },
@@ -418,6 +531,24 @@ export class PlatformCmsService {
     if (!page || !page.versions[0]) throw AppError.notFound('Page not found');
     const raw = (page.versions[0].content as Record<string, unknown>) || {};
     const contentV1 = filterExpiredAnnounceBars(normalizeContent(raw));
+    let experiment: Record<string, unknown> | null = null;
+    if (featureCmsPageAb() && page.experimentCode) {
+      const exp = await this.prisma.db.experiment.findFirst({
+        where: {
+          tenantId: site.tenantId,
+          storefrontId: site.storefrontId,
+          code: page.experimentCode,
+          status: 'running',
+        },
+      });
+      if (exp) {
+        experiment = {
+          code: exp.code,
+          status: exp.status,
+          variants: exp.variants,
+        };
+      }
+    }
     return {
       site_key: siteKey,
       slug: page.slug,
@@ -431,6 +562,10 @@ export class PlatformCmsService {
       content: toLegacyFlat(contentV1),
       seo: page.versions[0].seo ?? {},
       experiment_code: page.experimentCode || null,
+      experiment,
+      owner_type: 'platform',
+      owner_id: site.ownerId,
+      interim_storefront_id: site.storefrontId,
       feature_platform_cms: featurePlatformCms(true),
       locale: site.locale || 'vi',
     };
@@ -438,7 +573,7 @@ export class PlatformCmsService {
 
   async createPreviewToken(ctx: RequestContext, siteKey: string, hours = 24) {
     await assertPermission(this.prisma, ctx, 'platform.cms.write');
-    const site = this.assertCtxTenant(ctx, siteKey);
+    const site = await this.assertCtxTenant(ctx, siteKey);
     const token = await this.platform.createPreviewToken(site.tenantId, site.storefrontId, hours);
     const corp =
       process.env.CORPORATE_PUBLIC_URL?.replace(/\/$/, '') || 'https://webecom.ngoinhahomnay.vn';
@@ -450,7 +585,7 @@ export class PlatformCmsService {
   }
 
   async getPreviewPage(siteKey: string, token: string, slugRaw: string) {
-    const site = this.resolveSite(siteKey);
+    const site = await this.resolveSiteAsync(siteKey);
     await this.platform.resolvePreview(site.tenantId, token);
     const slug = normalizePlatformSlug(slugRaw);
     const draft = await this.platform.getPageDraft(site.tenantId, site.storefrontId, slug);
@@ -501,7 +636,7 @@ export class PlatformCmsService {
   /** PC3-5 — promote due scheduled versions to published. */
   async flushScheduled(ctx: RequestContext, siteKey: string) {
     await assertPermission(this.prisma, ctx, 'platform.cms.publish');
-    const site = this.assertCtxTenant(ctx, siteKey);
+    const site = await this.assertCtxTenant(ctx, siteKey);
     const rows = await this.prisma.db.pageVersion.findMany({
       where: { tenantId: site.tenantId, status: 'scheduled' },
       include: { page: true },
@@ -540,7 +675,7 @@ export class PlatformCmsService {
     version: number,
   ) {
     await assertPermission(this.prisma, ctx, 'platform.cms.publish');
-    const site = this.assertCtxTenant(ctx, siteKey);
+    const site = await this.assertCtxTenant(ctx, siteKey);
     const slug = normalizePlatformSlug(slugRaw);
     const page = await this.prisma.db.page.findFirst({
       where: { tenantId: site.tenantId, storefrontId: site.storefrontId, slug },
@@ -587,7 +722,7 @@ export class PlatformCmsService {
 
   async listNav(ctx: RequestContext, siteKey: string) {
     await assertPermission(this.prisma, ctx, 'platform.cms.read');
-    const site = this.assertCtxTenant(ctx, siteKey);
+    const site = await this.assertCtxTenant(ctx, siteKey);
     return this.platform.listNavigation(site.tenantId, site.storefrontId);
   }
 
@@ -598,7 +733,7 @@ export class PlatformCmsService {
     items: Array<{ label: string; href: string }>,
   ) {
     await assertPermission(this.prisma, ctx, 'platform.cms.write');
-    const site = this.assertCtxTenant(ctx, siteKey);
+    const site = await this.assertCtxTenant(ctx, siteKey);
     return this.platform.upsertNavigation(
       site.tenantId,
       site.storefrontId,
@@ -609,7 +744,7 @@ export class PlatformCmsService {
   }
 
   async getPublicNav(siteKey: string) {
-    const site = this.resolveSite(siteKey);
+    const site = await this.resolveSiteAsync(siteKey);
     const menus = await this.platform.listNavigation(site.tenantId, site.storefrontId);
     const out: Record<string, unknown> = { site_key: siteKey };
     for (const m of menus as Array<{ handle: string; items: unknown }>) {
