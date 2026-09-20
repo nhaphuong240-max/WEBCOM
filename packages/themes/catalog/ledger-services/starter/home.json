@@ -1,0 +1,67 @@
+{
+  "schema_version": 1,
+  "section_order": [
+    "hero",
+    "rich_text",
+    "featured",
+    "cta_banner",
+    "faq"
+  ],
+  "sections": {
+    "hero": {
+      "type": "hero",
+      "id": "sec_hero",
+      "props": {
+        "eyebrow": "Ledger Services",
+        "headline": "Đặt lịch tư vấn — case & trust rõ",
+        "cta": "Book lịch",
+        "cta_href": "/p/about"
+      },
+      "style": {}
+    },
+    "rich_text": {
+      "type": "rich_text",
+      "id": "sec_story",
+      "props": {
+        "title": "Dịch vụ chuyên nghiệp",
+        "body": "Booking lịch + trust logos + lead form consent — Sales nhận đủ context."
+      },
+      "style": {}
+    },
+    "featured": {
+      "type": "featured",
+      "id": "sec_featured",
+      "props": {
+        "limit": 6
+      },
+      "style": {}
+    },
+    "cta_banner": {
+      "type": "cta_banner",
+      "id": "sec_cta",
+      "props": {
+        "title": "Slot tư vấn tuần này",
+        "cta": "Đặt ngay",
+        "cta_href": "/cart"
+      },
+      "style": {}
+    },
+    "faq": {
+      "type": "faq",
+      "id": "sec_faq",
+      "props": {
+        "items": [
+          {
+            "q": "Có booking online?",
+            "a": "Có — chọn slot và để lại thông tin."
+          },
+          {
+            "q": "Lead đi đâu?",
+            "a": "CRM routing theo channel website."
+          }
+        ]
+      },
+      "style": {}
+    }
+  }
+}

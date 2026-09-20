@@ -16,16 +16,20 @@ assert "cms_builder_canvas" in d
 print("sections ok canvas=", d.get("cms_builder_canvas"))
 PY
 
-echo "== ≥5 theme packages =="
+echo "== ≥30 theme packages (MKT-2b full catalog) =="
 curl -sS "$BASE/v1/public/theme-packages" | tee /tmp/cms2-pkgs.json >/dev/null
 python3 - <<'PY'
 import json
 pkgs=json.load(open("/tmp/cms2-pkgs.json"))
 codes={p["code"] for p in pkgs}
-assert len(codes)>=5, codes
-for c in ("aura-commerce-lite","harvest-fnb","atelier-luxe","lumen-fashion","live-drop"):
+assert len(codes)>=30, codes
+for c in (
+    "aura-commerce-lite","harvest-fnb","atelier-luxe","lumen-fashion","live-drop",
+    "forge-b2b","nest-home","pulse-gadget","cafe-corner","zen-wellness",
+    "bloom-kids","spark-promo","green-basket","voyage-gear","motor-parts",
+):
     assert c in codes, c
-print("packages", sorted(codes))
+print("packages", len(codes))
 PY
 
 echo "== PUT ContentV1 reorder =="

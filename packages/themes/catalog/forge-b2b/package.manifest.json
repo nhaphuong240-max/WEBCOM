@@ -1,0 +1,13 @@
+{
+  "code": "forge-b2b",
+  "name": "Forge B2B",
+  "version": "1.0.0",
+  "supports": ["hero", "rich_text", "featured", "cta_banner", "faq", "footer_links"],
+  "layouts": {
+    "home": ["hero", "rich_text", "featured", "cta_banner", "faq"]
+  },
+  "demo_fixtures": {
+    "brand_name": "Forge"
+  },
+  "compatible_app_blocks": []
+}

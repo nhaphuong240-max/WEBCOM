@@ -1,0 +1,25 @@
+{
+  "code": "care-pharma",
+  "name": "Care Pharma",
+  "version": "1.0.0",
+  "supports": [
+    "hero",
+    "featured",
+    "trust",
+    "faq",
+    "cta_banner"
+  ],
+  "layouts": {
+    "home": [
+      "hero",
+      "featured",
+      "trust",
+      "faq",
+      "cta_banner"
+    ]
+  },
+  "demo_fixtures": {
+    "brand_name": "Care"
+  },
+  "compatible_app_blocks": []
+}

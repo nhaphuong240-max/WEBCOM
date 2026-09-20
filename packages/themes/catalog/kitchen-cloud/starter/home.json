@@ -1,0 +1,62 @@
+{
+  "schema_version": 1,
+  "section_order": [
+    "hero",
+    "countdown",
+    "featured",
+    "cta_banner",
+    "trust"
+  ],
+  "sections": {
+    "hero": {
+      "type": "hero",
+      "id": "sec_hero",
+      "props": {
+        "eyebrow": "Kitchen Cloud",
+        "headline": "Combo giờ vàng — countdown nóng",
+        "cta": "Đặt combo",
+        "cta_href": "/search"
+      },
+      "style": {}
+    },
+    "countdown": {
+      "type": "countdown",
+      "id": "sec_countdown",
+      "props": {
+        "label": "Kết thúc sau",
+        "ends_at": "2099-12-31T23:59:59Z"
+      },
+      "style": {}
+    },
+    "featured": {
+      "type": "featured",
+      "id": "sec_featured",
+      "props": {
+        "limit": 6
+      },
+      "style": {}
+    },
+    "cta_banner": {
+      "type": "cta_banner",
+      "id": "sec_cta",
+      "props": {
+        "title": "Thêm nước giảm 10k",
+        "cta": "Thêm món",
+        "cta_href": "/cart"
+      },
+      "style": {}
+    },
+    "trust": {
+      "type": "trust",
+      "id": "sec_trust",
+      "props": {
+        "items": [
+          "Upsell đồ uống",
+          "Pixel campaign",
+          "Giao nhanh"
+        ]
+      },
+      "style": {}
+    }
+  }
+}

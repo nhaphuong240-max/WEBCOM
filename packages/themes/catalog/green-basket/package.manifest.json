@@ -1,0 +1,25 @@
+{
+  "code": "green-basket",
+  "name": "Green Basket",
+  "version": "1.0.0",
+  "supports": [
+    "hero",
+    "featured",
+    "trust",
+    "cta_banner",
+    "collections"
+  ],
+  "layouts": {
+    "home": [
+      "hero",
+      "featured",
+      "collections",
+      "trust",
+      "cta_banner"
+    ]
+  },
+  "demo_fixtures": {
+    "brand_name": "Green"
+  },
+  "compatible_app_blocks": []
+}

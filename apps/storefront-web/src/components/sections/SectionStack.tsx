@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import type { DemoContentV1 } from '../../lib/demo-package';
 import { HeroBlock } from '../HeroBlock';
+import { CollectionStrip, TrustGrid } from '../ProductHero';
 
 export function SectionStack({
   content,
@@ -39,67 +40,34 @@ export function SectionStack({
         }
 
         if (node.type === 'trust') {
-          const items = Array.isArray(props.items) ? (props.items as string[]) : [];
+          const raw = Array.isArray(props.items) ? props.items : [];
+          const items = raw.map((t) => {
+            if (typeof t === 'string') {
+              const parts = t.split(/[·•|–-]/).map((s) => s.trim()).filter(Boolean);
+              return { title: parts[0] || t, sub: parts[1] || '' };
+            }
+            const obj = t as { title?: string; sub?: string; label?: string };
+            return {
+              title: String(obj.title || obj.label || ''),
+              sub: String(obj.sub || ''),
+            };
+          }).filter((t) => t.title);
           return (
-            <section
-              key={key}
-              style={{
-                padding: '8px clamp(14px, 3vw, 48px) 24px',
-                display: 'flex',
-                gap: 8,
-                flexWrap: 'wrap',
-              }}
-            >
-              {items.map((t) => (
-                <span
-                  key={t}
-                  style={{
-                    fontSize: 12,
-                    padding: '6px 10px',
-                    borderRadius: 8,
-                    background: `${accent}1a`,
-                    color: accent,
-                    fontWeight: 600,
-                  }}
-                >
-                  {t}
-                </span>
-              ))}
+            <section key={key} style={{ padding: '8px clamp(14px, 3vw, 48px) 0' }}>
+              <TrustGrid items={items.length ? items : undefined} />
             </section>
           );
         }
 
         if (node.type === 'collections' && collections?.length) {
           return (
-            <div
+            <CollectionStrip
               key={key}
-              style={{
-                padding: '14px clamp(14px, 3vw, 48px) 8px',
-                display: 'flex',
-                gap: 8,
-                overflowX: 'auto',
-              }}
-            >
-              {collections.map((c) => (
-                <Link
-                  key={c.slug}
-                  href={`/collections/${c.slug}`}
-                  style={{
-                    whiteSpace: 'nowrap',
-                    padding: '8px 12px',
-                    borderRadius: 999,
-                    border: '1px solid rgba(26,18,20,0.1)',
-                    background: '#fff',
-                    color: '#1a1214',
-                    fontSize: 13,
-                    textDecoration: 'none',
-                    fontWeight: 600,
-                  }}
-                >
-                  {c.title}
-                </Link>
-              ))}
-            </div>
+              items={collections.map((c) => ({
+                label: c.title,
+                href: `/collections/${c.slug}`,
+              }))}
+            />
           );
         }
 

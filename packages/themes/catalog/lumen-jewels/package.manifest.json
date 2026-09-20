@@ -1,0 +1,26 @@
+{
+  "code": "lumen-jewels",
+  "name": "Lumen Jewels",
+  "version": "1.0.0",
+  "supports": [
+    "hero",
+    "rich_text",
+    "collections",
+    "featured",
+    "trust",
+    "faq"
+  ],
+  "layouts": {
+    "home": [
+      "hero",
+      "rich_text",
+      "collections",
+      "featured",
+      "trust"
+    ]
+  },
+  "demo_fixtures": {
+    "brand_name": "Lumen Jewels"
+  },
+  "compatible_app_blocks": []
+}

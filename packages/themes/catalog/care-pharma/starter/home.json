@@ -1,0 +1,70 @@
+{
+  "schema_version": 1,
+  "section_order": [
+    "hero",
+    "featured",
+    "trust",
+    "faq",
+    "cta_banner"
+  ],
+  "sections": {
+    "hero": {
+      "type": "hero",
+      "id": "sec_hero",
+      "props": {
+        "eyebrow": "Care Pharma",
+        "headline": "Chăm sóc sức khỏe đúng cách — spec rõ",
+        "cta": "Xem sản phẩm",
+        "cta_href": "/search"
+      },
+      "style": {}
+    },
+    "featured": {
+      "type": "featured",
+      "id": "sec_featured",
+      "props": {
+        "limit": 6
+      },
+      "style": {}
+    },
+    "trust": {
+      "type": "trust",
+      "id": "sec_trust",
+      "props": {
+        "items": [
+          "Disclaimer dược",
+          "Thành phần rõ",
+          "Tư vấn pharmacist"
+        ]
+      },
+      "style": {}
+    },
+    "faq": {
+      "type": "faq",
+      "id": "sec_faq",
+      "props": {
+        "items": [
+          {
+            "q": "Có disclaimer?",
+            "a": "Luôn hiện trên trang sức khỏe."
+          },
+          {
+            "q": "Tư vấn pharmacist?",
+            "a": "CTA soft — không thay thế khám bệnh."
+          }
+        ]
+      },
+      "style": {}
+    },
+    "cta_banner": {
+      "type": "cta_banner",
+      "id": "sec_cta",
+      "props": {
+        "title": "Chat dược sĩ",
+        "cta": "Tư vấn",
+        "cta_href": "/cart"
+      },
+      "style": {}
+    }
+  }
+}

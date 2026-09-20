@@ -1,0 +1,25 @@
+{
+  "code": "course-commerce",
+  "name": "Course Commerce",
+  "version": "1.0.0",
+  "supports": [
+    "hero",
+    "rich_text",
+    "featured",
+    "cta_banner",
+    "faq"
+  ],
+  "layouts": {
+    "home": [
+      "hero",
+      "rich_text",
+      "featured",
+      "cta_banner",
+      "faq"
+    ]
+  },
+  "demo_fixtures": {
+    "brand_name": "Course"
+  },
+  "compatible_app_blocks": []
+}

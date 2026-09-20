@@ -1,0 +1,26 @@
+{
+  "code": "folio-press",
+  "name": "Folio Press",
+  "version": "1.0.0",
+  "supports": [
+    "hero",
+    "collections",
+    "featured",
+    "rich_text",
+    "trust",
+    "cta_banner"
+  ],
+  "layouts": {
+    "home": [
+      "hero",
+      "collections",
+      "featured",
+      "rich_text",
+      "cta_banner"
+    ]
+  },
+  "demo_fixtures": {
+    "brand_name": "Folio"
+  },
+  "compatible_app_blocks": []
+}

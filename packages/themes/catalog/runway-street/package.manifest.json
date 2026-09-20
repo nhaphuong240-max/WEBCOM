@@ -1,0 +1,26 @@
+{
+  "code": "runway-street",
+  "name": "Runway Street",
+  "version": "1.0.0",
+  "supports": [
+    "hero",
+    "countdown",
+    "featured",
+    "collections",
+    "cta_banner",
+    "trust"
+  ],
+  "layouts": {
+    "home": [
+      "hero",
+      "countdown",
+      "featured",
+      "collections",
+      "cta_banner"
+    ]
+  },
+  "demo_fixtures": {
+    "brand_name": "Runway"
+  },
+  "compatible_app_blocks": []
+}

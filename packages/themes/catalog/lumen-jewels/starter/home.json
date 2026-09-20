@@ -1,0 +1,60 @@
+{
+  "schema_version": 1,
+  "section_order": [
+    "hero",
+    "rich_text",
+    "collections",
+    "featured",
+    "trust"
+  ],
+  "sections": {
+    "hero": {
+      "type": "hero",
+      "id": "sec_hero",
+      "props": {
+        "eyebrow": "Lumen Jewels",
+        "headline": "Ánh sáng trên từng viên — authenticity",
+        "cta": "Xem bộ sưu tập",
+        "cta_href": "/collections/noi-bat"
+      },
+      "style": {}
+    },
+    "rich_text": {
+      "type": "rich_text",
+      "id": "sec_story",
+      "props": {
+        "title": "Chứng nhận & chế tác",
+        "body": "Macro gallery + authenticity trước khi CTA mua."
+      },
+      "style": {}
+    },
+    "collections": {
+      "type": "collections",
+      "id": "sec_collections",
+      "props": {
+        "source": "theme"
+      },
+      "style": {}
+    },
+    "featured": {
+      "type": "featured",
+      "id": "sec_featured",
+      "props": {
+        "limit": 6
+      },
+      "style": {}
+    },
+    "trust": {
+      "type": "trust",
+      "id": "sec_trust",
+      "props": {
+        "items": [
+          "Bảo hành vàng bạc",
+          "Macro gallery",
+          "Khắc / gift"
+        ]
+      },
+      "style": {}
+    }
+  }
+}

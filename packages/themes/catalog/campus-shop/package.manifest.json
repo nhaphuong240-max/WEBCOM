@@ -1,0 +1,25 @@
+{
+  "code": "campus-shop",
+  "name": "Campus Shop",
+  "version": "1.0.0",
+  "supports": [
+    "hero",
+    "collections",
+    "featured",
+    "trust",
+    "cta_banner"
+  ],
+  "layouts": {
+    "home": [
+      "hero",
+      "collections",
+      "featured",
+      "trust",
+      "cta_banner"
+    ]
+  },
+  "demo_fixtures": {
+    "brand_name": "Campus"
+  },
+  "compatible_app_blocks": []
+}

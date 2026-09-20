@@ -47,7 +47,7 @@ BASE_URL=http://127.0.0.1:3101/api bash scripts/e2e-cms-1.sh
 - Builder canvas: `FEATURE_CMS_BUILDER_CANVAS` (default on) — add/remove/reorder · D/T/M · undo · inspector
 - Media stub: `GET/POST /v1/admin/media` (URL)
 - Nav: `GET/PUT …/navigation/:handle` (`header|footer|bottom`) — storefront đọc runtime.navigation
-- Packages ≥5: `harvest-fnb`, `atelier-luxe` + 3 pilot
+- Packages **30/30** (MKT-2b): full TemplateCatalog coverage under `packages/themes/catalog/`
 - Install template: compatibility modal trước confirm
 - Section `footer_links`
 
@@ -81,6 +81,15 @@ BASE_URL=http://127.0.0.1:3101/api bash scripts/e2e-cms-3c.sh
 
 ```bash
 BASE_URL=http://127.0.0.1:3101/api bash scripts/e2e-mkt-1.sh
+```
+
+## MKT-2a / MKT-2b notes
+- ThemePackages on disk: **30/30** catalog codes (`packages/themes/catalog/<code>/`)
+- Demo `?demo=<code>` resolves distinct starter + tokens for every marketplace code
+- e2e: `scripts/e2e-mkt-2a.sh` (compat ≥10) · `scripts/e2e-mkt-2b.sh` (full 30)
+
+```bash
+BASE_URL=http://127.0.0.1:3101/api bash scripts/e2e-mkt-2b.sh
 ```
 
 ## Shared CMS GA hardening

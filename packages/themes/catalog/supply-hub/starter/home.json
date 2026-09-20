@@ -1,0 +1,70 @@
+{
+  "schema_version": 1,
+  "section_order": [
+    "hero",
+    "featured",
+    "cta_banner",
+    "faq",
+    "trust"
+  ],
+  "sections": {
+    "hero": {
+      "type": "hero",
+      "id": "sec_hero",
+      "props": {
+        "eyebrow": "Supply Hub",
+        "headline": "Đặt hàng sỉ nhanh — MOQ & tier rõ",
+        "cta": "Gửi RFQ",
+        "cta_href": "/p/about"
+      },
+      "style": {}
+    },
+    "featured": {
+      "type": "featured",
+      "id": "sec_featured",
+      "props": {
+        "limit": 6
+      },
+      "style": {}
+    },
+    "cta_banner": {
+      "type": "cta_banner",
+      "id": "sec_cta",
+      "props": {
+        "title": "Tải bảng giá sỉ",
+        "cta": "Download",
+        "cta_href": "/cart"
+      },
+      "style": {}
+    },
+    "faq": {
+      "type": "faq",
+      "id": "sec_faq",
+      "props": {
+        "items": [
+          {
+            "q": "MOQ thế nào?",
+            "a": "Hiển thị trên từng SKU."
+          },
+          {
+            "q": "Có reorder?",
+            "a": "Có — CTA reorder trên account."
+          }
+        ]
+      },
+      "style": {}
+    },
+    "trust": {
+      "type": "trust",
+      "id": "sec_trust",
+      "props": {
+        "items": [
+          "Tier pricing",
+          "Reorder nhanh",
+          "PDF catalog"
+        ]
+      },
+      "style": {}
+    }
+  }
+}

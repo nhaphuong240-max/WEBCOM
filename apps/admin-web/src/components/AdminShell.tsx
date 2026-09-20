@@ -67,7 +67,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
           </div>
         ))}
         <div style={{ marginTop: 24, padding: 12, fontSize: 11, opacity: 0.45 }}>
-          Phase W0 · Mockup routes mapped
+          Mockup parity · Command Center
         </div>
       </aside>
       <div style={{ minWidth: 0 }}>
@@ -83,15 +83,86 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
             position: 'sticky',
             top: 0,
             zIndex: 20,
+            gap: 12,
           }}
         >
           <div style={{ fontSize: 13, color: 'var(--ptt-ink-3)' }}>
-            AURA Beauty · <strong style={{ color: 'var(--ptt-ink)' }}>Admin</strong>
+            AURA Beauty ·{' '}
+            <strong style={{ color: 'var(--ptt-ink)' }}>
+              {pathname === '/' ? 'Command Center' : crumbLabel(pathname)}
+            </strong>
           </div>
-          <span style={{ fontSize: 12, color: 'var(--ptt-ink-3)' }}>W0 Foundation</span>
+          <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+            <span
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                height: 24,
+                padding: '0 10px',
+                borderRadius: 4,
+                fontSize: 11,
+                fontWeight: 600,
+                letterSpacing: '0.02em',
+                textTransform: 'uppercase',
+                background: 'var(--ptt-signal-soft)',
+                color: 'var(--ptt-signal)',
+              }}
+            >
+              Live sync
+            </span>
+            <Link
+              href="/website/analytics"
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                height: 32,
+                padding: '0 12px',
+                borderRadius: 8,
+                border: '1px solid var(--ptt-line)',
+                fontSize: 13,
+                fontWeight: 600,
+                color: 'var(--ptt-ink)',
+                background: 'transparent',
+              }}
+            >
+              Xuất báo cáo
+            </Link>
+            <Link
+              href="/orders"
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                height: 32,
+                padding: '0 12px',
+                borderRadius: 8,
+                fontSize: 13,
+                fontWeight: 600,
+                color: '#fff',
+                background: 'var(--ptt-accent)',
+              }}
+            >
+              Tạo đơn
+            </Link>
+          </div>
         </header>
         <main style={{ padding: 28 }}>{children}</main>
       </div>
     </div>
   );
+}
+
+function crumbLabel(pathname: string): string {
+  if (pathname.startsWith('/website/analytics')) return 'Website · Analytics';
+  if (pathname.startsWith('/website/golive')) return 'Website · Go-live';
+  if (pathname.startsWith('/website/builder')) return 'Website · Builder';
+  if (pathname.startsWith('/website')) return 'Website';
+  if (pathname.startsWith('/orders')) return 'Đơn hàng';
+  if (pathname.startsWith('/customers')) return 'CRM';
+  if (pathname.startsWith('/hr')) return 'HR';
+  if (pathname.startsWith('/pos')) return 'POS';
+  if (pathname.startsWith('/live')) return 'Live';
+  if (pathname.startsWith('/revenue')) return 'Revenue';
+  const seg = pathname.split('/').filter(Boolean)[0];
+  if (!seg) return 'Admin';
+  return seg.charAt(0).toUpperCase() + seg.slice(1);
 }

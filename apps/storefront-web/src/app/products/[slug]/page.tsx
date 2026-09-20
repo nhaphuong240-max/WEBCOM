@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { StoreShell } from '../../../components/StoreShell';
 import { AddToCartButton } from '../../../components/AddToCartButton';
+import { ProductHero, TrustGrid } from '../../../components/ProductHero';
 import { formatVnd, getProduct, getProducts, getRuntime, STOREFRONT_ID } from '../../../lib/api';
 import { ViewItemTracker } from '../../../components/ViewItemTracker';
 
@@ -36,6 +37,25 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
   }
   const [runtime, related] = await Promise.all([getRuntime(), getProducts()]);
   const sku = product.skus[0];
+  const accent =
+    runtime.brand_kit?.colors?.accent ||
+    runtime.brand_kit?.colors?.rose ||
+    '#c45a6a';
+  const cream =
+    runtime.brand_kit?.colors?.cream ||
+    runtime.brand_kit?.colors?.surface ||
+    '#faf6f4';
+  const ink = runtime.brand_kit?.colors?.ink || '#1a1214';
+  const bottomLinks = Array.isArray(runtime.navigation?.bottom)
+    ? (runtime.navigation.bottom as Array<{ label: string; href: string }>)
+    : [];
+  const inStock = (sku?.available ?? 0) > 0;
+  const listPrice = sku?.list_price ? Number(sku.list_price) : null;
+  const unitPrice = sku?.unit_price != null ? Number(sku.unit_price) : null;
+  const save =
+    listPrice != null && unitPrice != null && listPrice > unitPrice
+      ? listPrice - unitPrice
+      : null;
   const jsonLd = {
     '@context': 'https://schema.org',
     '@type': 'Product',
@@ -47,8 +67,9 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
       '@type': 'Offer',
       priceCurrency: sku?.currency || 'VND',
       price: sku?.unit_price,
-      availability:
-        (sku?.available ?? 0) > 0 ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock',
+      availability: inStock
+        ? 'https://schema.org/InStock'
+        : 'https://schema.org/OutOfStock',
     },
   };
 
@@ -56,6 +77,10 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
     <StoreShell
       gtm={runtime.storefront.gtm_container_id}
       pixel={runtime.storefront.meta_pixel_id}
+      accent={accent}
+      cream={cream}
+      ink={ink}
+      bottomLinks={bottomLinks}
     >
       <script
         type="application/ld+json"
@@ -67,116 +92,265 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
         skuId={sku?.id}
       />
 
-      <div
-        style={{
-          position: 'relative',
-          height: 'min(72vw, 360px)',
-          minHeight: 280,
-          background: `linear-gradient(165deg,#1a1514,#3d2c28 40%,#c4a090), url(${product.media[0]?.url || ''}) center/cover`,
-        }}
+      <ProductHero
+        brandLabel="AURA"
+        productLabel={sku?.variant_title || 'Night Repair'}
+        photoUrl={product.media[0]?.url}
+        showBottle={!product.media[0]?.url}
       />
 
-      <div style={{ padding: 16, paddingBottom: 88 }}>
-        <div style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
+      <div style={{ padding: '16px 16px 24px' }}>
+        <div style={{ display: 'flex', gap: 8, marginBottom: 10, flexWrap: 'wrap' }}>
           <span
             style={{
               fontSize: 11,
               fontWeight: 700,
-              color: '#c45a6a',
-              background: 'rgba(196,90,106,0.12)',
+              color: accent,
+              background: `${accent}1f`,
               padding: '4px 8px',
               borderRadius: 6,
             }}
           >
-            Best seller
+            Bán chạy
           </span>
-          <span style={{ fontSize: 11, color: '#6b5559', padding: '4px 0' }}>
-            {(sku?.available ?? 0) > 0 ? `Còn ${sku?.available}` : 'Hết hàng'}
-          </span>
-        </div>
-        <h1
-          style={{
-            margin: 0,
-            fontFamily: 'var(--ptt-font-display)',
-            fontSize: 28,
-            letterSpacing: '-0.03em',
-          }}
-        >
-          {product.title}
-        </h1>
-        <p style={{ color: '#6b5559', fontSize: 14 }}>{product.description}</p>
-
-        <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, margin: '12px 0' }}>
-          <strong style={{ fontSize: 22, color: '#c45a6a' }}>{formatVnd(sku?.unit_price)}</strong>
-          {sku?.list_price && sku.list_price !== sku.unit_price ? (
-            <span style={{ textDecoration: 'line-through', color: '#6b5559', fontSize: 14 }}>
-              {formatVnd(sku.list_price)}
+          {sku?.variant_title ? (
+            <span
+              style={{
+                fontSize: 11,
+                fontWeight: 600,
+                color: '#6b5559',
+                background: 'rgba(26,18,20,0.06)',
+                padding: '4px 8px',
+                borderRadius: 6,
+              }}
+            >
+              {sku.variant_title}
             </span>
           ) : null}
         </div>
 
-        <div style={{ marginBottom: 14 }}>
-          <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 6 }}>Phiên bản</div>
-          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-            {product.skus.map((s) => (
-              <span
-                key={s.id}
-                style={{
-                  padding: '8px 12px',
-                  borderRadius: 8,
-                  border: '1.5px solid #c45a6a',
-                  fontSize: 13,
-                  fontWeight: 600,
-                }}
-              >
-                {s.variant_title || s.code}
+        <h1
+          style={{
+            margin: 0,
+            fontFamily: 'var(--ptt-font-display)',
+            fontSize: 26,
+            letterSpacing: '-0.03em',
+            lineHeight: 1.2,
+          }}
+        >
+          {product.title}
+        </h1>
+        {product.description ? (
+          <p style={{ color: '#6b5559', fontSize: 14, margin: '8px 0 0', lineHeight: 1.5 }}>
+            {product.description}
+          </p>
+        ) : null}
+
+        <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, margin: '14px 0 4px' }}>
+          <strong style={{ fontSize: 24, color: accent, fontFamily: 'var(--ptt-font-display)' }}>
+            {formatVnd(sku?.unit_price)}
+          </strong>
+          {listPrice != null && save != null ? (
+            <>
+              <span style={{ textDecoration: 'line-through', color: '#6b5559', fontSize: 14 }}>
+                {formatVnd(sku?.list_price)}
               </span>
-            ))}
+              <span style={{ fontSize: 12, fontWeight: 700, color: '#2a7a4b' }}>
+                Tiết kiệm {formatVnd(save)}
+              </span>
+            </>
+          ) : null}
+        </div>
+        <p style={{ margin: '0 0 12px', fontSize: 12, color: '#6b5559' }}>
+          Giá <strong style={{ color: ink }}>thành viên AURA</strong>
+          {listPrice != null ? ` · Giá khách ${formatVnd(sku?.list_price)}` : null}
+        </p>
+
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 8,
+            fontSize: 13,
+            marginBottom: 16,
+          }}
+        >
+          <span
+            style={{
+              width: 8,
+              height: 8,
+              borderRadius: 99,
+              background: inStock ? '#2a7a4b' : '#9a3a3a',
+            }}
+            aria-hidden
+          />
+          <span style={{ fontWeight: 600 }}>{inStock ? 'Còn hàng' : 'Hết hàng'}</span>
+          <span style={{ color: '#6b5559', fontWeight: 500 }}>· Giao HCM trong 24h</span>
+        </div>
+
+        <div style={{ marginBottom: 16 }}>
+          <div style={{ fontSize: 12, fontWeight: 600, marginBottom: 8, color: '#6b5559' }}>
+            Phiên bản
+          </div>
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+            {product.skus.map((s, i) => {
+              const avail = (s.available ?? 0) > 0;
+              return (
+                <span
+                  key={s.id}
+                  style={{
+                    padding: '8px 12px',
+                    borderRadius: 8,
+                    border: `1.5px solid ${i === 0 ? accent : 'rgba(26,18,20,0.12)'}`,
+                    background: i === 0 ? `${accent}12` : '#fff',
+                    fontSize: 13,
+                    fontWeight: 600,
+                    opacity: avail ? 1 : 0.45,
+                    color: ink,
+                  }}
+                >
+                  {s.variant_title || s.code}
+                  {!avail ? ' — hết' : ''}
+                </span>
+              );
+            })}
           </div>
         </div>
 
-        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 16 }}>
-          {['COD toàn quốc', 'Đổi trả 7 ngày', 'Chat Zalo'].map((t) => (
-            <span
-              key={t}
-              style={{
-                fontSize: 12,
-                padding: '6px 10px',
-                borderRadius: 8,
-                background: '#fff',
-                border: '1px solid rgba(26,18,20,0.08)',
-              }}
-            >
-              {t}
-            </span>
-          ))}
+        <TrustGrid
+          items={[
+            { title: 'Giao 24–48h', sub: 'Nội thành HN/HCM' },
+            { title: 'COD', sub: 'Thanh toán khi nhận' },
+            { title: 'Đổi 7 ngày', sub: 'Seal còn nguyên' },
+          ]}
+        />
+
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 20 }}>
+          <a
+            href="https://zalo.me/"
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{
+              height: 42,
+              display: 'grid',
+              placeItems: 'center',
+              border: '1px solid rgba(26,18,20,0.12)',
+              borderRadius: 8,
+              fontSize: 13,
+              fontWeight: 600,
+              color: ink,
+              textDecoration: 'none',
+              background: '#fff',
+            }}
+          >
+            Nhắn Zalo
+          </a>
+          <a
+            href="https://m.me/"
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{
+              height: 42,
+              display: 'grid',
+              placeItems: 'center',
+              border: '1px solid rgba(26,18,20,0.12)',
+              borderRadius: 8,
+              fontSize: 13,
+              fontWeight: 600,
+              color: ink,
+              textDecoration: 'none',
+              background: '#fff',
+            }}
+          >
+            Messenger
+          </a>
         </div>
 
-        <h2 style={{ fontSize: 16, marginBottom: 8 }}>Có thể bạn thích</h2>
-        <div style={{ display: 'grid', gap: 8 }}>
+        <div style={{ marginBottom: 20 }}>
+          <h2 style={{ fontSize: 15, margin: '0 0 8px', fontFamily: 'var(--ptt-font-display)' }}>
+            Về sản phẩm
+          </h2>
+          <p style={{ margin: 0, fontSize: 13, color: '#6b5559', lineHeight: 1.55 }}>
+            {product.description ||
+              'Công thức tập trung phục hồi — thấm nhanh, phù hợp khí hậu Việt Nam.'}
+          </p>
+        </div>
+
+        <div
+          style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'baseline',
+            marginBottom: 10,
+          }}
+        >
+          <h2 style={{ fontSize: 15, margin: 0, fontFamily: 'var(--ptt-font-display)' }}>
+            Mua kèm
+          </h2>
+          <Link href="/search" style={{ fontSize: 12, color: '#6b5559', textDecoration: 'none' }}>
+            Xem tất cả
+          </Link>
+        </div>
+        <div
+          style={{
+            display: 'grid',
+            gridTemplateColumns: '1fr 1fr',
+            gap: 10,
+            marginBottom: 16,
+          }}
+        >
           {related
             .filter((r) => r.id !== product.id)
-            .slice(0, 3)
+            .slice(0, 2)
             .map((r) => (
               <Link
                 key={r.id}
                 href={`/products/${r.slug}`}
                 style={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  padding: 12,
-                  background: '#fff',
-                  borderRadius: 10,
                   textDecoration: 'none',
                   color: 'inherit',
+                  background: '#fff',
                   border: '1px solid rgba(26,18,20,0.06)',
+                  borderRadius: 10,
+                  overflow: 'hidden',
                 }}
               >
-                <span style={{ fontWeight: 600 }}>{r.title}</span>
-                <span style={{ color: '#c45a6a' }}>{formatVnd(r.skus[0]?.unit_price)}</span>
+                <div
+                  style={{
+                    height: 100,
+                    background: `linear-gradient(145deg,#2a1c1e,#c4a090), url(${r.media[0]?.url || ''}) center/cover`,
+                  }}
+                />
+                <div style={{ padding: '10px 12px' }}>
+                  <div
+                    style={{
+                      fontFamily: 'var(--ptt-font-display)',
+                      fontSize: 14,
+                      letterSpacing: '-0.02em',
+                      marginBottom: 4,
+                    }}
+                  >
+                    {r.title}
+                  </div>
+                  <div style={{ fontSize: 13, color: accent, fontWeight: 600 }}>
+                    {formatVnd(r.skus[0]?.unit_price)}
+                  </div>
+                </div>
               </Link>
             ))}
         </div>
+
+        <p
+          style={{
+            textAlign: 'center',
+            padding: '8px 0 4px',
+            fontSize: 10,
+            color: '#6b5559',
+            letterSpacing: '0.04em',
+          }}
+        >
+          Powered by <strong style={{ color: ink }}>PTT</strong>
+        </p>
       </div>
 
       <div
@@ -193,13 +367,22 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
           backdropFilter: 'blur(8px)',
         }}
       >
-        <div style={{ flex: 1 }}>
-          <div style={{ fontSize: 12, color: '#6b5559' }}>Giá thành viên</div>
-          <strong style={{ color: '#c45a6a' }}>{formatVnd(sku?.unit_price)}</strong>
+        <div style={{ flex: '0 0 auto', minWidth: 88 }}>
+          <div style={{ fontSize: 10, color: '#6b5559' }}>Thành viên</div>
+          <strong
+            style={{
+              color: accent,
+              fontFamily: 'var(--ptt-font-display)',
+              fontSize: 18,
+              letterSpacing: '-0.02em',
+            }}
+          >
+            {formatVnd(sku?.unit_price)}
+          </strong>
         </div>
         {sku ? (
-          <div style={{ flex: 1.2 }}>
-            <AddToCartButton skuId={sku.id} disabled={(sku.available ?? 0) < 1} />
+          <div style={{ flex: 1 }}>
+            <AddToCartButton skuId={sku.id} disabled={!inStock} />
           </div>
         ) : null}
       </div>

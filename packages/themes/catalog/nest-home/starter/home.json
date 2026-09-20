@@ -1,0 +1,47 @@
+{
+  "schema_version": 1,
+  "section_order": ["hero", "collections", "featured", "trust", "cta_banner"],
+  "sections": {
+    "hero": {
+      "type": "hero",
+      "id": "sec_hero",
+      "props": {
+        "eyebrow": "Nest Home",
+        "headline": "Room sets — shop the look ấm áp",
+        "cta": "Xem phòng mẫu",
+        "cta_href": "/collections/noi-bat"
+      },
+      "style": {}
+    },
+    "collections": {
+      "type": "collections",
+      "id": "sec_collections",
+      "props": { "source": "theme" },
+      "style": {}
+    },
+    "featured": {
+      "type": "featured",
+      "id": "sec_featured",
+      "props": { "limit": 8 },
+      "style": {}
+    },
+    "trust": {
+      "type": "trust",
+      "id": "sec_trust",
+      "props": {
+        "items": ["Bảo hành nội thất 24 tháng", "Giao lắp nội thành", "Gallery không gian lớn"]
+      },
+      "style": {}
+    },
+    "cta_banner": {
+      "type": "cta_banner",
+      "id": "sec_cta",
+      "props": {
+        "title": "Tư vấn phối phòng miễn phí",
+        "cta": "Đặt hẹn",
+        "cta_href": "/p/about"
+      },
+      "style": {}
+    }
+  }
+}

@@ -1,0 +1,67 @@
+{
+  "schema_version": 1,
+  "section_order": [
+    "hero",
+    "rich_text",
+    "featured",
+    "cta_banner",
+    "faq"
+  ],
+  "sections": {
+    "hero": {
+      "type": "hero",
+      "id": "sec_hero",
+      "props": {
+        "eyebrow": "Habitat Living",
+        "headline": "Dự án đáng sống — nhận bảng giá & tour",
+        "cta": "Nhận bảng giá",
+        "cta_href": "/p/about"
+      },
+      "style": {}
+    },
+    "rich_text": {
+      "type": "rich_text",
+      "id": "sec_story",
+      "props": {
+        "title": "Mặt bằng & tiện ích",
+        "body": "Gallery + form nhận bảng giá — Sales follow trong SLA."
+      },
+      "style": {}
+    },
+    "featured": {
+      "type": "featured",
+      "id": "sec_featured",
+      "props": {
+        "limit": 6
+      },
+      "style": {}
+    },
+    "cta_banner": {
+      "type": "cta_banner",
+      "id": "sec_cta",
+      "props": {
+        "title": "Mở bán đợt mới",
+        "cta": "Đăng ký tour",
+        "cta_href": "/cart"
+      },
+      "style": {}
+    },
+    "faq": {
+      "type": "faq",
+      "id": "sec_faq",
+      "props": {
+        "items": [
+          {
+            "q": "Có tour thực tế?",
+            "a": "Có — đặt lịch trên form."
+          },
+          {
+            "q": "Bảng giá public?",
+            "a": "Gửi sau khi lead consent."
+          }
+        ]
+      },
+      "style": {}
+    }
+  }
+}

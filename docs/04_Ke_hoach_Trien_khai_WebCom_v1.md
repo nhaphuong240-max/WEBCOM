@@ -1104,6 +1104,8 @@ Một **Visual Builder + Page/CMS** dùng chung mọi template; template = **The
 | **CMS-2** | Canvas mockup 06 · nav/media · ≥5 packages · legacy warning | **shipped** — builder canvas · e2e-cms-2 |
 | **CMS-3** | Section SRS · blog · saved blocks · AI · **Could:** Creator stub · reviews · page A/B | **shipped** — e2e-cms-3 · e2e-cms-3c |
 | **MKT-1** | Corporate gallery facets + `/templates/[code]` · supports · demo CTA | **shipped** — e2e-mkt-1 |
+| **MKT-2a** | +5 ThemePackages (10/30) · demo headline diffs | **shipped** — forge/nest/pulse/cafe/zen · e2e-mkt-2a |
+| **MKT-2b** | Full **30/30** ThemePackages on disk | **shipped** — e2e-mkt-2b · mọi `?demo=` resolve package |
 | **CMS-GA** | Blog promote · OpenAPI/Bruno · e2e-cms-ga (P2/P3/golive) | **shipped** — cứng hóa GA |
 | **HR-0** | ADR-006 · permission/role catalog `@ptt/shared-kernel` · flags | **shipped** |
 | **HR-1** | Invite/Users/RBAC · Employee · UI `/hr/*` · e2e-hr-1 | **shipped** (code) |
@@ -1148,6 +1150,8 @@ CMS per-template · fork editor Enterprise · arbitrary script · 400 theme mỏ
 | CORP-CMS-1 | Content MVP · nghiệp vụ · UI runtime | **Shipped** — registry/CTA/SectionStack/admin/e2e-1 |
 | CORP-CMS-2 | Solutions · Case · Industry · Nav · **GA** | **Shipped GA** — case KPI gate · rollback · revalidate · nav · e2e-platform-cms.sh |
 | CORP-CMS-3 | Resources gated · Tour · ROI · i18n | **Shipped** — gated · tour · ROI · schedule · **webcom_en EN** · **PC3-6 A/B** · e2e-3 + e2e-debt |
+
+**Mockup parity:** Command Center (`03`) polished — KPI · exception queue · AI HITL · GMV/margin bars · recent orders (demo + API). Next PO pick: `08` / `09` / `01`.
 
 **Ước lượng:** GA đạt (CORP-CMS-2). Debt PC2-10 (`PlatformSite`/`owner_type`) + PC3-6 A/B + EN content đã code. Rollout: migrate + seed + flag theo runbook `platform-cms.md`.
 

@@ -1,0 +1,61 @@
+{
+  "schema_version": 1,
+  "section_order": [
+    "hero",
+    "featured",
+    "collections",
+    "trust",
+    "cta_banner"
+  ],
+  "sections": {
+    "hero": {
+      "type": "hero",
+      "id": "sec_hero",
+      "props": {
+        "eyebrow": "Green Basket",
+        "headline": "Rau sạch giao mỗi sáng — farm trust",
+        "cta": "Đặt hộp tuần",
+        "cta_href": "/search"
+      },
+      "style": {}
+    },
+    "featured": {
+      "type": "featured",
+      "id": "sec_featured",
+      "props": {
+        "limit": 6
+      },
+      "style": {}
+    },
+    "collections": {
+      "type": "collections",
+      "id": "sec_collections",
+      "props": {
+        "source": "theme"
+      },
+      "style": {}
+    },
+    "trust": {
+      "type": "trust",
+      "id": "sec_trust",
+      "props": {
+        "items": [
+          "Nguồn gốc farm",
+          "Delivery slot",
+          "Subscription tuần"
+        ]
+      },
+      "style": {}
+    },
+    "cta_banner": {
+      "type": "cta_banner",
+      "id": "sec_cta",
+      "props": {
+        "title": "Subscription hộp rau",
+        "cta": "Đăng ký",
+        "cta_href": "/cart"
+      },
+      "style": {}
+    }
+  }
+}

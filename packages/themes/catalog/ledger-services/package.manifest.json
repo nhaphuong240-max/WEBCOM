@@ -1,0 +1,26 @@
+{
+  "code": "ledger-services",
+  "name": "Ledger Services",
+  "version": "1.0.0",
+  "supports": [
+    "hero",
+    "rich_text",
+    "featured",
+    "cta_banner",
+    "faq",
+    "trust"
+  ],
+  "layouts": {
+    "home": [
+      "hero",
+      "rich_text",
+      "featured",
+      "cta_banner",
+      "faq"
+    ]
+  },
+  "demo_fixtures": {
+    "brand_name": "Ledger"
+  },
+  "compatible_app_blocks": []
+}

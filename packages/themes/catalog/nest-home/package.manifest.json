@@ -1,0 +1,13 @@
+{
+  "code": "nest-home",
+  "name": "Nest Home",
+  "version": "1.0.0",
+  "supports": ["hero", "collections", "featured", "trust", "cta_banner"],
+  "layouts": {
+    "home": ["hero", "collections", "featured", "trust", "cta_banner"]
+  },
+  "demo_fixtures": {
+    "brand_name": "Nest"
+  },
+  "compatible_app_blocks": []
+}

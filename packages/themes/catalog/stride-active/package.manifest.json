@@ -1,0 +1,25 @@
+{
+  "code": "stride-active",
+  "name": "Stride Active",
+  "version": "1.0.0",
+  "supports": [
+    "hero",
+    "collections",
+    "featured",
+    "trust",
+    "cta_banner"
+  ],
+  "layouts": {
+    "home": [
+      "hero",
+      "collections",
+      "featured",
+      "trust",
+      "cta_banner"
+    ]
+  },
+  "demo_fixtures": {
+    "brand_name": "Stride"
+  },
+  "compatible_app_blocks": []
+}

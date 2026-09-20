@@ -1,0 +1,76 @@
+{
+  "schema_version": 1,
+  "section_order": ["hero", "rich_text", "featured", "cta_banner", "faq", "footer_links"],
+  "sections": {
+    "hero": {
+      "type": "hero",
+      "id": "sec_hero",
+      "props": {
+        "eyebrow": "Forge B2B",
+        "headline": "Catalog sỉ + RFQ trong một trang",
+        "cta": "Tải bảng giá",
+        "cta_href": "/p/about"
+      },
+      "style": {}
+    },
+    "rich_text": {
+      "type": "rich_text",
+      "id": "sec_story",
+      "props": {
+        "title": "Bán sỉ có kiểm soát",
+        "body": "Megamenu ngành hàng, PDF catalog và form RFQ gắn mọi CTA — Sales nhận lead đủ tier giá."
+      },
+      "style": {}
+    },
+    "featured": {
+      "type": "featured",
+      "id": "sec_featured",
+      "props": { "limit": 8 },
+      "style": {}
+    },
+    "cta_banner": {
+      "type": "cta_banner",
+      "id": "sec_cta",
+      "props": {
+        "title": "Đặt lịch demo kho / bảng giá",
+        "cta": "Liên hệ Sales",
+        "cta_href": "/p/about"
+      },
+      "style": {}
+    },
+    "faq": {
+      "type": "faq",
+      "id": "sec_faq",
+      "props": {
+        "items": [
+          { "q": "Có bảng giá theo tier không?", "a": "Có — xuất PDF hoặc gửi sau RFQ." },
+          { "q": "MOQ tối thiểu?", "a": "Cấu hình theo SKU trong catalog admin." }
+        ]
+      },
+      "style": {}
+    },
+    "footer_links": {
+      "type": "footer_links",
+      "id": "sec_footer_links",
+      "props": {
+        "columns": [
+          {
+            "title": "Catalog",
+            "links": [
+              { "label": "Ngành hàng", "href": "/search" },
+              { "label": "PDF mẫu", "href": "/p/about" }
+            ]
+          },
+          {
+            "title": "Sales",
+            "links": [
+              { "label": "RFQ", "href": "/p/about" },
+              { "label": "Liên hệ", "href": "/p/about" }
+            ]
+          }
+        ]
+      },
+      "style": {}
+    }
+  }
+}

@@ -1,0 +1,58 @@
+{
+  "schema_version": 1,
+  "section_order": [
+    "hero",
+    "countdown",
+    "collections",
+    "featured",
+    "cta_banner"
+  ],
+  "sections": {
+    "hero": {
+      "type": "hero",
+      "id": "sec_hero",
+      "props": {
+        "eyebrow": "Voyage Gear",
+        "headline": "Sẵn sàng mọi hành trình — early-bird",
+        "cta": "Xem pack list",
+        "cta_href": "/collections/noi-bat"
+      },
+      "style": {}
+    },
+    "countdown": {
+      "type": "countdown",
+      "id": "sec_countdown",
+      "props": {
+        "label": "Kết thúc sau",
+        "ends_at": "2099-12-31T23:59:59Z"
+      },
+      "style": {}
+    },
+    "collections": {
+      "type": "collections",
+      "id": "sec_collections",
+      "props": {
+        "source": "theme"
+      },
+      "style": {}
+    },
+    "featured": {
+      "type": "featured",
+      "id": "sec_featured",
+      "props": {
+        "limit": 6
+      },
+      "style": {}
+    },
+    "cta_banner": {
+      "type": "cta_banner",
+      "id": "sec_cta",
+      "props": {
+        "title": "Early-bird còn 48h",
+        "cta": "Chốt deal",
+        "cta_href": "/cart"
+      },
+      "style": {}
+    }
+  }
+}

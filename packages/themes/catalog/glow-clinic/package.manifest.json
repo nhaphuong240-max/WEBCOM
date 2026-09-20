@@ -1,0 +1,26 @@
+{
+  "code": "glow-clinic",
+  "name": "Glow Clinic",
+  "version": "1.0.0",
+  "supports": [
+    "hero",
+    "rich_text",
+    "featured",
+    "faq",
+    "cta_banner",
+    "trust"
+  ],
+  "layouts": {
+    "home": [
+      "hero",
+      "rich_text",
+      "featured",
+      "faq",
+      "cta_banner"
+    ]
+  },
+  "demo_fixtures": {
+    "brand_name": "Glow"
+  },
+  "compatible_app_blocks": []
+}

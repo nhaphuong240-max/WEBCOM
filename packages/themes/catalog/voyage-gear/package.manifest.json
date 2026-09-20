@@ -1,0 +1,26 @@
+{
+  "code": "voyage-gear",
+  "name": "Voyage Gear",
+  "version": "1.0.0",
+  "supports": [
+    "hero",
+    "countdown",
+    "collections",
+    "featured",
+    "cta_banner",
+    "trust"
+  ],
+  "layouts": {
+    "home": [
+      "hero",
+      "countdown",
+      "collections",
+      "featured",
+      "cta_banner"
+    ]
+  },
+  "demo_fixtures": {
+    "brand_name": "Voyage"
+  },
+  "compatible_app_blocks": []
+}

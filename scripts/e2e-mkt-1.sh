@@ -52,4 +52,17 @@ assert "footer_links" in d.get("supports",[])
 print("harvest ok")
 PY
 
+echo "== MKT-2a/2b packaged samples =="
+for CODE in forge-b2b nest-home bloom-kids spark-promo green-basket; do
+  curl -sS "$BASE/v1/public/templates/$CODE" | tee "/tmp/mkt1-$CODE.json" >/dev/null
+  python3 - <<PY
+import json
+d=json.load(open("/tmp/mkt1-$CODE.json"))
+assert d["code"]=="$CODE"
+assert d.get("has_package") is True, d
+assert "demo=$CODE" in (d.get("demo_url") or "")
+print("$CODE ok")
+PY
+done
+
 echo "MKT-1 OK"

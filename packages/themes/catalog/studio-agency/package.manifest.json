@@ -1,0 +1,26 @@
+{
+  "code": "studio-agency",
+  "name": "Studio Agency",
+  "version": "1.0.0",
+  "supports": [
+    "hero",
+    "rich_text",
+    "featured",
+    "cta_banner",
+    "trust",
+    "faq"
+  ],
+  "layouts": {
+    "home": [
+      "hero",
+      "rich_text",
+      "featured",
+      "cta_banner",
+      "faq"
+    ]
+  },
+  "demo_fixtures": {
+    "brand_name": "Studio"
+  },
+  "compatible_app_blocks": []
+}

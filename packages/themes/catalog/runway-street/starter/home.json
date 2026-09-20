@@ -1,0 +1,58 @@
+{
+  "schema_version": 1,
+  "section_order": [
+    "hero",
+    "countdown",
+    "featured",
+    "collections",
+    "cta_banner"
+  ],
+  "sections": {
+    "hero": {
+      "type": "hero",
+      "id": "sec_hero",
+      "props": {
+        "eyebrow": "Street Drop",
+        "headline": "Drop tuần này — limited SKU",
+        "cta": "Shop drop",
+        "cta_href": "/search"
+      },
+      "style": {}
+    },
+    "countdown": {
+      "type": "countdown",
+      "id": "sec_countdown",
+      "props": {
+        "label": "Kết thúc sau",
+        "ends_at": "2099-12-31T23:59:59Z"
+      },
+      "style": {}
+    },
+    "featured": {
+      "type": "featured",
+      "id": "sec_featured",
+      "props": {
+        "limit": 6
+      },
+      "style": {}
+    },
+    "collections": {
+      "type": "collections",
+      "id": "sec_collections",
+      "props": {
+        "source": "theme"
+      },
+      "style": {}
+    },
+    "cta_banner": {
+      "type": "cta_banner",
+      "id": "sec_cta",
+      "props": {
+        "title": "Deep-link từ social",
+        "cta": "Thêm vào giỏ",
+        "cta_href": "/cart"
+      },
+      "style": {}
+    }
+  }
+}

@@ -1,0 +1,70 @@
+{
+  "schema_version": 1,
+  "section_order": [
+    "hero",
+    "featured",
+    "trust",
+    "cta_banner",
+    "faq"
+  ],
+  "sections": {
+    "hero": {
+      "type": "hero",
+      "id": "sec_hero",
+      "props": {
+        "eyebrow": "Motor Parts",
+        "headline": "Phụ tùng đúng xe — lọc hãng & đời",
+        "cta": "Tìm theo xe",
+        "cta_href": "/search"
+      },
+      "style": {}
+    },
+    "featured": {
+      "type": "featured",
+      "id": "sec_featured",
+      "props": {
+        "limit": 6
+      },
+      "style": {}
+    },
+    "trust": {
+      "type": "trust",
+      "id": "sec_trust",
+      "props": {
+        "items": [
+          "OEM / aftermarket",
+          "Megamenu danh mục",
+          "Spec rõ"
+        ]
+      },
+      "style": {}
+    },
+    "cta_banner": {
+      "type": "cta_banner",
+      "id": "sec_cta",
+      "props": {
+        "title": "Lọc theo đời xe",
+        "cta": "Bắt đầu",
+        "cta_href": "/cart"
+      },
+      "style": {}
+    },
+    "faq": {
+      "type": "faq",
+      "id": "sec_faq",
+      "props": {
+        "items": [
+          {
+            "q": "Có lọc theo đời xe?",
+            "a": "Có — playbook megamenu + facet."
+          },
+          {
+            "q": "OEM hay aftermarket?",
+            "a": "Ghi rõ trên PDP."
+          }
+        ]
+      },
+      "style": {}
+    }
+  }
+}

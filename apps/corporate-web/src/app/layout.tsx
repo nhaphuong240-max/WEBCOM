@@ -18,9 +18,9 @@ const display = Plus_Jakarta_Sans({
 });
 
 export const metadata: Metadata = {
-  title: 'WebCom — Template & Theme Marketplace | Commerce OS',
+  title: 'PTT — Giải pháp bán hàng đa kênh có lãi | Commerce Intelligence OS',
   description:
-    'Chọn theme → demo live → trial → mua. Marketplace template bán hàng đa kênh cho Việt Nam.',
+    'Omnichannel + Website + Social/Live + POS + Sàn + CRM + AI — điều hành theo contribution margin, không chỉ GMV.',
 };
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {

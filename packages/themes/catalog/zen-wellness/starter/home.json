@@ -1,0 +1,72 @@
+{
+  "schema_version": 1,
+  "section_order": ["hero", "rich_text", "collections", "featured", "faq", "footer_links"],
+  "sections": {
+    "hero": {
+      "type": "hero",
+      "id": "sec_hero",
+      "props": {
+        "eyebrow": "Zen Wellness",
+        "headline": "Chăm sóc từ gốc — ingredient storytelling",
+        "cta": "Đọc journal",
+        "cta_href": "/collections/noi-bat"
+      },
+      "style": {}
+    },
+    "rich_text": {
+      "type": "rich_text",
+      "id": "sec_story",
+      "props": {
+        "title": "Ritual chậm, hiệu quả dài",
+        "body": "Editorial brand kể chuyện thành phần — CTA tư vấn nhẹ thay vì hard sell flash sale."
+      },
+      "style": {}
+    },
+    "collections": {
+      "type": "collections",
+      "id": "sec_collections",
+      "props": { "source": "theme" },
+      "style": {}
+    },
+    "featured": {
+      "type": "featured",
+      "id": "sec_featured",
+      "props": { "limit": 4 },
+      "style": {}
+    },
+    "faq": {
+      "type": "faq",
+      "id": "sec_faq",
+      "props": {
+        "items": [
+          { "q": "Có tư vấn routine?", "a": "Có — soft CTA đặt lịch hoặc chat." },
+          { "q": "Nguyên liệu có chứng nhận?", "a": "Gắn source_ref trên block education." }
+        ]
+      },
+      "style": {}
+    },
+    "footer_links": {
+      "type": "footer_links",
+      "id": "sec_footer_links",
+      "props": {
+        "columns": [
+          {
+            "title": "Explore",
+            "links": [
+              { "label": "Journal", "href": "/p/about" },
+              { "label": "Collections", "href": "/search" }
+            ]
+          },
+          {
+            "title": "Care",
+            "links": [
+              { "label": "Tư vấn", "href": "/p/about" },
+              { "label": "Ship & đổi", "href": "/p/about" }
+            ]
+          }
+        ]
+      },
+      "style": {}
+    }
+  }
+}

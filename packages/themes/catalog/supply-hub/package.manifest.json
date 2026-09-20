@@ -1,0 +1,26 @@
+{
+  "code": "supply-hub",
+  "name": "Supply Hub",
+  "version": "1.0.0",
+  "supports": [
+    "hero",
+    "featured",
+    "cta_banner",
+    "faq",
+    "trust",
+    "footer_links"
+  ],
+  "layouts": {
+    "home": [
+      "hero",
+      "featured",
+      "cta_banner",
+      "faq",
+      "trust"
+    ]
+  },
+  "demo_fixtures": {
+    "brand_name": "Supply"
+  },
+  "compatible_app_blocks": []
+}

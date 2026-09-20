@@ -1,0 +1,67 @@
+{
+  "schema_version": 1,
+  "section_order": [
+    "hero",
+    "rich_text",
+    "featured",
+    "cta_banner",
+    "faq"
+  ],
+  "sections": {
+    "hero": {
+      "type": "hero",
+      "id": "sec_hero",
+      "props": {
+        "eyebrow": "Studio Agency",
+        "headline": "Case study & book demo — ROI rõ",
+        "cta": "Book demo",
+        "cta_href": "/p/about"
+      },
+      "style": {}
+    },
+    "rich_text": {
+      "type": "rich_text",
+      "id": "sec_story",
+      "props": {
+        "title": "Không slide suông",
+        "body": "Case + KPI trước CTA demo — phù hợp agency / SI."
+      },
+      "style": {}
+    },
+    "featured": {
+      "type": "featured",
+      "id": "sec_featured",
+      "props": {
+        "limit": 6
+      },
+      "style": {}
+    },
+    "cta_banner": {
+      "type": "cta_banner",
+      "id": "sec_cta",
+      "props": {
+        "title": "Xem case 15 phút",
+        "cta": "Đặt lịch",
+        "cta_href": "/cart"
+      },
+      "style": {}
+    },
+    "faq": {
+      "type": "faq",
+      "id": "sec_faq",
+      "props": {
+        "items": [
+          {
+            "q": "Có white-label?",
+            "a": "Preview sẵn trong playbook."
+          },
+          {
+            "q": "Demo bao lâu?",
+            "a": "15–30 phút theo ICP."
+          }
+        ]
+      },
+      "style": {}
+    }
+  }
+}

@@ -1,0 +1,13 @@
+{
+  "code": "zen-wellness",
+  "name": "Zen Wellness",
+  "version": "1.0.0",
+  "supports": ["hero", "rich_text", "collections", "featured", "faq", "footer_links"],
+  "layouts": {
+    "home": ["hero", "rich_text", "collections", "featured", "faq"]
+  },
+  "demo_fixtures": {
+    "brand_name": "Zen"
+  },
+  "compatible_app_blocks": []
+}

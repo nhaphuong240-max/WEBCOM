@@ -1,0 +1,25 @@
+{
+  "code": "kitchen-cloud",
+  "name": "Kitchen Cloud",
+  "version": "1.0.0",
+  "supports": [
+    "hero",
+    "countdown",
+    "featured",
+    "cta_banner",
+    "trust"
+  ],
+  "layouts": {
+    "home": [
+      "hero",
+      "countdown",
+      "featured",
+      "cta_banner",
+      "trust"
+    ]
+  },
+  "demo_fixtures": {
+    "brand_name": "Kitchen"
+  },
+  "compatible_app_blocks": []
+}

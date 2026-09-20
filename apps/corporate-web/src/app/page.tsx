@@ -1,42 +1,12 @@
 import Link from 'next/link';
-import { HeroConcierge, LeadForm } from '../components/HeroConcierge';
-import { TemplateProductCard } from '../components/TemplateProductCard';
+import { GtmHome } from '../components/GtmHome';
+import { LeadForm } from '../components/HeroConcierge';
 import { SectionStackPlatform } from '../components/platform/SectionStackPlatform';
+import { TemplateProductCard } from '../components/TemplateProductCard';
 import { fetchTemplates } from '../lib/marketplace';
 import { fetchPlatformPage, isPlatformCmsEnabled } from '../lib/platform-cms';
 
 export const dynamic = 'force-dynamic';
-
-const CATEGORY_TILES = [
-  {
-    title: 'Website Commerce',
-    body: 'Theme HTML/Next storefront · Brand Kit · Go-live gate',
-    count: '30+ playbooks',
-    href: '/templates?goal=conversion',
-    tone: 'blue' as const,
-  },
-  {
-    title: 'Live & Social',
-    body: 'Live drop, keyword order, attribution realtime',
-    count: 'Live kits',
-    href: '/templates?goal=live',
-    tone: 'green' as const,
-  },
-  {
-    title: 'Beauty & Fashion',
-    body: 'Aura, Atelier và theme ngành bán lẻ VN',
-    count: 'Industry packs',
-    href: '/templates?industry=beauty',
-    tone: 'rose' as const,
-  },
-  {
-    title: 'Omnichannel POS',
-    body: 'Giá · tồn · khách web ↔ quầy',
-    count: 'POS ready',
-    href: '/templates?goal=omnichannel',
-    tone: 'amber' as const,
-  },
-];
 
 export default async function CorporateHome({
   searchParams,
@@ -52,128 +22,59 @@ export default async function CorporateHome({
     (isPlatformCmsEnabled() || Boolean(sp.preview));
 
   const templates = await fetchTemplates({ sort: 'cvr' });
-  const hot = templates.slice(0, 5);
-  const best = templates.slice(0, 5);
-  const featured = [...templates].reverse().slice(0, 5);
+  const hot = templates.slice(0, 4);
 
   return (
-    <main className="tm-home">
+    <main>
       {useCms && platformPage?.content_v1 ? (
-        <SectionStackPlatform
-          content={platformPage.content_v1}
-          experimentCode={platformPage.experiment_code}
-          experiment={platformPage.experiment}
-          storefrontId={platformPage.interim_storefront_id}
-        />
-      ) : (
         <>
-          <HeroConcierge />
-          <section className="tm-section" id="categories">
-            <div className="tm-section-head">
-              <h2>Website Templates, Theme & Playbook Marketplace</h2>
-              <p>Catalog công khai — demo live, trial self-serve, mua license khi sẵn sàng.</p>
-            </div>
-            <div className="tm-cat-tiles">
-              {CATEGORY_TILES.map((c) => (
-                <Link key={c.title} href={c.href} className={`tm-cat-tile tone-${c.tone}`}>
-                  <h3>{c.title}</h3>
-                  <p>{c.body}</p>
-                  <span>{c.count}</span>
-                </Link>
-              ))}
+          <SectionStackPlatform
+            content={platformPage.content_v1}
+            experimentCode={platformPage.experiment_code}
+            experiment={platformPage.experiment}
+            storefrontId={platformPage.interim_storefront_id}
+          />
+          <section className="gtm-sec gtm-demo" id="demo">
+            <div className="gtm-narrow gtm-demo-grid">
+              <div className="gtm-sec-h" style={{ margin: 0 }}>
+                <div className="gtm-eyebrow">Bắt đầu</div>
+                <h2>Đặt demo 30 phút theo ngành của bạn</h2>
+                <p>
+                  Tour Command Center, Website Go-live và Social/Live. So sánh margin vs chỉ nhìn
+                  GMV.
+                </p>
+              </div>
+              <LeadForm ctaCode="cta_book_demo" landingSlug="/" />
             </div>
           </section>
         </>
+      ) : (
+        <GtmHome locale="vi" />
       )}
 
-      <section className="tm-section tm-section-muted" id="hot">
-        <div className="tm-section-head row">
-          <div>
-            <h2>Hot this week</h2>
-            <p>Theme đang được xem demo nhiều nhất trên WebCom.</p>
+      <section
+        className="gtm-sec gtm-channels"
+        id="templates"
+        style={{ paddingTop: 64, paddingBottom: 64 }}
+      >
+        <div className="gtm-narrow">
+          <div className="gtm-sec-h" style={{ marginBottom: 28 }}>
+            <div className="gtm-eyebrow">Website Commerce</div>
+            <h2>Template Marketplace</h2>
+            <p>Playbook đo CVR / Mobile / SEO — demo live, trial trước paywall.</p>
           </div>
-          <Link href="/templates" className="tm-link-more">
-            Browse all products →
-          </Link>
-        </div>
-        <div className="tm-product-rail">
-          {hot.map((t) => (
-            <TemplateProductCard key={t.id} t={t} badge="Hot" />
-          ))}
-          {!hot.length ? <p className="tm-empty">Chưa có template — kiểm tra API public.</p> : null}
-        </div>
-      </section>
-
-      <section className="tm-section" id="bestsellers">
-        <div className="tm-section-head row">
-          <div>
-            <h2>Bestsellers</h2>
-            <p>Top website templates theo điểm CVR / mobile / SEO.</p>
+          <div className="tm-product-rail">
+            {hot.map((t) => (
+              <TemplateProductCard key={t.id} t={t} badge="Hot" />
+            ))}
+            {!hot.length ? <p className="tm-empty">Chưa có template — kiểm tra API public.</p> : null}
           </div>
-          <Link href="/templates?sort=cvr" className="tm-link-more">
-            View bestsellers →
-          </Link>
-        </div>
-        <div className="tm-product-rail">
-          {best.map((t) => (
-            <TemplateProductCard key={`b-${t.id}`} t={t} badge="Bestseller" />
-          ))}
-        </div>
-      </section>
-
-      {!useCms ? (
-        <section className="tm-unlimited">
-          <div className="tm-unlimited-inner">
-            <div>
-              <p className="tm-hero-eyebrow">WebCom Unlimited</p>
-              <h2>Một gói — dùng cho mọi dự án sáng tạo</h2>
-              <ul>
-                <li>Unlimited projects</li>
-                <li>Product support</li>
-                <li>Theme mới mỗi tuần</li>
-                <li>Trial trước paywall · VietQR</li>
-              </ul>
-              <Link href="/pricing" className="tm-btn tm-btn-primary">
-                Xem Unlimited
-              </Link>
-            </div>
-            <div className="tm-unlimited-card" aria-hidden>
-              <div className="n">∞</div>
-              <div className="t">Downloads</div>
-            </div>
+          <div style={{ marginTop: 24 }}>
+            <Link href="/templates" className="gtm-btn gtm-btn-primary">
+              Xem tất cả templates
+            </Link>
           </div>
-        </section>
-      ) : null}
-
-      <section className="tm-section tm-section-muted" id="featured">
-        <div className="tm-section-head row">
-          <div>
-            <h2>Featured</h2>
-            <p>Theme được đội WebCom chọn tay — layout sạch, go-live gate sẵn.</p>
-          </div>
-          <Link href="/templates" className="tm-link-more">
-            Explore featured →
-          </Link>
         </div>
-        <div className="tm-product-rail">
-          {featured.map((t) => (
-            <TemplateProductCard key={`f-${t.id}`} t={t} badge="Featured" />
-          ))}
-        </div>
-      </section>
-
-      <section className="tm-cta-band" id="lead">
-        <h2>Sẵn sàng mở storefront?</h2>
-        <p>Trial miễn phí trước — mua theme khi đã chạy được. Hoặc để sales đồng hành.</p>
-        <div className="tm-cta-actions">
-          <Link href="/trial" className="tm-btn tm-btn-primary">
-            Dùng thử ngay
-          </Link>
-          <Link href="/templates" className="tm-btn tm-btn-ghost-light">
-            Xem templates
-          </Link>
-        </div>
-        <LeadForm ctaCode="cta_book_demo" landingSlug="/" />
       </section>
     </main>
   );

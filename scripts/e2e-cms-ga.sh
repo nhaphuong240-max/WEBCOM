@@ -30,12 +30,12 @@ for k in ("hero","announcement","footer_links","product_grid"):
 print("flags+sections ok")
 PY
 
-echo "== packages ≥5 =="
+echo "== packages ≥30 (MKT-2b) =="
 curl -sS "$BASE/v1/public/theme-packages" | tee /tmp/cms-ga-pkgs.json >/dev/null
 python3 - <<'PY'
 import json
 pkgs=json.load(open("/tmp/cms-ga-pkgs.json"))
-assert len(pkgs)>=5
+assert len(pkgs)>=30, len(pkgs)
 print("packages", len(pkgs))
 PY
 

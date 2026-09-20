@@ -3,6 +3,7 @@ import { StoreShell } from '../components/StoreShell';
 import { formatVnd, getProducts, getRuntime } from '../lib/api';
 import { AddToCartButton } from '../components/AddToCartButton';
 import { HeroBlock } from '../components/HeroBlock';
+import { CollectionStrip, TrustGrid } from '../components/ProductHero';
 import { SectionStack } from '../components/sections/SectionStack';
 import { loadDemoPackage } from '../lib/demo-package';
 import { normalizeContent } from '../lib/normalize-content';
@@ -148,7 +149,26 @@ export default async function HomePage({
             accent={accent}
             experimentCode={experimentCode}
           />
+          <CollectionStrip
+            items={
+              collections.length
+                ? collections.map((c) => ({
+                    label: c.title,
+                    href: `/collections/${c.slug}`,
+                  }))
+                : [
+                    { label: 'Serum đêm', href: '/collections/serum' },
+                    { label: 'Làm sáng', href: '/collections/skincare' },
+                    { label: 'Chống lão hóa', href: '/search' },
+                    { label: 'Set quà', href: '/search' },
+                    { label: 'Mini size', href: '/search' },
+                  ]
+            }
+          />
           {productsSlot}
+          <div style={{ padding: '0 14px' }}>
+            <TrustGrid />
+          </div>
         </>
       )}
     </StoreShell>

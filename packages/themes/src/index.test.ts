@@ -60,9 +60,9 @@ describe('validatePackageBundle', () => {
 });
 
 describe('theme packages', () => {
-  it('lists ≥5 package codes', () => {
+  it('lists all 30 catalog ThemePackages (MKT-2b)', () => {
     const codes = listPackageCodes();
-    expect(codes.length).toBeGreaterThanOrEqual(5);
+    expect(codes.length).toBeGreaterThanOrEqual(30);
     expect(codes).toEqual(
       expect.arrayContaining([
         'aura-commerce-lite',
@@ -70,6 +70,14 @@ describe('theme packages', () => {
         'harvest-fnb',
         'live-drop',
         'lumen-fashion',
+        'forge-b2b',
+        'nest-home',
+        'pulse-gadget',
+        'cafe-corner',
+        'zen-wellness',
+        'bloom-kids',
+        'spark-promo',
+        'green-basket',
       ]),
     );
   });

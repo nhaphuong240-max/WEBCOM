@@ -69,6 +69,7 @@ export function PlatformHero({
   const variant = usePlatformAb(ab?.code, ab?.experiment, ab?.storefrontId);
   const headline = String(variant?.headline || props.headline || '');
   const sub = String(props.sub || '');
+  const brand = String(props.brand || '');
   const primaryBase = (props.primary_cta || {}) as Cta;
   const primary: Cta = {
     ...primaryBase,
@@ -77,8 +78,14 @@ export function PlatformHero({
   };
   const secondary = props.secondary_cta as Cta | undefined;
   return (
-    <section className="pcms-hero">
+    <section className={`pcms-hero${brand ? ' pcms-hero-brand' : ''}`}>
       <div className="pcms-hero-copy">
+        {brand ? (
+          <div className="pcms-hero-brand">
+            {brand}
+            <em>.</em>
+          </div>
+        ) : null}
         <h1 className="pcms-hero-title">{headline}</h1>
         {sub ? <p className="pcms-hero-sub">{sub}</p> : null}
         <div className="pcms-hero-ctas">

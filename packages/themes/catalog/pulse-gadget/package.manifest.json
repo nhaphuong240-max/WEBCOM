@@ -1,0 +1,13 @@
+{
+  "code": "pulse-gadget",
+  "name": "Pulse Gadget",
+  "version": "1.0.0",
+  "supports": ["hero", "featured", "trust", "cta_banner", "faq"],
+  "layouts": {
+    "home": ["hero", "featured", "trust", "cta_banner", "faq"]
+  },
+  "demo_fixtures": {
+    "brand_name": "Pulse"
+  },
+  "compatible_app_blocks": []
+}

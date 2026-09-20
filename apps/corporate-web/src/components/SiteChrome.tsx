@@ -5,17 +5,20 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 
 const DEFAULT_NAV = [
-  { label: 'Website bán hàng', href: '/templates?goal=conversion' },
-  { label: 'Beauty & Live', href: '/templates?industry=beauty' },
-  { label: 'Doanh nghiệp', href: '/templates?industry=b2b' },
-  { label: 'Giao diện miễn phí', href: '/templates?license=free' },
+  { label: 'Đa kênh', href: '/#channels' },
+  { label: 'CRM', href: '/#crm' },
+  { label: 'AI', href: '/#ai' },
+  { label: 'Vận hành', href: '/#ops' },
+  { label: 'Margin', href: '/#margin' },
+  { label: 'Templates', href: '/templates' },
 ];
 
 const DEFAULT_NAV_EN = [
-  { label: 'Home', href: '/en' },
+  { label: 'Channels', href: '/en#channels' },
+  { label: 'CRM', href: '/en#crm' },
+  { label: 'AI', href: '/en#ai' },
+  { label: 'Ops', href: '/en#ops' },
   { label: 'Templates', href: '/templates' },
-  { label: 'Pricing', href: '/en/pricing' },
-  { label: 'Trial', href: '/trial' },
   { label: 'Tiếng Việt', href: '/' },
 ];
 
@@ -30,20 +33,60 @@ export function SiteNav({
   const pathname = usePathname() || '/';
   const isEn = pathname === '/en' || pathname.startsWith('/en/');
   const light = pathname.startsWith('/templates') || pathname.startsWith('/trial');
+  const isGtmHome = pathname === '/' || pathname === '/en';
   const [q, setQ] = useState('');
   const [menuOpen, setMenuOpen] = useState(false);
-  const NAV = isEn
-    ? navItemsEn?.length
-      ? navItemsEn
-      : DEFAULT_NAV_EN
-    : navItems?.length
-      ? navItems
-      : DEFAULT_NAV;
+  const NAV = isGtmHome
+    ? isEn
+      ? DEFAULT_NAV_EN
+      : DEFAULT_NAV
+    : isEn
+      ? navItemsEn?.length
+        ? navItemsEn
+        : DEFAULT_NAV_EN
+      : navItems?.length
+        ? navItems
+        : DEFAULT_NAV;
 
   function onSearch(e: FormEvent) {
     e.preventDefault();
     const query = q.trim();
     router.push(query ? `/templates?q=${encodeURIComponent(query)}` : '/templates');
+  }
+
+  if (isGtmHome) {
+    return (
+      <header className="gtm-nav">
+        <Link href={isEn ? '/en' : '/'} className="gtm-nav-brand" aria-label="PTT">
+          <span className="dot" aria-hidden />
+          PTT
+        </Link>
+        <nav className="gtm-nav-links" aria-label="Primary">
+          {NAV.filter((n) => !n.href.includes('Tiếng') && n.label !== 'Tiếng Việt').map((n) => (
+            <Link key={n.href + n.label} href={n.href}>
+              {n.label}
+            </Link>
+          ))}
+        </nav>
+        <div className="gtm-nav-cta">
+          {isEn ? (
+            <Link href="/" className="gtm-btn gtm-btn-ghost-ink">
+              VI
+            </Link>
+          ) : (
+            <Link href="/en" className="gtm-btn gtm-btn-ghost-ink">
+              EN
+            </Link>
+          )}
+          <Link href="/templates" className="gtm-btn gtm-btn-ghost-ink">
+            {isEn ? 'Tour' : 'Xem tour'}
+          </Link>
+          <a href="#demo" className="gtm-btn gtm-btn-primary">
+            {isEn ? 'Book demo' : 'Đặt demo'}
+          </a>
+        </div>
+      </header>
+    );
   }
 
   if (light) {

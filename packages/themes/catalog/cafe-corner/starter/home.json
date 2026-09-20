@@ -1,0 +1,64 @@
+{
+  "schema_version": 1,
+  "section_order": ["hero", "featured", "cta_banner", "trust", "footer_links"],
+  "sections": {
+    "hero": {
+      "type": "hero",
+      "id": "sec_hero",
+      "props": {
+        "eyebrow": "Cafe Corner",
+        "headline": "Cà phê mang đi — size & pickup slot",
+        "cta": "Xem menu",
+        "cta_href": "/search"
+      },
+      "style": {}
+    },
+    "featured": {
+      "type": "featured",
+      "id": "sec_featured",
+      "props": { "limit": 6 },
+      "style": {}
+    },
+    "cta_banner": {
+      "type": "cta_banner",
+      "id": "sec_cta",
+      "props": {
+        "title": "Stamp loyalty — ly thứ 6 miễn phí",
+        "cta": "Đặt pickup",
+        "cta_href": "/cart"
+      },
+      "style": {}
+    },
+    "trust": {
+      "type": "trust",
+      "id": "sec_trust",
+      "props": {
+        "items": ["ETA pickup rõ", "Size S/M/L", "Thanh toán COD / QR"]
+      },
+      "style": {}
+    },
+    "footer_links": {
+      "type": "footer_links",
+      "id": "sec_footer_links",
+      "props": {
+        "columns": [
+          {
+            "title": "Menu",
+            "links": [
+              { "label": "Espresso", "href": "/search" },
+              { "label": "Trà & đá xay", "href": "/search" }
+            ]
+          },
+          {
+            "title": "Cửa hàng",
+            "links": [
+              { "label": "Giờ mở cửa", "href": "/p/about" },
+              { "label": "Liên hệ", "href": "/p/about" }
+            ]
+          }
+        ]
+      },
+      "style": {}
+    }
+  }
+}

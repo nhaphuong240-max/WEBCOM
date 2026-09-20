@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { Suspense } from 'react';
 import { Be_Vietnam_Pro, Syne } from 'next/font/google';
 import '@ptt/ui/styles.css';
+import './aura-beauty.css';
 import { CartProvider } from '../lib/cart';
 import { getRuntime } from '../lib/api';
 import { PwaRegister } from '../components/PwaRegister';

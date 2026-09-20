@@ -1,0 +1,25 @@
+{
+  "code": "paw-market",
+  "name": "Paw Market",
+  "version": "1.0.0",
+  "supports": [
+    "hero",
+    "collections",
+    "featured",
+    "trust",
+    "cta_banner"
+  ],
+  "layouts": {
+    "home": [
+      "hero",
+      "collections",
+      "featured",
+      "trust",
+      "cta_banner"
+    ]
+  },
+  "demo_fixtures": {
+    "brand_name": "Paw"
+  },
+  "compatible_app_blocks": []
+}
