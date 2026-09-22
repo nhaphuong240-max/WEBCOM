@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useRef, useState, useTransition, type CSSProperties } from 'react';
+import { CatalogPicker } from './CatalogPicker';
 
 export type SectionNode = {
   type: string;
@@ -57,15 +58,28 @@ function defaultProps(type: string): Record<string, unknown> {
     case 'collections':
       return { source: 'theme' };
     case 'featured':
-      return { limit: 8 };
+      return { limit: 8, collection_slug: '' };
+    case 'product_grid':
+      return { limit: 8, collection_slug: '', sort: 'manual', columns: 2 };
+    case 'flash_sale':
+      return {
+        title: 'Flash sale',
+        badge: 'Sale',
+        ends_at: new Date(Date.now() + 86400000).toISOString(),
+        product_ids: [] as string[],
+      };
+    case 'promo_banner':
+      return { title: 'Promo', banner_url: '', collection_slug: '' };
+    case 'lead_form':
+      return { title: 'Đăng ký nhận tư vấn', submit_label: 'Gửi' };
+    case 'hero_slider':
+      return { slides: [{ headline: 'Slide 1', cta: 'Xem', href: '/' }] };
     case 'announcement':
       return { text: 'Thông báo mới', href: '/', dismissible: true };
     case 'testimonial':
       return { items: [{ quote: 'Rất hài lòng', author: 'Khách hàng', role: '' }] };
     case 'video':
       return { url: 'https://www.youtube.com/embed/dQw4w9WgXcQ', caption: '' };
-    case 'product_grid':
-      return { limit: 8, sort: 'manual', columns: 2 };
     case 'announce_bar':
       return {
         text: 'Thông báo mới',
@@ -135,6 +149,7 @@ export function BuilderCanvas({
   saveNavAction,
   saveBlockAction,
   suggestCopyAction,
+  searchCatalogAction,
 }: {
   initialContent: ContentV1;
   initialVersion: number;
@@ -157,6 +172,10 @@ export function BuilderCanvas({
     content: SectionNode;
   }) => Promise<SavedBlock>;
   suggestCopyAction: (headline: string) => Promise<{ variants: string[]; draft_only: boolean }>;
+  searchCatalogAction?: (
+    mode: 'products' | 'collection',
+    q: string,
+  ) => Promise<Array<{ id: string; title: string; slug?: string }>>;
 }) {
   const [content, setContent] = useState(() => cloneContent(initialContent));
   const [version, setVersion] = useState(initialVersion);
@@ -189,6 +208,12 @@ export function BuilderCanvas({
       'testimonial',
       'video',
       'product_grid',
+      'featured',
+      'flash_sale',
+      'promo_banner',
+      'lead_form',
+      'hero_slider',
+      'collections',
     ]);
     return sections.filter((s) => supportSet.has(s.key) || global.has(s.key) || supports.length === 0);
   }, [sections, supportSet, supports.length]);
@@ -525,10 +550,19 @@ export function BuilderCanvas({
             <p style={{ fontSize: 13, opacity: 0.7 }}>Chọn một section</p>
           ) : (
             <div style={{ display: 'grid', gap: 8 }}>
-              {(Object.keys(selectedNode.props).length
-                ? Object.keys(selectedNode.props)
-                : ['headline']
-              ).map((field) => {
+              {(() => {
+                const defFields =
+                  sections.find((s) => s.key === selectedNode.type)?.fields || [];
+                const propKeys = Object.keys(selectedNode.props);
+                const fields = [
+                  ...new Set([
+                    ...defFields,
+                    ...propKeys,
+                    ...(propKeys.length || defFields.length ? [] : ['headline']),
+                  ]),
+                ];
+                return fields;
+              })().map((field) => {
                 const val = selectedNode.props[field];
                 if (field === 'items' && Array.isArray(val)) {
                   const text =
@@ -602,6 +636,45 @@ export function BuilderCanvas({
                     </label>
                   );
                 }
+                if (field === 'product_ids') {
+                  const ids = Array.isArray(val) ? (val as string[]) : [];
+                  return (
+                    <label key={field} style={{ fontSize: 12, display: 'grid', gap: 4 }}>
+                      product_ids
+                      <CatalogPicker
+                        mode="products"
+                        value={ids}
+                        dark
+                        onChange={(next) => updateProp('product_ids', next)}
+                        searchAction={(q) =>
+                          searchCatalogAction
+                            ? searchCatalogAction('products', q)
+                            : Promise.resolve([])
+                        }
+                      />
+                    </label>
+                  );
+                }
+                if (field === 'collection_slug') {
+                  return (
+                    <label key={field} style={{ fontSize: 12, display: 'grid', gap: 4 }}>
+                      collection_slug
+                      <CatalogPicker
+                        mode="collection"
+                        value={String(val || '')}
+                        dark
+                        onChange={(next) =>
+                          updateProp('collection_slug', Array.isArray(next) ? next[0] || '' : next)
+                        }
+                        searchAction={(q) =>
+                          searchCatalogAction
+                            ? searchCatalogAction('collection', q)
+                            : Promise.resolve([])
+                        }
+                      />
+                    </label>
+                  );
+                }
                 return (
                   <label key={field} style={{ fontSize: 12, display: 'grid', gap: 4 }}>
                     {field}
@@ -610,7 +683,9 @@ export function BuilderCanvas({
                       onChange={(e) =>
                         updateProp(
                           field,
-                          field === 'limit' ? Number(e.target.value) || 0 : e.target.value,
+                          field === 'limit' || field === 'columns'
+                            ? Number(e.target.value) || 0
+                            : e.target.value,
                         )
                       }
                       style={inputDark}

@@ -288,6 +288,7 @@ export function commerceUxFromSettings(data: SiteSettingsData) {
     related_mode: data.commerce.related_mode,
     related_limit: data.commerce.related_limit,
     plp_default_sort: data.commerce.plp_default_sort,
+    plp_filters_enabled: data.commerce.plp_filters_enabled,
     archetype: data.archetype,
     is_lead_gen: lead || data.archetype === 'lead_gen',
   };

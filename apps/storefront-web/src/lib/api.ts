@@ -83,8 +83,13 @@ export type Runtime = {
     floating?: Array<{ key: string; label: string; href: string; color1?: string }>;
     catalog_card?: { primary_cta?: string; show_price?: boolean };
     show_compare_at_price?: boolean;
+    sold_out_behavior?: 'hide' | 'badge' | 'waitlist';
     checkout_policy_links?: Array<{ label: string; href: string }>;
     coupon_entry_cart?: boolean;
+    related_mode?: string;
+    related_limit?: number;
+    plp_default_sort?: string;
+    plp_filters_enabled?: string[];
     archetype?: string;
     is_lead_gen?: boolean;
   } | null;

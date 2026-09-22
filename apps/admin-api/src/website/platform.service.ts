@@ -1729,12 +1729,19 @@ export class PlatformService {
       };
       const commerce = d.archetype === 'commerce';
       results.commerce_atc = {
-        status: !commerce || (d.header.show_cart && d.catalog_card.primary_cta !== 'view_detail')
-          ? 'pass'
-          : d.header.show_cart
+        status:
+          !commerce ||
+          (d.header.show_cart &&
+            (d.catalog_card.primary_cta === 'add_to_cart' || d.commerce.sticky_atc_mobile))
             ? 'pass'
-            : 'fail',
-        evidence: { show_cart: d.header.show_cart, primary_cta: d.catalog_card.primary_cta },
+            : d.header.show_cart
+              ? 'pass'
+              : 'fail',
+        evidence: {
+          show_cart: d.header.show_cart,
+          primary_cta: d.catalog_card.primary_cta,
+          sticky_atc_mobile: d.commerce.sticky_atc_mobile,
+        },
       };
       results.merch_home = {
         status: !commerce || hasMerch || productCount > 0 ? 'pass' : 'fail',

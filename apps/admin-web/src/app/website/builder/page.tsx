@@ -153,6 +153,49 @@ async function suggestCopyAction(headline: string) {
   );
 }
 
+async function searchCatalogAction(mode: 'products' | 'collection', q: string) {
+  'use server';
+  if (mode === 'products') {
+    const rows = await apiGet<
+      Array<{ id: string; title: string; slug?: string }>
+    >(`/v1/admin/products${q ? `?q=${encodeURIComponent(q)}` : ''}`);
+    return (rows || []).slice(0, 20).map((r) => ({
+      id: r.id,
+      title: r.title,
+      slug: r.slug,
+    }));
+  }
+  const nav = await apiGet<
+    Array<{ handle: string; items: Array<{ label: string; href: string }> }>
+  >(`/v1/admin/storefronts/${SF}/navigation`).catch(() => []);
+  const fromNav = (nav || [])
+    .flatMap((n) => n.items || [])
+    .filter((i) => i.href?.includes('/collections/'))
+    .map((i) => {
+      const slug = i.href.split('/collections/')[1]?.split('?')[0] || '';
+      return { id: slug, title: i.label, slug };
+    })
+    .filter((c) => c.slug);
+  const fallback = [
+    { id: 'noi-bat', title: 'Nổi bật', slug: 'noi-bat' },
+    { id: 'moi', title: 'Mới', slug: 'moi' },
+    { id: 'serum-dem', title: 'Serum đêm', slug: 'serum-dem' },
+    { id: 'lam-sang', title: 'Làm sáng', slug: 'lam-sang' },
+  ];
+  const map = new Map<string, { id: string; title: string; slug: string }>();
+  for (const c of [...fromNav, ...fallback]) map.set(c.slug, c);
+  const cols = [...map.values()];
+  const needle = q.trim().toLowerCase();
+  return cols
+    .filter(
+      (c) =>
+        !needle ||
+        c.slug.toLowerCase().includes(needle) ||
+        c.title.toLowerCase().includes(needle),
+    )
+    .slice(0, 20);
+}
+
 export default async function BuilderPage() {
   let draft: {
     version?: number;
@@ -335,6 +378,7 @@ export default async function BuilderPage() {
             saveNavAction={saveNavAction}
             saveBlockAction={saveBlockAction}
             suggestCopyAction={suggestCopyAction}
+            searchCatalogAction={searchCatalogAction}
           />
         </Panel>
       ) : (

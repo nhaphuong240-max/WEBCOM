@@ -2,8 +2,8 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { StoreShell } from '../../../components/StoreShell';
-import { AddToCartButton } from '../../../components/AddToCartButton';
 import { ProductHero, TrustGrid } from '../../../components/ProductHero';
+import { StickyAtcBar } from '../../../components/StickyAtcBar';
 import { formatVnd, getProduct, getProducts, getRuntime, STOREFRONT_ID } from '../../../lib/api';
 import { ViewItemTracker } from '../../../components/ViewItemTracker';
 
@@ -36,6 +36,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
     notFound();
   }
   const [runtime, related] = await Promise.all([getRuntime(), getProducts()]);
+  const ux = runtime.commerce_ux;
   const sku = product.skus[0];
   const accent =
     runtime.brand_kit?.colors?.accent ||
@@ -49,13 +50,21 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
   const bottomLinks = Array.isArray(runtime.navigation?.bottom)
     ? (runtime.navigation.bottom as Array<{ label: string; href: string }>)
     : [];
+  const headerLinks = Array.isArray(runtime.navigation?.header)
+    ? (runtime.navigation.header as Array<{ label: string; href: string }>)
+    : [];
   const inStock = (sku?.available ?? 0) > 0;
+  const showCompare = ux?.show_compare_at_price !== false;
   const listPrice = sku?.list_price ? Number(sku.list_price) : null;
   const unitPrice = sku?.unit_price != null ? Number(sku.unit_price) : null;
   const save =
-    listPrice != null && unitPrice != null && listPrice > unitPrice
+    showCompare && listPrice != null && unitPrice != null && listPrice > unitPrice
       ? listPrice - unitPrice
       : null;
+  const relatedLimit = Math.max(1, Math.min(12, ux?.related_limit ?? 4));
+  const stickyEnabled = ux?.show_cart !== false && ux?.sticky_atc_mobile !== false;
+  const soldOut = ux?.sold_out_behavior || 'badge';
+  const showAtc = ux?.show_cart !== false && ux?.catalog_card?.primary_cta !== 'view_detail';
   const jsonLd = {
     '@context': 'https://schema.org',
     '@type': 'Product',
@@ -80,7 +89,13 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
       accent={accent}
       cream={cream}
       ink={ink}
+      headerLinks={headerLinks}
       bottomLinks={bottomLinks}
+      showCart={ux?.show_cart !== false}
+      showCartCount={ux?.show_cart_count !== false}
+      headerCta={ux?.header_cta || null}
+      announcement={ux?.announcement || null}
+      floating={ux?.floating || []}
     >
       <script
         type="application/ld+json"
@@ -113,6 +128,20 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
           >
             Bán chạy
           </span>
+          {!inStock && soldOut !== 'hide' ? (
+            <span
+              style={{
+                fontSize: 11,
+                fontWeight: 700,
+                color: '#9a3a3a',
+                background: 'rgba(154,58,58,0.12)',
+                padding: '4px 8px',
+                borderRadius: 6,
+              }}
+            >
+              {soldOut === 'waitlist' ? 'Chờ hàng' : 'Hết hàng'}
+            </span>
+          ) : null}
           {sku?.variant_title ? (
             <span
               style={{
@@ -163,7 +192,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
         </div>
         <p style={{ margin: '0 0 12px', fontSize: 12, color: '#6b5559' }}>
           Giá <strong style={{ color: ink }}>thành viên AURA</strong>
-          {listPrice != null ? ` · Giá khách ${formatVnd(sku?.list_price)}` : null}
+          {showCompare && listPrice != null ? ` · Giá khách ${formatVnd(sku?.list_price)}` : null}
         </p>
 
         <div
@@ -301,7 +330,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
         >
           {related
             .filter((r) => r.id !== product.id)
-            .slice(0, 2)
+            .slice(0, relatedLimit)
             .map((r) => (
               <Link
                 key={r.id}
@@ -353,39 +382,15 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
         </p>
       </div>
 
-      <div
-        style={{
-          position: 'sticky',
-          bottom: 56,
-          zIndex: 45,
-          display: 'flex',
-          gap: 12,
-          alignItems: 'center',
-          padding: '10px 14px',
-          background: 'rgba(250,246,244,0.96)',
-          borderTop: '1px solid rgba(26,18,20,0.08)',
-          backdropFilter: 'blur(8px)',
-        }}
-      >
-        <div style={{ flex: '0 0 auto', minWidth: 88 }}>
-          <div style={{ fontSize: 10, color: '#6b5559' }}>Thành viên</div>
-          <strong
-            style={{
-              color: accent,
-              fontFamily: 'var(--ptt-font-display)',
-              fontSize: 18,
-              letterSpacing: '-0.02em',
-            }}
-          >
-            {formatVnd(sku?.unit_price)}
-          </strong>
-        </div>
-        {sku ? (
-          <div style={{ flex: 1 }}>
-            <AddToCartButton skuId={sku.id} disabled={!inStock} />
-          </div>
-        ) : null}
-      </div>
+      {sku && showAtc ? (
+        <StickyAtcBar
+          skuId={sku.id}
+          priceLabel={formatVnd(sku.unit_price)}
+          inStock={inStock}
+          enabled={stickyEnabled}
+          accent={accent}
+        />
+      ) : null}
     </StoreShell>
   );
 }
