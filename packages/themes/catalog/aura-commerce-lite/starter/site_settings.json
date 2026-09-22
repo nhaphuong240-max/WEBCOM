@@ -1,0 +1,27 @@
+{
+  "schema_version": 1,
+  "archetype": "commerce",
+  "header": {
+    "cta_label": "Mua ngay",
+    "cta_href": "/search",
+    "show_cart": true,
+    "show_account": true,
+    "bg": "#ffffff",
+    "fg": "#1a1214"
+  },
+  "commerce": {
+    "show_mini_cart": true,
+    "show_cart_count": true,
+    "sticky_atc_mobile": true,
+    "announcement_bar": {
+      "enabled": true,
+      "text": "Freeship đơn từ 500k · AURA Beauty",
+      "href": "/search",
+      "start_at": null,
+      "end_at": null
+    },
+    "empty_cart_title": "Giỏ hàng trống",
+    "empty_cart_cta_label": "Xem serum",
+    "empty_cart_cta_href": "/collections/serum"
+  }
+}

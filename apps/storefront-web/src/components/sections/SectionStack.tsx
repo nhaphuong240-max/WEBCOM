@@ -2,6 +2,7 @@ import Link from 'next/link';
 import type { DemoContentV1 } from '../../lib/demo-package';
 import { HeroBlock } from '../HeroBlock';
 import { CollectionStrip, TrustGrid } from '../ProductHero';
+import { LeadFormBlock } from '../LeadFormBlock';
 
 export function SectionStack({
   content,
@@ -73,6 +74,72 @@ export function SectionStack({
 
         if (node.type === 'featured' && productsSlot) {
           return <div key={key}>{productsSlot}</div>;
+        }
+
+        if (node.type === 'product_grid' && productsSlot) {
+          return <div key={key}>{productsSlot}</div>;
+        }
+
+        if (node.type === 'hero_slider') {
+          const slides = Array.isArray(props.slides)
+            ? (props.slides as Array<{ headline?: string; cta?: string; href?: string; alt?: string }>)
+            : [];
+          const first = slides[0] || {};
+          return (
+            <HeroBlock
+              key={key}
+              eyebrow={String(first.alt || props.eyebrow || '')}
+              headline={String(first.headline || props.headline || 'Hero')}
+              cta={String(first.cta || props.cta || 'Xem thêm')}
+              ctaHref={String(first.href || props.cta_href || '/search')}
+              accent={accent}
+              experimentCode={experimentCode}
+            />
+          );
+        }
+
+        if (node.type === 'flash_sale' || node.type === 'promo_banner') {
+          const ends = props.ends_at ? Date.parse(String(props.ends_at)) : NaN;
+          if (Number.isFinite(ends) && ends < Date.now()) {
+            return (
+              <section key={key} style={{ padding: '12px clamp(14px, 3vw, 48px)', opacity: 0.7 }}>
+                <BadgeEnded label={String(props.badge || 'Flash sale đã kết thúc')} />
+              </section>
+            );
+          }
+          return (
+            <section
+              key={key}
+              style={{
+                margin: '10px clamp(14px, 3vw, 48px)',
+                padding: '16px',
+                borderRadius: 12,
+                background: `linear-gradient(120deg, ${accent}, #1a1214)`,
+                color: '#fff',
+              }}
+            >
+              <div style={{ fontWeight: 800, fontSize: 18 }}>
+                {String(props.title || props.badge || 'Flash sale')}
+              </div>
+              {props.ends_at ? (
+                <div style={{ fontSize: 12, opacity: 0.85, marginTop: 4 }}>
+                  Kết thúc: {String(props.ends_at)}
+                </div>
+              ) : null}
+              {productsSlot}
+            </section>
+          );
+        }
+
+        if (node.type === 'lead_form') {
+          return (
+            <LeadFormBlock
+              key={key}
+              title={String(props.title || 'Đăng ký tư vấn')}
+              cta={String(props.cta || 'Gửi đăng ký')}
+              accent={accent}
+            />
+          );
         }
 
         if (node.type === 'cta_banner') {
@@ -301,13 +368,25 @@ export function SectionStack({
           );
         }
 
-        if (node.type === 'product_grid' && productsSlot) {
-          return <div key={key}>{productsSlot}</div>;
-        }
-
         // legacy / unsupported — hide on storefront
         return null;
       })}
     </>
+  );
+}
+
+function BadgeEnded({ label }: { label: string }) {
+  return (
+    <div
+      style={{
+        padding: '10px 12px',
+        borderRadius: 8,
+        background: 'rgba(26,18,20,0.06)',
+        fontSize: 13,
+        fontWeight: 600,
+      }}
+    >
+      {label}
+    </div>
   );
 }

@@ -1,0 +1,32 @@
+flowchart LR
+  subgraph Prospect["Khách tiềm năng"]
+    H["/ Home GTM"]
+    T["/templates"]
+    TR["/trial"]
+    D["#demo Lead form"]
+  end
+
+  subgraph Demo["Sandbox"]
+    SF["themes…/?demo=code"]
+    PDP["/products/…"]
+    CART["/cart → /checkout"]
+  end
+
+  subgraph Ops["Đội vận hành"]
+    CC["/console Command Center"]
+    GL["/console/website/golive"]
+    CMS["/console/platform/pages"]
+    AN["/console/website/analytics"]
+  end
+
+  H -->|Đặt demo| D
+  H -->|Xem theme| T
+  T -->|Demo live| SF
+  T -->|Dùng thử| TR
+  TR -->|Onboarding| CC
+  SF --> PDP --> CART
+  D -->|Lead API| API[(admin-api)]
+  CMS -->|Publish Platform| H
+  GL -->|Gate publish| SF
+  AN -->|Funnel / CWV| SF
+  CC -->|Đơn / tồn / CRM| API

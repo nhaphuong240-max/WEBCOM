@@ -215,6 +215,93 @@ export const SECTION_REGISTRY = [
       },
     },
   },
+  {
+    key: 'lead_form',
+    label: 'Lead form',
+    fields: ['title', 'cta', 'consent_label'],
+    props_schema: {
+      type: 'object',
+      properties: {
+        title: { type: 'string' },
+        cta: { type: 'string' },
+        consent_label: { type: 'string' },
+      },
+    },
+  },
+  {
+    key: 'hero_slider',
+    label: 'Hero slider',
+    fields: ['slides'],
+    props_schema: {
+      type: 'object',
+      properties: {
+        slides: {
+          type: 'array',
+          items: {
+            type: 'object',
+            properties: {
+              headline: { type: 'string' },
+              href: { type: 'string' },
+              cta: { type: 'string' },
+              alt: { type: 'string' },
+            },
+          },
+        },
+      },
+    },
+  },
+  {
+    key: 'flash_sale',
+    label: 'Flash sale',
+    fields: ['title', 'badge', 'ends_at', 'product_ids'],
+    props_schema: {
+      type: 'object',
+      properties: {
+        title: { type: 'string' },
+        badge: { type: 'string' },
+        ends_at: { type: ['string', 'null'] },
+        product_ids: { type: 'array', items: { type: 'string' } },
+      },
+    },
+  },
+  {
+    key: 'promo_banner',
+    label: 'Promo banner',
+    fields: ['title', 'href', 'ends_at'],
+    props_schema: {
+      type: 'object',
+      properties: {
+        title: { type: 'string' },
+        href: { type: 'string' },
+        ends_at: { type: ['string', 'null'] },
+      },
+    },
+  },
+  {
+    key: 'collection_banner',
+    label: 'Collection banner',
+    fields: ['title', 'banner_url', 'collection_slug'],
+    props_schema: {
+      type: 'object',
+      properties: {
+        title: { type: 'string' },
+        banner_url: { type: 'string' },
+        collection_slug: { type: 'string' },
+      },
+    },
+  },
+  {
+    key: 'bundle_offer',
+    label: 'Bundle offer',
+    fields: ['label', 'sku_ids'],
+    props_schema: {
+      type: 'object',
+      properties: {
+        label: { type: 'string' },
+        sku_ids: { type: 'array', items: { type: 'string' } },
+      },
+    },
+  },
   // ─── Platform CMS (CORP-CMS-1) ─────────────────────────────
   {
     key: 'announce_bar',

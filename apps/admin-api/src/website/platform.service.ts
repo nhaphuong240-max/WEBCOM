@@ -17,7 +17,11 @@ import {
   toLegacyFlat,
   validateContentV1,
   validatePackageBundle,
+  defaultSiteSettings,
+  mergeSiteSettings,
+  commerceUxFromSettings,
 } from '@ptt/themes';
+import type { SiteSettingsData, SiteArchetype } from '@ptt/themes';
 import { Prisma } from '@prisma/client';
 import { randomBytes } from 'crypto';
 import { PrismaService } from '../prisma/prisma.service';
@@ -57,6 +61,11 @@ const GOLIVE_DEFS: Array<{
     title: 'Home page ContentV1 schema hợp lệ',
     severity: 'warning',
   },
+  { groupKey: 'cms', code: 'site_identity', title: 'Logo / favicon Site Settings', severity: 'blocking' },
+  { groupKey: 'cms', code: 'floating_contact', title: 'Hotline hoặc Zalo floating', severity: 'warning' },
+  { groupKey: 'cms', code: 'lead_form_ready', title: 'Lead form / trang đăng ký (lead_gen)', severity: 'warning' },
+  { groupKey: 'commerce', code: 'commerce_atc', title: 'Cart icon + ATC (commerce)', severity: 'warning' },
+  { groupKey: 'commerce', code: 'merch_home', title: 'Home có merch section (commerce)', severity: 'warning' },
 ];
 
 type BrandTokens = {
@@ -151,6 +160,96 @@ export class PlatformService {
         brand: brandKit?.id ?? null,
         storefront: sfKit?.id ?? null,
       },
+    };
+  }
+
+
+  featureCmsSiteSettings() {
+    return this.feature('cms.site_settings.v1');
+  }
+
+  async getSiteSettings(tenantId: string, storefrontId: string) {
+    await this.sf(tenantId, storefrontId);
+    if (!this.featureCmsSiteSettings()) {
+      const data = defaultSiteSettings('commerce');
+      return { version: 0, data, commerce_ux: commerceUxFromSettings(data), feature: false };
+    }
+    const row = await this.prisma.db.siteSettings.findUnique({ where: { storefrontId } });
+    const data = mergeSiteSettings((row?.data as SiteSettingsData) || undefined);
+    return {
+      id: row?.id ?? null,
+      version: row?.version ?? 0,
+      data,
+      commerce_ux: commerceUxFromSettings(data),
+      feature: true,
+      updated_at: row?.updatedAt?.toISOString() ?? null,
+    };
+  }
+
+  async upsertSiteSettings(
+    tenantId: string,
+    storefrontId: string,
+    input: { data: Partial<SiteSettingsData>; expected_version?: number },
+    actorId?: string,
+  ) {
+    await this.sf(tenantId, storefrontId);
+    if (!this.featureCmsSiteSettings()) {
+      throw AppError.validation('cms.site_settings.v1 disabled');
+    }
+    const existing = await this.prisma.db.siteSettings.findUnique({ where: { storefrontId } });
+    if (
+      input.expected_version !== undefined &&
+      existing &&
+      existing.version !== input.expected_version
+    ) {
+      throw AppError.conflict('Site settings version conflict', {
+        expected: input.expected_version,
+        current: existing.version,
+      });
+    }
+    const merged = mergeSiteSettings({
+      ...((existing?.data as object) || {}),
+      ...input.data,
+      archetype: (input.data.archetype ||
+        (existing?.data as SiteSettingsData)?.archetype ||
+        'commerce') as SiteArchetype,
+    });
+    // Archetype rules
+    if (merged.archetype === 'lead_gen' || merged.archetype === 'content') {
+      merged.header.show_cart = false;
+      merged.commerce.show_mini_cart = false;
+    }
+    const nextVersion = (existing?.version ?? 0) + 1;
+    const row = existing
+      ? await this.prisma.db.siteSettings.update({
+          where: { storefrontId },
+          data: {
+            version: nextVersion,
+            data: merged as Prisma.InputJsonValue,
+          },
+        })
+      : await this.prisma.db.siteSettings.create({
+          data: {
+            id: createId('sset'),
+            tenantId,
+            storefrontId,
+            version: 1,
+            data: merged as Prisma.InputJsonValue,
+          },
+        });
+    await this.audit.write({
+      tenantId,
+      actorId,
+      action: 'site_settings.upsert',
+      entity: 'site_settings',
+      entityId: row.id,
+      payload: { version: row.version, archetype: merged.archetype },
+    });
+    return {
+      id: row.id,
+      version: row.version,
+      data: merged,
+      commerce_ux: commerceUxFromSettings(merged),
     };
   }
 
@@ -1592,6 +1691,56 @@ export class PlatformService {
         evidence: contentSchemaEvidence,
       },
     };
+
+    if (this.feature('cms.site_settings.v1')) {
+      const ss = await this.getSiteSettings(tenantId, storefrontId);
+      const d = ss.data;
+      const hasLogo = !!(d.identity.logo_url || d.identity.logo_media_id || d.identity.logo_visible);
+      const floatingOk = d.floating_channels.some((c) => c.visible && c.href);
+      const leadPage = await this.prisma.db.page.findFirst({
+        where: {
+          tenantId,
+          storefrontId,
+          OR: [{ slug: 'dang-ky' }, { slug: 'register' }, { slug: 'contact' }],
+        },
+      });
+      const homeRaw = (
+        await this.prisma.db.page.findFirst({
+          where: { tenantId, storefrontId, slug: 'home' },
+          include: { versions: { orderBy: { version: 'desc' }, take: 1 } },
+        })
+      )?.versions[0]?.content as { section_order?: string[]; sections?: Record<string, { type?: string }> } | undefined;
+      const merchTypes = new Set(['featured', 'product_grid', 'flash_sale', 'collections', 'promo_banner']);
+      const hasMerch = !!(
+        homeRaw?.section_order?.some((k) => merchTypes.has(homeRaw.sections?.[k]?.type || k))
+      );
+      results.site_identity = {
+        status: hasLogo ? 'pass' : 'fail',
+        evidence: { logo: d.identity.logo_url || d.identity.logo_media_id },
+      };
+      results.floating_contact = {
+        status: floatingOk ? 'pass' : 'fail',
+        evidence: { channels: d.floating_channels.filter((c) => c.visible).map((c) => c.key) },
+      };
+      const leadRequired = d.archetype === 'lead_gen' || d.archetype === 'booking';
+      results.lead_form_ready = {
+        status: !leadRequired || !!leadPage ? 'pass' : 'fail',
+        evidence: { archetype: d.archetype, page: leadPage?.slug ?? null },
+      };
+      const commerce = d.archetype === 'commerce';
+      results.commerce_atc = {
+        status: !commerce || (d.header.show_cart && d.catalog_card.primary_cta !== 'view_detail')
+          ? 'pass'
+          : d.header.show_cart
+            ? 'pass'
+            : 'fail',
+        evidence: { show_cart: d.header.show_cart, primary_cta: d.catalog_card.primary_cta },
+      };
+      results.merch_home = {
+        status: !commerce || hasMerch || productCount > 0 ? 'pass' : 'fail',
+        evidence: { has_merch_section: hasMerch, product_count: productCount },
+      };
+    }
 
     const items = await this.prisma.db.goLiveChecklistItem.findMany({
       where: { tenantId, storefrontId },

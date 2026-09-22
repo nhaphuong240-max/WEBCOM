@@ -11,6 +11,12 @@ export {
 } from './registry';
 export type { SectionKey, SectionScope, PlatformCtaCode } from './registry';
 export {
+  defaultSiteSettings,
+  mergeSiteSettings,
+  commerceUxFromSettings,
+} from './site-settings';
+export type { SiteSettingsData, SiteArchetype, FloatingChannel } from './site-settings';
+export {
   normalizeContent,
   toLegacyFlat,
   validateContentV1,

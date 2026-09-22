@@ -164,12 +164,43 @@ export default async function CommandCenterPage() {
         }
       />
 
+      <Panel
+        title="CMS template · vào nhanh"
+        action={
+          <Link href="/website/builder" style={{ fontSize: 12, color: 'var(--ptt-accent)', fontWeight: 600 }}>
+            Mở Site Builder →
+          </Link>
+        }
+      >
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, alignItems: 'center' }}>
+          <Link href="/website/builder">
+            <Button variant="primary" size="sm">
+              CMS · Site Builder
+            </Button>
+          </Link>
+          <Link href="/website/templates">
+            <Button variant="ghost" size="sm">
+              Template Store
+            </Button>
+          </Link>
+          <Link href="/website/themes">
+            <Button variant="ghost" size="sm">
+              Theme Library
+            </Button>
+          </Link>
+          <span style={{ fontSize: 12, color: 'var(--ptt-ink-3)' }}>
+            Menu trái: <strong>Website · CMS</strong>
+          </span>
+        </div>
+      </Panel>
+
       <div
         style={{
           display: 'grid',
           gridTemplateColumns: 'repeat(4, minmax(0, 1fr))',
           gap: 14,
           marginBottom: 18,
+          marginTop: 18,
         }}
         className="cc-kpi-row"
       >

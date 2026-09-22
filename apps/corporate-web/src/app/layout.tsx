@@ -1,8 +1,9 @@
 import type { Metadata } from 'next';
-import { Be_Vietnam_Pro, Plus_Jakarta_Sans } from 'next/font/google';
+import { Be_Vietnam_Pro, Outfit } from 'next/font/google';
 import '@ptt/ui/styles.css';
 import './globals.css';
 import { SiteNav, SiteFooter } from '../components/SiteChrome';
+import { UnregisterLegacySw } from '../components/UnregisterLegacySw';
 import { fetchPlatformNav } from '../lib/platform-cms';
 
 const body = Be_Vietnam_Pro({
@@ -11,9 +12,9 @@ const body = Be_Vietnam_Pro({
   variable: '--font-body',
 });
 
-const display = Plus_Jakarta_Sans({
+const display = Outfit({
   subsets: ['latin', 'latin-ext'],
-  weight: ['600', '700', '800'],
+  weight: ['500', '600', '700', '800'],
   variable: '--font-display',
 });
 
@@ -36,10 +37,11 @@ export default async function RootLayout({ children }: { children: React.ReactNo
             ['--ptt-font-body' as string]:
               'var(--font-body), "Be Vietnam Pro", system-ui, sans-serif',
             ['--ptt-font-display' as string]:
-              'var(--font-display), "Plus Jakarta Sans", system-ui, sans-serif',
+              'var(--font-display), Outfit, "Be Vietnam Pro", system-ui, sans-serif',
           } as React.CSSProperties
         }
       >
+        <UnregisterLegacySw />
         <SiteNav navItems={nav.header} navItemsEn={navEn.header} />
         {children}
         <SiteFooter footerItems={nav.footer} />

@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { mergeSiteSettings, commerceUxFromSettings } from '@ptt/themes';
 import { AppError, createId } from '@ptt/shared-kernel';
 import { Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
@@ -66,6 +67,12 @@ export class WebsiteService {
       include: { versions: { where: { status: 'published' }, orderBy: { version: 'desc' }, take: 1 } },
     });
 
+    const settingsRow = await this.prisma.db.siteSettings.findUnique({
+      where: { storefrontId: sf.id },
+    });
+    const siteSettings = mergeSiteSettings(
+      (settingsRow?.data as Parameters<typeof mergeSiteSettings>[0]) || undefined,
+    );
     return {
       storefront: {
         id: sf.id,
@@ -95,6 +102,8 @@ export class WebsiteService {
             experiment_code: home.experimentCode,
           }
         : null,
+      site_settings: siteSettings,
+      commerce_ux: commerceUxFromSettings(siteSettings),
     };
   }
 
@@ -457,6 +466,24 @@ export class WebsiteService {
       unlock_href: unlockHref,
       unlocked: Boolean(unlockHref),
     };
+  }
+
+  async listLeads(tenantId: string, take = 50) {
+    const rows = await this.prisma.db.lead.findMany({
+      where: { tenantId },
+      orderBy: { createdAt: 'desc' },
+      take,
+    });
+    return rows.map((r) => ({
+      id: r.id,
+      name: r.name,
+      email: r.email,
+      phone: r.phone,
+      channel: r.channel,
+      message: r.message,
+      status: r.status,
+      created_at: r.createdAt.toISOString(),
+    }));
   }
 
   // ─── A1 Domain connect ─────────────────────────────────────

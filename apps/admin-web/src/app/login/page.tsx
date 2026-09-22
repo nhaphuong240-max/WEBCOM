@@ -25,14 +25,21 @@ export default function LoginPage() {
         }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data?.error?.message || 'Login failed');
+      if (!res.ok) {
+        throw new Error(
+          data?.error?.message ||
+            data?.message ||
+            (typeof data?.error === 'string' ? data.error : null) ||
+            `Login failed (${res.status})`,
+        );
+      }
       const q = new URLSearchParams({
         access_token: data.access_token,
         tenant_id: data.tenant_id,
         brand_id: data.brand_id || '',
         storefront_id: data.storefront_id || '',
         actor_id: data.user_id || '',
-        next: '/website/onboarding',
+        next: '/website/builder',
       });
       window.location.href = `/console/auth/callback?${q.toString()}`;
     } catch (err) {
@@ -43,15 +50,25 @@ export default function LoginPage() {
 
   return (
     <>
-      <PageHeader title="Đăng nhập" description="Merchant trial / admin · P2" />
+      <PageHeader title="Đăng nhập" description="Merchant / admin · vào CMS template sau login" />
       <Panel title="Login">
         <form onSubmit={onSubmit} style={{ display: 'grid', gap: 10, maxWidth: 360 }}>
-          <Input name="email" type="email" placeholder="Email" required />
+          <Input name="email" type="email" placeholder="Email" required defaultValue="" />
           <Input name="password" type="password" placeholder="Mật khẩu" required />
           <Button type="submit" variant="primary" disabled={busy}>
             {busy ? '…' : 'Đăng nhập'}
           </Button>
           {msg ? <p style={{ color: 'crimson', fontSize: 13 }}>{msg}</p> : null}
+          <p style={{ fontSize: 12, opacity: 0.75, lineHeight: 1.45, margin: 0 }}>
+            Seed VPS: <code>admin@aura.local</code> / <code>AuraAdmin1!</code>
+            <br />
+            Sau login → <strong>Website · CMS → CMS · Site Builder</strong>
+            <br />
+            Link trực tiếp:{' '}
+            <a href="/console/website/builder" style={{ color: 'var(--ptt-accent)' }}>
+              /console/website/builder
+            </a>
+          </p>
           <p style={{ fontSize: 13, opacity: 0.7 }}>
             Chưa có tài khoản?{' '}
             <a href="https://webecom.ngoinhahomnay.vn/trial" style={{ color: 'var(--ptt-accent)' }}>

@@ -98,6 +98,7 @@ export default async function HomePage({
     !demoCode && runtime.home && 'experiment_code' in (runtime.home as object)
       ? ((runtime.home as { experiment_code?: string | null }).experiment_code ?? null)
       : null;
+  const ux = runtime.commerce_ux;
   const headerLinks = Array.isArray(runtime.navigation?.header)
     ? (runtime.navigation.header as Array<{ label: string; href: string }>)
     : [];
@@ -115,6 +116,11 @@ export default async function HomePage({
       ink={ink}
       headerLinks={headerLinks}
       bottomLinks={bottomLinks}
+      showCart={ux?.show_cart !== false}
+      showCartCount={ux?.show_cart_count !== false}
+      headerCta={ux?.header_cta || null}
+      announcement={ux?.announcement || null}
+      floating={ux?.floating || []}
     >
       {demoCode ? (
         <p

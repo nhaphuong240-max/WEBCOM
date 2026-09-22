@@ -13,3 +13,4 @@ apps/admin-api/prisma/*.db
 apps/admin-api/prisma/*.db-journal
 
 !.env.example
+.venv-pdf/

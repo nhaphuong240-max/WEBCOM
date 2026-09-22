@@ -53,6 +53,7 @@ model Tenant {
   savedBlocks SavedBlock[]
   leads       Lead[]
   brandKits   BrandKit[]
+  siteSettings SiteSettings[]
   templateInstalls TemplateInstall[]
   goLiveItems GoLiveChecklistItem[]
   publishJobs PublishJob[]
@@ -337,6 +338,7 @@ model Storefront {
   events           StorefrontEvent[]
   vouchers         Voucher[]
   brandKits        BrandKit[]
+  siteSettings     SiteSettings?
   templateInstalls TemplateInstall[]
   goLiveItems      GoLiveChecklistItem[]
   publishJobs      PublishJob[]
@@ -1288,6 +1290,23 @@ model Lead {
 
   @@index([tenantId, status])
   @@map("leads")
+}
+
+/// Merchant CMS Pro — Site Settings (FR-CMS-PRO-001 / 011)
+model SiteSettings {
+  id           String     @id @default(uuid())
+  tenantId     String     @map("tenant_id")
+  storefrontId String     @unique @map("storefront_id")
+  version      Int        @default(1)
+  /// SiteSettingsData JSON (archetype, identity, header, commerce, …)
+  data         Json       @default("{}")
+  createdAt    DateTime   @default(now()) @map("created_at")
+  updatedAt    DateTime   @updatedAt @map("updated_at")
+  tenant       Tenant     @relation(fields: [tenantId], references: [id])
+  storefront   Storefront @relation(fields: [storefrontId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@map("site_settings")
 }
 
 /// W3 — Brand Kit tokens (tenant → brand → storefront inheritance)

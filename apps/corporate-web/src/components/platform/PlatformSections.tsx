@@ -67,14 +67,21 @@ export function PlatformHero({
   };
 }) {
   const variant = usePlatformAb(ab?.code, ab?.experiment, ab?.storefrontId);
-  const headline = String(variant?.headline || props.headline || '');
+  const abHeadline = String(variant?.headline || '').trim();
+  const abCta = String(variant?.cta || '').trim();
+  // Ignore truncated / broken assign payloads (e.g. "Keep", "T")
+  const safeAb =
+    abHeadline.length >= 12 && abCta.length >= 3
+      ? variant
+      : null;
+  const headline = String(safeAb?.headline || props.headline || '');
   const sub = String(props.sub || '');
   const brand = String(props.brand || '');
   const primaryBase = (props.primary_cta || {}) as Cta;
   const primary: Cta = {
     ...primaryBase,
-    label: variant?.cta || primaryBase.label,
-    href: variant?.cta_href || primaryBase.href,
+    label: safeAb?.cta || primaryBase.label,
+    href: safeAb?.cta_href || primaryBase.href,
   };
   const secondary = props.secondary_cta as Cta | undefined;
   return (

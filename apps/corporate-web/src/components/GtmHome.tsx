@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { LeadForm } from './HeroConcierge';
 
@@ -18,7 +18,7 @@ const CHANNELS = [
     ],
     primary: { label: 'Xem Template Marketplace', href: '/templates' },
     secondary: { label: 'Bắt đầu trial', href: '/trial' },
-    viz: { top: 'Storefront · Mobile', meta: 'CVR 3.8%', big: 'LCP · INP · CLS' },
+    viz: { top: 'Storefront · Mobile', meta: 'CVR 3.8%', big: 'LCP · INP · CLS', scene: 'web' as const },
   },
   {
     id: 'social',
@@ -37,6 +37,7 @@ const CHANNELS = [
       meta: '14 unread',
       big: 'Comment → Order',
       note: 'Keyword “SET A” · reserve 15 phút · COD',
+      scene: 'social' as const,
     },
   },
   {
@@ -56,6 +57,7 @@ const CHANNELS = [
       meta: '12.4k viewers',
       big: '₫286tr GMV',
       note: 'Contribution ước tính 19% · return risk cao',
+      scene: 'live' as const,
     },
   },
   {
@@ -75,6 +77,7 @@ const CHANNELS = [
       meta: 'Sync < 5s',
       big: 'Offline queue',
       note: 'Bán được khi mạng yếu · đồng bộ khi online',
+      scene: 'pos' as const,
     },
   },
   {
@@ -89,7 +92,7 @@ const CHANNELS = [
       'Fee sàn vào P&L — không chỉ GMV',
     ],
     primary: { label: 'Đặt demo sàn', href: '#demo' },
-    viz: { top: '4 sàn', meta: 'Unmatched 0', big: 'Fee-aware P&L', bars: true },
+    viz: { top: '4 sàn', meta: 'Unmatched 0', big: 'Fee-aware P&L', bars: true, scene: 'mkt' as const },
   },
   {
     id: 'corp',
@@ -107,6 +110,7 @@ const CHANNELS = [
       meta: 'UTM + consent',
       big: 'Demo routing',
       note: 'Industry · size · intent → owner + SLA',
+      scene: 'corp' as const,
     },
   },
 ] as const;
@@ -154,88 +158,164 @@ const GRAPH = [
   'Contribution',
 ];
 
-/** Mockup 01 — Corporate GTM narrative (margin-first, not ThemeForest). */
+function ChannelScene({ scene }: { scene: (typeof CHANNELS)[number]['viz']['scene'] }) {
+  return (
+    <div className={`gtm-scene gtm-scene-${scene}`} aria-hidden>
+      <div className="gtm-scene-glow" />
+      <div className="gtm-scene-layer gtm-scene-back" />
+      <div className="gtm-scene-layer gtm-scene-mid" />
+      <div className="gtm-scene-layer gtm-scene-front" />
+      {scene === 'web' ? (
+        <div className="gtm-scene-device">
+          <div className="gtm-scene-notch" />
+          <div className="gtm-scene-screen">
+            <i />
+            <i />
+            <i />
+          </div>
+        </div>
+      ) : null}
+      {scene === 'live' ? <span className="gtm-scene-pulse" /> : null}
+      {scene === 'social' ? (
+        <div className="gtm-scene-bubbles">
+          <span />
+          <span />
+          <span />
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+/** Mockup 01 — Corporate GTM narrative (margin-first). */
 export function GtmHome({ locale = 'vi' }: { locale?: 'vi' | 'en' }) {
   const [tab, setTab] = useState<(typeof CHANNELS)[number]['id']>('web');
   const active = CHANNELS.find((c) => c.id === tab) || CHANNELS[0];
   const en = locale === 'en';
 
+  useEffect(() => {
+    const nodes = document.querySelectorAll('.gtm-reveal');
+    if (!nodes.length) return;
+    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (reduced) {
+      nodes.forEach((n) => n.classList.add('is-in'));
+      return;
+    }
+    const io = new IntersectionObserver(
+      (entries) => {
+        for (const e of entries) {
+          if (e.isIntersecting) {
+            e.target.classList.add('is-in');
+            io.unobserve(e.target);
+          }
+        }
+      },
+      { rootMargin: '0px 0px -8% 0px', threshold: 0.12 },
+    );
+    nodes.forEach((n) => io.observe(n));
+    return () => io.disconnect();
+  }, []);
+
   return (
     <div className="gtm-home">
       <section className="gtm-hero">
-        <div className="gtm-hero-plane" aria-hidden>
-          <div className="gtm-hero-plane-inner">
-            <div className="gtm-hp-kpi">
-              <div className="l">Contribution margin</div>
-              <div className="v">32.4%</div>
-              <div className="d">+2.1đ · sau return, fee & commission</div>
-            </div>
-            <div className="gtm-hp-row">
-              <div className="gtm-hp-mini">
-                Net revenue<b>₫1.84 tỷ</b>
-              </div>
-              <div className="gtm-hp-mini">
-                Đơn rủi ro<b>18</b>
-              </div>
-            </div>
-            <div className="gtm-hp-chan">
-              <div className="ln">
-                <span style={{ width: 56 }}>Live</span>
-                <div className="trk">
-                  <div className="fill" style={{ width: '90%' }} />
-                </div>
-                <span>GMV</span>
-              </div>
-              <div className="ln">
-                <span style={{ width: 56 }}>Live</span>
-                <div className="trk">
-                  <div className="fill g" style={{ width: '38%' }} />
-                </div>
-                <span>Margin</span>
-              </div>
-              <div className="ln">
-                <span style={{ width: 56 }}>Web</span>
-                <div className="trk">
-                  <div className="fill" style={{ width: '62%' }} />
-                </div>
-                <span>GMV</span>
-              </div>
-              <div className="ln">
-                <span style={{ width: 56 }}>Web</span>
-                <div className="trk">
-                  <div className="fill g" style={{ width: '74%' }} />
-                </div>
-                <span>Margin</span>
-              </div>
-            </div>
-          </div>
+        <div className="gtm-hero-ambient" aria-hidden>
+          <span className="gtm-orb gtm-orb-a" />
+          <span className="gtm-orb gtm-orb-b" />
+          <span className="gtm-orb gtm-orb-c" />
         </div>
-        <div className="gtm-hero-inner">
-          <div className="gtm-brand">
-            PTT<em>.</em>
+
+        <div className="gtm-hero-grid">
+          <div className="gtm-hero-inner">
+            <p className="gtm-hero-kicker">
+              {en ? 'Website templates & commerce OS' : 'Website templates & commerce OS'}
+            </p>
+            <div className="gtm-brand">
+              PTT<em>.</em>
+            </div>
+            <h1>
+              {en
+                ? 'Sell omnichannel — run the business on real margin.'
+                : 'Bán đa kênh — điều hành theo lãi thật.'}
+            </h1>
+            <p className="gtm-sub">
+              {en
+                ? 'Browse conversion-ready templates, then run Website, Social, Live, POS and marketplaces on one OS.'
+                : 'Chọn template đo được CVR — rồi bán Website, Social, Live, POS và sàn trên một OS. Đo lãi thật, không chỉ GMV.'}
+            </p>
+            <div className="gtm-hero-actions">
+              <Link className="gtm-btn gtm-btn-primary" href="/templates">
+                {en ? 'Browse templates' : 'Xem templates'}
+              </Link>
+              <a className="gtm-btn gtm-btn-ghost-ink" href="#demo">
+                {en ? 'Book a demo' : 'Đặt demo'}
+              </a>
+            </div>
           </div>
-          <h1>
-            {en
-              ? 'Sell omnichannel — run the business on real margin.'
-              : 'Bán đa kênh — điều hành theo lãi thật.'}
-          </h1>
-          <p className="gtm-sub">
-            {en
-              ? 'Website, Social, Live, POS and marketplaces on one OS. Measure contribution margin, not just GMV.'
-              : 'Website, Social, Live, POS và sàn trên một OS. Đo contribution margin, không chỉ GMV.'}
-          </p>
-          <div className="gtm-hero-actions">
-            <a className="gtm-btn gtm-btn-primary" href="#demo">
-              {en ? 'Book a demo' : 'Đặt demo'}
-            </a>
-            <Link className="gtm-btn gtm-btn-ghost" href="/templates">
-              {en ? 'Browse templates' : 'Product tour · Templates'}
-            </Link>
+
+          <div className="gtm-hero-plane" aria-hidden>
+            <div className="gtm-hero-plane-inner">
+              <div className="gtm-hp-kpi">
+                <div className="l">Contribution margin</div>
+                <div className="v">32.4%</div>
+                <div className="d">+2.1đ · sau return, fee & commission</div>
+              </div>
+              <div className="gtm-hp-row">
+                <div className="gtm-hp-mini">
+                  Net revenue<b>₫1.84 tỷ</b>
+                </div>
+                <div className="gtm-hp-mini">
+                  Đơn rủi ro<b>18</b>
+                </div>
+              </div>
+              <div className="gtm-hp-chan">
+                <div className="ln">
+                  <span className="lbl">Live</span>
+                  <div className="trk">
+                    <div className="fill" style={{ ['--w' as string]: '90%' }} />
+                  </div>
+                  <span>GMV</span>
+                </div>
+                <div className="ln">
+                  <span className="lbl">Live</span>
+                  <div className="trk">
+                    <div className="fill g" style={{ ['--w' as string]: '38%' }} />
+                  </div>
+                  <span>Margin</span>
+                </div>
+                <div className="ln">
+                  <span className="lbl">Web</span>
+                  <div className="trk">
+                    <div className="fill" style={{ ['--w' as string]: '62%' }} />
+                  </div>
+                  <span>GMV</span>
+                </div>
+                <div className="ln">
+                  <span className="lbl">Web</span>
+                  <div className="trk">
+                    <div className="fill g" style={{ ['--w' as string]: '74%' }} />
+                  </div>
+                  <span>Margin</span>
+                </div>
+              </div>
+              <div className="gtm-hp-spark">
+                <svg viewBox="0 0 240 56" preserveAspectRatio="none">
+                  <path
+                    className="gtm-spark-line"
+                    d="M0 44 C28 42 36 18 58 22 C82 26 90 48 118 40 C146 32 158 8 188 14 C210 18 224 28 240 20"
+                  />
+                  <path
+                    className="gtm-spark-fill"
+                    d="M0 44 C28 42 36 18 58 22 C82 26 90 48 118 40 C146 32 158 8 188 14 C210 18 224 28 240 20 V56 H0 Z"
+                  />
+                </svg>
+              </div>
+            </div>
           </div>
         </div>
       </section>
 
-      <section className="gtm-proof">
+      <section className="gtm-proof gtm-reveal">
         <div className="gtm-proof-grid">
           <div>
             <div className="n">1 OS</div>
@@ -258,7 +338,7 @@ export function GtmHome({ locale = 'vi' }: { locale?: 'vi' | 'en' }) {
 
       <section className="gtm-sec gtm-channels" id="channels">
         <div className="gtm-narrow">
-          <div className="gtm-sec-h">
+          <div className="gtm-sec-h gtm-reveal">
             <div className="gtm-eyebrow">Omnichannel</div>
             <h2>
               {en
@@ -272,7 +352,7 @@ export function GtmHome({ locale = 'vi' }: { locale?: 'vi' | 'en' }) {
             </p>
           </div>
 
-          <div className="gtm-tabs" role="tablist">
+          <div className="gtm-tabs gtm-reveal" role="tablist">
             {CHANNELS.map((c) => (
               <button
                 key={c.id}
@@ -287,7 +367,7 @@ export function GtmHome({ locale = 'vi' }: { locale?: 'vi' | 'en' }) {
             ))}
           </div>
 
-          <div className="gtm-tab-layout" role="tabpanel">
+          <div className="gtm-tab-layout gtm-reveal" role="tabpanel" key={active.id}>
             <div>
               <h3>{active.title}</h3>
               <p className="gtm-lead">{active.lead}</p>
@@ -308,42 +388,45 @@ export function GtmHome({ locale = 'vi' }: { locale?: 'vi' | 'en' }) {
               </div>
             </div>
             <div className="gtm-viz">
-              <div className="row">
-                <span>{active.viz.top}</span>
-                <span>{active.viz.meta}</span>
+              <ChannelScene scene={active.viz.scene} />
+              <div className="gtm-viz-meta">
+                <div className="row">
+                  <span>{active.viz.top}</span>
+                  <span>{active.viz.meta}</span>
+                </div>
+                <div className="big">{active.viz.big}</div>
+                {'note' in active.viz && active.viz.note ? (
+                  <p className="note">{active.viz.note}</p>
+                ) : null}
+                {'bars' in active.viz && active.viz.bars ? (
+                  <div className="bars">
+                    <span style={{ ['--h' as string]: '50%' }} />
+                    <span style={{ ['--h' as string]: '30%' }} />
+                    <span style={{ ['--h' as string]: '65%' }} />
+                    <span style={{ ['--h' as string]: '25%' }} />
+                  </div>
+                ) : !('note' in active.viz) ? (
+                  <div className="bars">
+                    <span style={{ ['--h' as string]: '40%' }} />
+                    <span style={{ ['--h' as string]: '70%' }} />
+                    <span style={{ ['--h' as string]: '55%' }} />
+                    <span style={{ ['--h' as string]: '88%' }} />
+                    <span style={{ ['--h' as string]: '62%' }} />
+                    <span style={{ ['--h' as string]: '45%' }} />
+                  </div>
+                ) : null}
               </div>
-              <div className="big">{active.viz.big}</div>
-              {'note' in active.viz && active.viz.note ? (
-                <p className="note">{active.viz.note}</p>
-              ) : null}
-              {'bars' in active.viz && active.viz.bars ? (
-                <div className="bars">
-                  <span style={{ height: '50%' }} />
-                  <span style={{ height: '30%' }} />
-                  <span style={{ height: '65%' }} />
-                  <span style={{ height: '25%' }} />
-                </div>
-              ) : !('note' in active.viz) ? (
-                <div className="bars">
-                  <span style={{ height: '40%' }} />
-                  <span style={{ height: '70%' }} />
-                  <span style={{ height: '55%' }} />
-                  <span style={{ height: '88%' }} />
-                  <span style={{ height: '62%' }} />
-                  <span style={{ height: '45%' }} />
-                </div>
-              ) : null}
             </div>
           </div>
         </div>
       </section>
 
       <section className="gtm-contrast" id="margin">
-        <div>
+        <div className="gtm-reveal">
           <div className="strike">+120% GMV</div>
           <div className="win">−8% margin</div>
         </div>
-        <div>
+        <div className="gtm-reveal">
           <div className="gtm-eyebrow">Revenue Intelligence</div>
           <h2>
             {en
@@ -360,7 +443,7 @@ export function GtmHome({ locale = 'vi' }: { locale?: 'vi' | 'en' }) {
 
       <section className="gtm-sec" id="graph">
         <div className="gtm-narrow">
-          <div className="gtm-sec-h">
+          <div className="gtm-sec-h gtm-reveal">
             <div className="gtm-eyebrow">{en ? 'PTT difference' : 'Khác biệt PTT'}</div>
             <h2>Revenue Graph</h2>
             <p>
@@ -369,20 +452,24 @@ export function GtmHome({ locale = 'vi' }: { locale?: 'vi' | 'en' }) {
                 : 'Từ creative đến contribution profit — công thức có version, không rewrite lịch sử.'}
             </p>
           </div>
-          <div className="gtm-graph">
+          <div className="gtm-graph gtm-reveal">
             {GRAPH.map((node, i) => (
-              <span key={node} className="gtm-graph-piece">
+              <span
+                key={node}
+                className="gtm-graph-piece"
+                style={{ animationDelay: `${i * 0.06}s` }}
+              >
                 <span className={`node${i === GRAPH.length - 1 ? ' hot' : ''}`}>{node}</span>
                 {i < GRAPH.length - 1 ? <span className="arr">→</span> : null}
               </span>
             ))}
           </div>
-          <div className="gtm-tab-actions" style={{ marginTop: 28 }}>
+          <div className="gtm-tab-actions gtm-reveal" style={{ marginTop: 28 }}>
             <a className="gtm-btn gtm-btn-primary" href="#demo">
               {en ? 'See Revenue Intelligence' : 'Mở Revenue Intelligence'}
             </a>
             <Link className="gtm-btn gtm-btn-ghost-ink" href="/templates">
-              {en ? 'Website playbooks' : 'Website playbooks'}
+              Website playbooks
             </Link>
           </div>
         </div>
@@ -390,7 +477,7 @@ export function GtmHome({ locale = 'vi' }: { locale?: 'vi' | 'en' }) {
 
       <section className="gtm-sec gtm-crm" id="crm">
         <div className="gtm-narrow gtm-split">
-          <div className="gtm-sec-h" style={{ margin: 0 }}>
+          <div className="gtm-sec-h gtm-reveal" style={{ margin: 0 }}>
             <div className="gtm-eyebrow">CRM & Retention</div>
             <h2>
               {en
@@ -408,7 +495,7 @@ export function GtmHome({ locale = 'vi' }: { locale?: 'vi' | 'en' }) {
               </a>
             </div>
           </div>
-          <ul className="gtm-feat-lines">
+          <ul className="gtm-feat-lines gtm-reveal">
             {CRM.map((c) => (
               <li key={c.n}>
                 <span className="num">{c.n}</span>
@@ -424,7 +511,7 @@ export function GtmHome({ locale = 'vi' }: { locale?: 'vi' | 'en' }) {
 
       <section className="gtm-sec gtm-ai" id="ai">
         <div className="gtm-narrow">
-          <div className="gtm-sec-h">
+          <div className="gtm-sec-h gtm-reveal">
             <div className="gtm-eyebrow">AI Platform</div>
             <h2>
               {en
@@ -437,7 +524,7 @@ export function GtmHome({ locale = 'vi' }: { locale?: 'vi' | 'en' }) {
                 : 'Không chỉ chatbot. Agent có tool permission, risk class và human-in-the-loop. Không tự refund hay đổi giá.'}
             </p>
           </div>
-          <div className="gtm-ai-grid">
+          <div className="gtm-ai-grid gtm-reveal">
             {AI.map((a) => (
               <article key={a.title}>
                 <div className="tag">{a.tag}</div>
@@ -451,7 +538,7 @@ export function GtmHome({ locale = 'vi' }: { locale?: 'vi' | 'en' }) {
 
       <section className="gtm-sec" id="ops">
         <div className="gtm-narrow">
-          <div className="gtm-sec-h">
+          <div className="gtm-sec-h gtm-reveal">
             <div className="gtm-eyebrow">Operations</div>
             <h2>
               {en
@@ -464,7 +551,7 @@ export function GtmHome({ locale = 'vi' }: { locale?: 'vi' | 'en' }) {
                 : 'Một hệ thống từ online đến offline — COD đối soát và e-invoice đa kênh.'}
             </p>
           </div>
-          <div className="gtm-ops">
+          <div className="gtm-ops gtm-reveal">
             {OPS.map((o) => (
               <div key={o.t}>
                 <h3>{o.t}</h3>
@@ -480,7 +567,7 @@ export function GtmHome({ locale = 'vi' }: { locale?: 'vi' | 'en' }) {
           <p className="gtm-logos-label">
             {en ? 'Vietnam ecosystem' : 'Kết nối hệ sinh thái Việt Nam'}
           </p>
-          <div className="gtm-logos">
+          <div className="gtm-logos gtm-reveal">
             {[
               'Shopee',
               'Lazada',
@@ -503,7 +590,7 @@ export function GtmHome({ locale = 'vi' }: { locale?: 'vi' | 'en' }) {
 
       <section className="gtm-sec gtm-demo" id="demo">
         <div className="gtm-narrow gtm-demo-grid">
-          <div className="gtm-sec-h" style={{ margin: 0 }}>
+          <div className="gtm-sec-h gtm-reveal" style={{ margin: 0 }}>
             <div className="gtm-eyebrow">{en ? 'Get started' : 'Bắt đầu'}</div>
             <h2>
               {en
@@ -515,13 +602,15 @@ export function GtmHome({ locale = 'vi' }: { locale?: 'vi' | 'en' }) {
                 ? 'Tour Command Center, Website Go-live, and Social/Live. Sales Copilot summarizes pain before the call.'
                 : 'Nhận tour Command Center, Website Go-live và Social/Live. Sales Copilot tóm tắt pain trước cuộc gọi.'}
             </p>
-            <ul className="gtm-bullet gtm-bullet-light">
+            <ul className="gtm-bullet">
               <li>Beauty / D2C / Agency / B2B playbook</li>
               <li>{en ? 'Margin vs GMV-only comparison' : 'So sánh margin vs chỉ nhìn GMV'}</li>
               <li>{en ? 'Sandbox storefront in week one' : 'Sandbox storefront trong tuần đầu'}</li>
             </ul>
           </div>
-          <LeadForm ctaCode="cta_book_demo" landingSlug={en ? '/en' : '/'} />
+          <div className="gtm-reveal">
+            <LeadForm ctaCode="cta_book_demo" landingSlug={en ? '/en' : '/'} />
+          </div>
         </div>
       </section>
     </div>

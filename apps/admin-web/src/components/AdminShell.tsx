@@ -154,8 +154,9 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
 function crumbLabel(pathname: string): string {
   if (pathname.startsWith('/website/analytics')) return 'Website · Analytics';
   if (pathname.startsWith('/website/golive')) return 'Website · Go-live';
-  if (pathname.startsWith('/website/builder')) return 'Website · Builder';
-  if (pathname.startsWith('/website')) return 'Website';
+  if (pathname.startsWith('/website/builder')) return 'CMS · Site Builder';
+  if (pathname.startsWith('/website/templates')) return 'Template Store';
+  if (pathname.startsWith('/website')) return 'Website · CMS';
   if (pathname.startsWith('/orders')) return 'Đơn hàng';
   if (pathname.startsWith('/customers')) return 'CRM';
   if (pathname.startsWith('/hr')) return 'HR';

@@ -71,6 +71,23 @@ export type Runtime = {
     logo?: { url?: string; alt?: string };
     voice?: { cta_default?: string };
   } | null;
+  site_settings?: Record<string, unknown> | null;
+  commerce_ux?: {
+    show_cart?: boolean;
+    show_mini_cart?: boolean;
+    show_cart_count?: boolean;
+    sticky_atc_mobile?: boolean;
+    announcement?: { text: string; href: string } | null;
+    empty_cart?: { title: string; cta_label: string; cta_href: string };
+    header_cta?: { label: string; href: string };
+    floating?: Array<{ key: string; label: string; href: string; color1?: string }>;
+    catalog_card?: { primary_cta?: string; show_price?: boolean };
+    show_compare_at_price?: boolean;
+    checkout_policy_links?: Array<{ label: string; href: string }>;
+    coupon_entry_cart?: boolean;
+    archetype?: string;
+    is_lead_gen?: boolean;
+  } | null;
 };
 
 export async function storeApi<T>(

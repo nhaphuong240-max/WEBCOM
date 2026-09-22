@@ -1,0 +1,30 @@
+flowchart TB
+  subgraph DNS["DNS · HTTPS"]
+    APEX["webecom.ngoinhahomnay.vn"]
+    THEMES["themes.ngoinhahomnay.vn"]
+  end
+
+  subgraph Nginx["Nginx reverse proxy"]
+    APEX --> LOC_API["/api → :3101"]
+    APEX --> LOC_CON["/console → :3100"]
+    APEX --> LOC_CORP["/ → :3103"]
+    APEX -.->|redirect shop paths| THEMES
+    THEMES --> LOC_SF_API["/api → :3101"]
+    THEMES --> LOC_SF["/ → :3102"]
+  end
+
+  subgraph Apps["Processes trên VPS"]
+    API["admin-api :3101"]
+    ADM["admin-web :3100<br/>basePath=/console"]
+    CORP["corporate-web :3103"]
+    SF["storefront-web :3102"]
+  end
+
+  LOC_API --> API
+  LOC_CON --> ADM
+  LOC_CORP --> CORP
+  LOC_SF_API --> API
+  LOC_SF --> SF
+
+  API --> PG[(PostgreSQL)]
+  API --> RD[(Redis)]

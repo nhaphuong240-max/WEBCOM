@@ -1,7 +1,12 @@
 import { cookies } from 'next/headers';
 
-export const API_BASE =
-  process.env.NEXT_PUBLIC_ADMIN_API_URL?.replace(/\/$/, '') || 'http://127.0.0.1:3001';
+/** Server-side: prefer loopback (INTERNAL_API_URL). Browser builds use NEXT_PUBLIC_*. */
+export const API_BASE = (
+  process.env.INTERNAL_API_URL ||
+  process.env.ADMIN_API_URL ||
+  process.env.NEXT_PUBLIC_ADMIN_API_URL ||
+  'http://127.0.0.1:3001'
+).replace(/\/$/, '');
 
 export const TENANT_ID = process.env.NEXT_PUBLIC_TENANT_ID || 'ten_aura';
 export const BRAND_ID = process.env.NEXT_PUBLIC_BRAND_ID || 'brd_aura';

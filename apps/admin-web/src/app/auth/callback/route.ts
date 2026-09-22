@@ -1,15 +1,46 @@
 import { NextRequest, NextResponse } from 'next/server';
 
+/** Public console origin incl. basePath, never the Node listen address. */
+function consoleBase(req: NextRequest): string {
+  const fromEnv = (
+    process.env.ADMIN_WEB_PUBLIC_URL ||
+    process.env.NEXT_PUBLIC_CONSOLE_URL ||
+    ''
+  ).replace(/\/$/, '');
+  if (fromEnv) return fromEnv;
+
+  const basePath = (process.env.NEXT_BASE_PATH || '').replace(/\/$/, '');
+  const proto =
+    req.headers.get('x-forwarded-proto')?.split(',')[0]?.trim() ||
+    (req.nextUrl.protocol || 'https:').replace(':', '') ||
+    'https';
+  const host =
+    req.headers.get('x-forwarded-host')?.split(',')[0]?.trim() ||
+    req.headers.get('host') ||
+    '';
+  const internal =
+    !host ||
+    /^127\./.test(host) ||
+    /^localhost(?::|$)/i.test(host) ||
+    /^0\.0\.0\.0(?::|$)/.test(host) ||
+    /^\[::1\](?::|$)/.test(host);
+
+  if (internal) {
+    return `https://webecom.ngoinhahomnay.vn${basePath}`;
+  }
+  return `${proto}://${host}${basePath}`;
+}
+
 export async function GET(req: NextRequest) {
   const sp = req.nextUrl.searchParams;
   const token = sp.get('access_token');
   const tenantId = sp.get('tenant_id');
   if (!token || !tenantId) {
-    return NextResponse.redirect(new URL('/login?error=missing_token', req.url));
+    return NextResponse.redirect(`${consoleBase(req)}/login?error=missing_token`);
   }
 
   const nextPath = sp.get('next')?.startsWith('/') ? sp.get('next')! : '/website/onboarding';
-  const res = NextResponse.redirect(new URL(nextPath, req.url));
+  const res = NextResponse.redirect(`${consoleBase(req)}${nextPath}`);
   const maxAge = 60 * 60 * 12;
   const secure = process.env.NODE_ENV === 'production';
   const common = { httpOnly: true, sameSite: 'lax' as const, path: '/', maxAge, secure };

@@ -28,6 +28,10 @@ pnpm dev
 - Corporate: http://localhost:3003  
 - OpenAPI: `docs/openapi-w2.yaml`
 
+## Hướng dẫn sử dụng toàn hệ thống
+
+Xem [`docs/05_Huong_dan_Su_dung_WebCom_v1.md`](./docs/05_Huong_dan_Su_dung_WebCom_v1.md) — sơ đồ liên kết domain, setup local/VPS, và tính năng từng màn (Platform · Storefront · Admin Console).
+
 ## W2 checklist
 
 - [x] Theme / Page / Nav / Events / Voucher / Lead

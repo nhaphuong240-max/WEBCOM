@@ -178,6 +178,105 @@ export class WebsiteController {
     return this.platform.applyBrandKitToTheme(ctx.tenantId, id, ctx.actorId);
   }
 
+  // ─── Merchant CMS Pro — Site Settings ───────────────────────
+
+  @Get('v1/admin/storefronts/:id/site-settings')
+  @UseGuards(TenantAuthGuard)
+  getSiteSettings(@ReqContext() ctx: RequestContext, @Param('id') id: string) {
+    return this.platform.getSiteSettings(ctx.tenantId, id);
+  }
+
+  @Put('v1/admin/storefronts/:id/site-settings')
+  @UseGuards(TenantAuthGuard)
+  putSiteSettings(
+    @ReqContext() ctx: RequestContext,
+    @Param('id') id: string,
+    @Body() body: unknown,
+  ) {
+    const parsed = z
+      .object({
+        data: z.record(z.unknown()),
+        expected_version: z.number().optional(),
+      })
+      .safeParse(body);
+    if (!parsed.success) throw AppError.validation('Invalid site settings', parsed.error.flatten());
+    return this.platform.upsertSiteSettings(
+      ctx.tenantId,
+      id,
+      {
+        data: parsed.data.data as never,
+        expected_version: parsed.data.expected_version,
+      },
+      ctx.actorId,
+    );
+  }
+
+  @Get('v1/admin/storefronts/:id/leads')
+  @UseGuards(TenantAuthGuard)
+  async listStorefrontLeads(
+    @ReqContext() ctx: RequestContext,
+    @Param('id') id: string,
+    @Query('limit') limit?: string,
+  ) {
+    await this.platform.getSiteSettings(ctx.tenantId, id);
+    const take = Math.min(Number(limit) || 50, 200);
+    const rows = await this.website.listLeads(ctx.tenantId, take);
+    return { items: rows };
+  }
+
+  @Post('v1/public/storefronts/:id/leads')
+  @UseGuards(StorefrontContextGuard)
+  async publicStorefrontLead(
+    @ReqContext() ctx: RequestContext,
+    @Param('id') id: string,
+    @Body() body: unknown,
+  ) {
+    const parsed = z
+      .object({
+        full_name: z.string().min(2).optional(),
+        name: z.string().min(2).optional(),
+        phone: z.string().min(8),
+        email: z.string().email().optional().or(z.literal('')),
+        message: z.string().optional(),
+        page_url: z.string().optional(),
+        product_id: z.string().optional(),
+        consent: z.boolean().optional(),
+        utm_source: z.string().optional(),
+        utm_medium: z.string().optional(),
+        utm_campaign: z.string().optional(),
+      })
+      .safeParse(body);
+    if (!parsed.success) throw AppError.validation('Invalid lead', parsed.error.flatten());
+    const name = parsed.data.full_name || parsed.data.name;
+    if (!name) throw AppError.validation('full_name required');
+    const phone = parsed.data.phone.replace(/\s+/g, '');
+    if (!/^(0|\+84)\d{8,10}$/.test(phone)) {
+      throw AppError.validation('Invalid VN phone');
+    }
+    const settings = await this.platform.getSiteSettings(ctx.tenantId, id);
+    if (settings.data.privacy.lead_consent_required && parsed.data.consent === false) {
+      throw AppError.validation('Consent required');
+    }
+    return this.website.createLead(ctx.tenantId, {
+      name,
+      email: parsed.data.email || `${phone}@lead.local`,
+      phone,
+      message: [
+        parsed.data.message || '',
+        parsed.data.page_url ? `page_url=${parsed.data.page_url}` : '',
+        parsed.data.product_id ? `product_id=${parsed.data.product_id}` : '',
+        `storefront_id=${id}`,
+      ]
+        .filter(Boolean)
+        .join('\n'),
+      channel: 'storefront_cms',
+      consent: parsed.data.consent !== false,
+      utm_source: parsed.data.utm_source,
+      utm_medium: parsed.data.utm_medium,
+      utm_campaign: parsed.data.utm_campaign,
+    });
+  }
+
   // ─── W3 Marketplace ────────────────────────────────────────
 
   @Get('v1/admin/templates')

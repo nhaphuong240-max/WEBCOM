@@ -1558,21 +1558,39 @@ async function main() {
         {
           key: 'control',
           weight: 1,
-          headline: 'Website Commerce cho bán lẻ Việt Nam',
-          cta: 'Xem templates',
-          cta_href: '/templates',
+          headline: 'Bán đa kênh — điều hành theo lãi thật.',
+          cta: 'Đặt demo',
+          cta_href: '/#demo',
         },
         {
           key: 'benefit',
           weight: 1,
-          headline: 'Go-live nhanh — theme, Brand Kit, gate sẵn sàng',
-          cta: 'Bắt đầu trial',
-          cta_href: '/trial',
+          headline: 'Website, Live, POS trên một OS — đo contribution margin.',
+          cta: 'Xem templates',
+          cta_href: '/templates',
         },
       ],
       startedAt: new Date(),
     },
-    update: { status: 'running' },
+    update: {
+      status: 'running',
+      variants: [
+        {
+          key: 'control',
+          weight: 1,
+          headline: 'Bán đa kênh — điều hành theo lãi thật.',
+          cta: 'Đặt demo',
+          cta_href: '/#demo',
+        },
+        {
+          key: 'benefit',
+          weight: 1,
+          headline: 'Website, Live, POS trên một OS — đo contribution margin.',
+          cta: 'Xem templates',
+          cta_href: '/templates',
+        },
+      ],
+    },
   });
   await prisma.page.update({
     where: { id: 'pg_platform_home' },

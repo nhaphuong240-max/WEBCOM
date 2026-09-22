@@ -2,9 +2,10 @@
 
 | Thuộc tính | Nội dung |
 |---|---|
-| Phiên bản | 1.0 |
+| Phiên bản | 1.0 (engine) |
 | Ngày | 2026-09-18 |
-| Trạng thái | CMS-0 **shipped** (code) — tiếp CMS-1 theo [`shared-cms-implementation-plan.md`](./shared-cms-implementation-plan.md) |
+| Trạng thái | CMS-0 **shipped** (code) — product mở rộng xem **Merchant CMS Pro v2.0** |
+| Product SRS v2 | [`merchant-cms-pro-srs.md`](./merchant-cms-pro-srs.md) · [`merchant-cms-pro-implementation-plan.md`](./merchant-cms-pro-implementation-plan.md) |
 | Tham chiếu | ADR-005 · `docs/04` §9p #5–8 · §9q · SRS FR-WCP-004…007 · mockup 05/06 |
 | Phạm vi | Một CMS/Builder dùng chung mọi template; ThemePackage tách khỏi CMS engine |
 

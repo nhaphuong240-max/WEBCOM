@@ -7,6 +7,7 @@ import { ConsentBanner } from './ConsentBanner';
 import { TrackingPixels } from './TrackingPixels';
 import { PageViewTracker } from './PageViewTracker';
 import { useThemePreview } from './ThemePreviewChrome';
+import { FloatingContacts } from './FloatingContacts';
 
 export function StoreShell({
   children,
@@ -18,6 +19,13 @@ export function StoreShell({
   ink = '#1a1214',
   headerLinks,
   bottomLinks,
+  showCart = true,
+  showCartCount = true,
+  headerCta,
+  announcement,
+  floating,
+  headerBg,
+  headerFg,
 }: {
   children: React.ReactNode;
   brand?: string;
@@ -28,6 +36,13 @@ export function StoreShell({
   ink?: string;
   headerLinks?: Array<{ label: string; href: string }>;
   bottomLinks?: Array<{ label: string; href: string }>;
+  showCart?: boolean;
+  showCartCount?: boolean;
+  headerCta?: { label: string; href: string } | null;
+  announcement?: { text: string; href: string } | null;
+  floating?: Array<{ key: string; label: string; href: string; color1?: string }>;
+  headerBg?: string;
+  headerFg?: string;
 }) {
   const { qty } = useCart();
   const preview = useThemePreview();
@@ -63,6 +78,22 @@ export function StoreShell({
     >
       <PageViewTracker />
       <TrackingPixels gtmId={gtm} pixelId={pixel} />
+      {announcement ? (
+        <div
+          style={{
+            background: accent,
+            color: '#fff',
+            fontSize: 12,
+            fontWeight: 600,
+            textAlign: 'center',
+            padding: '8px 12px',
+          }}
+        >
+          <Link href={announcement.href || '/'} style={{ color: 'inherit', textDecoration: 'none' }}>
+            {announcement.text}
+          </Link>
+        </div>
+      ) : null}
       <header
         style={{
           position: 'sticky',
@@ -73,7 +104,8 @@ export function StoreShell({
           alignItems: 'center',
           justifyContent: 'space-between',
           padding: desktop ? '0 clamp(20px, 4vw, 48px)' : '0 14px',
-          background: 'rgba(250,246,244,0.92)',
+          background: headerBg || 'rgba(250,246,244,0.92)',
+          color: headerFg || ink,
           backdropFilter: 'blur(10px)',
           borderBottom: '1px solid rgba(26,18,20,0.06)',
         }}
@@ -85,11 +117,11 @@ export function StoreShell({
             fontWeight: 800,
             fontSize: desktop ? 20 : 17,
             letterSpacing: '-0.04em',
-            color: ink,
+            color: headerFg || ink,
             textDecoration: 'none',
           }}
         >
-          {brand} <span style={{ color: accent }}>Beauty</span>
+          {brand}
         </Link>
         {desktop ? (
           <nav
@@ -109,38 +141,44 @@ export function StoreShell({
           </nav>
         ) : null}
         <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+          {headerCta?.label ? (
+            <Link
+              href={headerCta.href || '/'}
+              style={{
+                fontSize: 12,
+                fontWeight: 700,
+                color: '#fff',
+                background: accent,
+                padding: '6px 10px',
+                borderRadius: 8,
+                textDecoration: 'none',
+              }}
+            >
+              {headerCta.label}
+            </Link>
+          ) : null}
           <Link href="/search" style={{ fontSize: 13, color: '#6b5559', textDecoration: 'none' }}>
             {desktop ? 'Tài khoản' : 'Tìm'}
           </Link>
-          <Link
-            href="/cart"
-            style={{
-              fontSize: 13,
-              fontWeight: 700,
-              color: ink,
-              textDecoration: 'none',
-            }}
-          >
-            Giỏ ({qty})
-          </Link>
+          {showCart ? (
+            <Link
+              href="/cart"
+              style={{
+                fontSize: 13,
+                fontWeight: 700,
+                color: ink,
+                textDecoration: 'none',
+              }}
+            >
+              Giỏ{showCartCount && qty > 0 ? ` (${qty})` : ''}
+            </Link>
+          ) : null}
         </div>
       </header>
-      <div
-        style={{
-          flex: 1,
-          minHeight: 0,
-          ...(desktop
-            ? {
-                display: 'grid',
-                gridTemplateColumns: 'minmax(0, 1fr)',
-              }
-            : null),
-        }}
-      >
-        {children}
-      </div>
-      {!desktop ? <BottomNav links={bottomLinks} /> : null}
-      <ConsentBanner hasGtm={!!gtm} hasPixel={!!pixel} />
+      <main style={{ flex: 1 }}>{children}</main>
+      <BottomNav links={bottomLinks} />
+      <ConsentBanner />
+      <FloatingContacts channels={floating || []} />
     </div>
   );
 }

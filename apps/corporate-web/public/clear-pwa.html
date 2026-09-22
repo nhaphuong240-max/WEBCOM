@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta http-equiv="Clear-Site-Data" content="&quot;cache&quot;, &quot;storage&quot;, &quot;executionContexts&quot;" />
+  <title>PTT · Xóa PWA cũ</title>
+  <style>
+    body { font-family: system-ui, sans-serif; max-width: 420px; margin: 48px auto; padding: 0 16px; color: #0b1420; }
+    h1 { font-size: 22px; }
+    button, a.btn {
+      display: inline-block; margin-top: 12px; padding: 12px 18px; background: #ff5c1a; color: #fff;
+      border: 0; border-radius: 8px; font-weight: 700; text-decoration: none; cursor: pointer;
+    }
+    code { background: #f3f5f7; padding: 2px 6px; border-radius: 4px; font-size: 13px; }
+  </style>
+</head>
+<body>
+  <h1>Gỡ PWA AURA cũ trên domain này</h1>
+  <p>Apex <code>webecom.ngoinhahomnay.vn</code> không còn là shop AURA. Service Worker cũ khiến hiện “Bạn đang offline”.</p>
+  <p id="status">Đang xóa Service Worker và cache…</p>
+  <p><a class="btn" href="/">Về trang PTT</a></p>
+  <script>
+    (async function () {
+      var status = document.getElementById('status');
+      try {
+        if ('serviceWorker' in navigator) {
+          var regs = await navigator.serviceWorker.getRegistrations();
+          await Promise.all(regs.map(function (r) { return r.unregister(); }));
+        }
+        if (window.caches) {
+          var keys = await caches.keys();
+          await Promise.all(keys.map(function (k) { return caches.delete(k); }));
+        }
+        status.textContent = 'Đã xóa. Bấm “Về trang PTT” hoặc đợi chuyển hướng…';
+        setTimeout(function () { location.replace('/?pwa_cleared=1'); }, 800);
+      } catch (e) {
+        status.textContent = 'Xóa một phần thất bại — hãy xóa dữ liệu site trong trình duyệt, rồi mở lại /';
+      }
+    })();
+  </script>
+</body>
+</html>

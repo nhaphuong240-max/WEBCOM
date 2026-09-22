@@ -17,7 +17,9 @@ export default async function CorporateHome({
   const platformPage = await fetchPlatformPage('home', {
     previewToken: sp.preview,
   });
+  // Home always uses full GTM narrative (mockup 01). CMS only for explicit preview.
   const useCms =
+    Boolean(sp.preview) &&
     Boolean(platformPage?.content_v1?.section_order?.length) &&
     (isPlatformCmsEnabled() || Boolean(sp.preview));
 

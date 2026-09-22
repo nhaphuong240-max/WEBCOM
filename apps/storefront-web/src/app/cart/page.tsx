@@ -1,69 +1,46 @@
-'use client';
-
 import Link from 'next/link';
-import { useEffect } from 'react';
 import { StoreShell } from '../../components/StoreShell';
-import { useCart } from '../../lib/cart';
-import { formatVnd } from '../../lib/api';
+import { CartClient } from './CartClient';
+import { getRuntime } from '../../lib/api';
 
-export default function CartPage() {
-  const { cart, refresh, qty } = useCart();
-  useEffect(() => {
-    void refresh();
-  }, [refresh]);
+export const dynamic = 'force-dynamic';
+
+export default async function CartPage() {
+  let ux: Awaited<ReturnType<typeof getRuntime>>['commerce_ux'] = null;
+  try {
+    const runtime = await getRuntime();
+    ux = runtime.commerce_ux;
+  } catch {
+    /* demo offline */
+  }
+
+  if (ux?.is_lead_gen || ux?.show_cart === false) {
+    return (
+      <StoreShell showCart={false} floating={ux?.floating || []} headerCta={ux?.header_cta || null}>
+        <div style={{ padding: 16 }}>
+          <h1 style={{ fontFamily: 'var(--ptt-font-display)', fontSize: 28 }}>Giỏ hàng</h1>
+          <p style={{ color: '#6b5559' }}>{ux?.empty_cart?.title || 'Chế độ tư vấn — không dùng giỏ hàng.'}</p>
+          <Link href={ux?.empty_cart?.cta_href || '/'}>{ux?.empty_cart?.cta_label || 'Về trang chủ'}</Link>
+        </div>
+      </StoreShell>
+    );
+  }
 
   return (
-    <StoreShell>
-      <div style={{ padding: 16 }}>
-        <h1 style={{ fontFamily: 'var(--ptt-font-display)', fontSize: 28, marginTop: 8 }}>Giỏ hàng</h1>
-        {!cart || cart.lines.length === 0 ? (
-          <p style={{ color: '#6b5559' }}>
-            Chưa có sản phẩm. <Link href="/">Tiếp tục mua</Link>
-          </p>
-        ) : (
-          <div style={{ display: 'grid', gap: 10 }}>
-            {cart.lines.map((l) => (
-              <div
-                key={l.id}
-                style={{
-                  background: '#fff',
-                  borderRadius: 12,
-                  padding: 14,
-                  border: '1px solid rgba(26,18,20,0.06)',
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                }}
-              >
-                <div>
-                  <strong>{l.title}</strong>
-                  <div style={{ fontSize: 13, color: '#6b5559' }}>× {l.qty}</div>
-                </div>
-                <strong style={{ color: '#c45a6a' }}>{formatVnd(l.line_total)}</strong>
-              </div>
-            ))}
-            <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 800 }}>
-              <span>Tổng ({qty})</span>
-              <span>{formatVnd(cart.total)}</span>
-            </div>
-            <p style={{ fontSize: 12, color: '#6b5559' }}>Giá do server tính — không tin client total.</p>
-            <Link
-              href="/checkout"
-              style={{
-                display: 'grid',
-                placeItems: 'center',
-                height: 48,
-                background: '#1a1214',
-                color: '#fff',
-                borderRadius: 10,
-                fontWeight: 700,
-                textDecoration: 'none',
-              }}
-            >
-              Thanh toán
-            </Link>
-          </div>
-        )}
-      </div>
+    <StoreShell
+      showCart
+      showCartCount={ux?.show_cart_count !== false}
+      floating={ux?.floating || []}
+      headerCta={ux?.header_cta || null}
+      announcement={ux?.announcement || null}
+    >
+      <CartClient
+        emptyTitle={ux?.empty_cart?.title}
+        emptyCtaLabel={ux?.empty_cart?.cta_label}
+        emptyCtaHref={ux?.empty_cart?.cta_href}
+        showCoupon={ux?.coupon_entry_cart}
+        policyLinks={ux?.checkout_policy_links}
+      />
     </StoreShell>
   );
 }
