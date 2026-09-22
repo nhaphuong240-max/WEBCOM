@@ -332,6 +332,11 @@ Base local: `http://localhost:3000` (không prefix trừ khi set `NEXT_BASE_PATH
 | `/website/templates` | Template Store (admin) | Cài / chọn ThemePackage |
 | `/website/themes` | Theme Library | Staging / publish / rollback |
 | `/website/builder` | Site Builder | Canvas ContentV1, AI copy (guardrail) |
+| `/website/settings` | Thiết lập website | Brand / Floating / **Bán hàng** / Popup (CMS Pro) |
+| `/website/collections` | Bộ sưu tập merch | Banner + SEO collection (`collection--{slug}`) |
+| `/website/nav` | Mega menu | Header mega: columns + collection + SP |
+| `/website/campaigns` | Campaign promo | `landing_promo` · countdown TZ VN · coupon |
+| `/website/leads` | Leads | Form tư vấn + CSV |
 | `/platform/pages` | Platform CMS Pages | Soạn / duyệt / publish trang corporate |
 | `/platform/nav` | Platform Nav | Header/footer nav theo site (`webcom_apex`, `webcom_en`…) |
 | `/website/creator` | Creator Portal | Creator scorecard / portal |
@@ -375,10 +380,16 @@ Base local: `http://localhost:3000` (không prefix trừ khi set `NEXT_BASE_PATH
 
 1. `/trial` hoặc `/console/website/onboarding`.  
 2. Chọn theme → Brand Kit → Builder.  
-3. `/console/website/golive` đạt checklist.  
-4. Publish → khách mua trên storefront.  
-5. Ops xử lý đơn `/console/orders`, tồn `/console/inventory`.  
-6. Marketing theo funnel `/console/website/analytics`.
+3. `/console/website/settings?tab=commerce` — empty cart, mini-cart, policy, thank-you.  
+4. `/console/website/collections` — banner/SEO BST → Publish.  
+5. `/console/website/nav` — mega menu gắn collection/SP.  
+6. (Tuỳ chọn) `/console/website/campaigns` — landing promo + countdown.  
+7. `/console/website/golive` đạt checklist (kể cả commerce).  
+8. Publish → khách: PLP → PDP → ATC → mini-cart → checkout trên storefront.  
+9. Ops xử lý đơn `/console/orders`, tồn `/console/inventory`.  
+10. Marketing theo funnel `/console/website/analytics`.
+
+**Không nhầm:** sửa giá/tồn ở `/console/products` · `/inventory` — không phải trong Builder.
 
 ### 7.3. Live commerce
 

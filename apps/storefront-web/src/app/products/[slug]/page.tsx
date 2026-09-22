@@ -93,6 +93,8 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
       bottomLinks={bottomLinks}
       showCart={ux?.show_cart !== false}
       showCartCount={ux?.show_cart_count !== false}
+      showMiniCart={ux?.show_mini_cart !== false}
+      miniCart={ux?.mini_cart || null}
       headerCta={ux?.header_cta || null}
       announcement={ux?.announcement || null}
       floating={ux?.floating || []}

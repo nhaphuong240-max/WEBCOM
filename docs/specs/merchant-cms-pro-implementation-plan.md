@@ -119,7 +119,7 @@ Home bán hàng cấu hình được; flash gắn SP thật.
 | PC2-8 | Mega menu merch picker (nav) | FR-017 |
 | PC2-9 | GoLive commerce checks (SP, payment, ATC, merch home) | §8.8 |
 | PC2-10 | Analytics surface flags (document + toggles) | FR-018 |
-| PC2-11 | `e2e-cms-pro-c2.sh` UC-13 full | Pass VPS |
+| PC2-11 | `e2e-cms-pro-c2.sh` UC-13 full | Script ready — Pass VPS after C2 deploy |
 
 ### Exit PRO-C2
 PLP→PDP→ATC→cart→checkout content đủ UAT bán hàng.

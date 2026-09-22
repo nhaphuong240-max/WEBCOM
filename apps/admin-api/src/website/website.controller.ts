@@ -513,7 +513,39 @@ export class WebsiteController {
   ) {
     const parsed = z
       .object({
-        items: z.array(z.object({ label: z.string().min(1), href: z.string().min(1) })),
+        items: z.array(
+          z.object({
+            label: z.string().min(1),
+            href: z.string().min(1),
+            mega: z
+              .object({
+                columns: z
+                  .array(
+                    z.object({
+                      title: z.string(),
+                      links: z.array(
+                        z.object({ label: z.string().min(1), href: z.string().min(1) }),
+                      ),
+                    }),
+                  )
+                  .optional(),
+                featured_collections: z
+                  .array(z.object({ slug: z.string().min(1), title: z.string().min(1) }))
+                  .optional(),
+                featured_products: z
+                  .array(
+                    z.object({
+                      id: z.string().optional(),
+                      slug: z.string().min(1),
+                      title: z.string().min(1),
+                      image: z.string().optional(),
+                    }),
+                  )
+                  .optional(),
+              })
+              .optional(),
+          }),
+        ),
       })
       .safeParse(body);
     if (!parsed.success) throw AppError.validation('Invalid navigation', parsed.error.flatten());

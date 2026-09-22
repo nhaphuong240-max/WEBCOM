@@ -1021,7 +1021,20 @@ export class PlatformService {
     tenantId: string,
     storefrontId: string,
     handle: string,
-    items: Array<{ label: string; href: string }>,
+    items: Array<{
+      label: string;
+      href: string;
+      mega?: {
+        columns?: Array<{ title: string; links: Array<{ label: string; href: string }> }>;
+        featured_collections?: Array<{ slug: string; title: string }>;
+        featured_products?: Array<{
+          id?: string;
+          slug: string;
+          title: string;
+          image?: string;
+        }>;
+      };
+    }>,
     actorId?: string,
   ) {
     await this.sf(tenantId, storefrontId);
@@ -1240,7 +1253,65 @@ export class PlatformService {
 
     const templateKey = input.template_key || (slug === 'home' ? 'home' : 'static');
     const starter =
-      templateKey === 'blog_post'
+      templateKey === 'landing_promo'
+        ? this.dualWriteContent({
+            schema_version: 1,
+            section_order: ['hero', 'countdown', 'coupon_strip', 'product_grid', 'faq'],
+            sections: {
+              hero: {
+                type: 'hero',
+                id: 'sec_hero',
+                props: {
+                  eyebrow: 'Campaign',
+                  headline: input.title || 'Flash sale',
+                  cta: 'Mua ngay',
+                  cta_href: '/search',
+                },
+                style: {},
+              },
+              countdown: {
+                type: 'countdown',
+                id: 'sec_countdown',
+                props: {
+                  title: 'Ưu đãi kết thúc sau',
+                  label: 'Còn lại',
+                  ends_at: new Date(Date.now() + 3 * 86400000).toISOString(),
+                  hide_when_ended: true,
+                },
+                style: {},
+              },
+              coupon_strip: {
+                type: 'coupon_strip',
+                id: 'sec_coupon',
+                props: {
+                  code: 'FLASH10',
+                  title: 'Mã giảm giá',
+                  hint: 'Áp dụng tại checkout',
+                  cta_label: 'Đến checkout',
+                  cta_href: '/checkout',
+                },
+                style: {},
+              },
+              product_grid: {
+                type: 'product_grid',
+                id: 'sec_grid',
+                props: { limit: 8, sort: 'newest' },
+                style: {},
+              },
+              faq: {
+                type: 'faq',
+                id: 'sec_faq',
+                props: {
+                  items: [
+                    { q: 'Mã dùng được bao lâu?', a: 'Trong thời gian countdown còn hiệu lực.' },
+                    { q: 'Áp dụng thế nào?', a: 'Nhập mã ở trang giỏ / checkout.' },
+                  ],
+                },
+                style: {},
+              },
+            },
+          })
+        : templateKey === 'blog_post'
         ? this.dualWriteContent({
             schema_version: 1,
             section_order: ['announcement', 'rich_text'],

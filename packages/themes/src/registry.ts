@@ -98,13 +98,33 @@ export const SECTION_REGISTRY = [
   {
     key: 'countdown',
     label: 'Countdown',
-    fields: ['label', 'ends_at'],
+    fields: ['title', 'label', 'ends_at', 'href', 'hide_when_ended'],
     props_schema: {
       type: 'object',
       properties: {
+        title: { type: 'string' },
         label: { type: 'string' },
         ends_at: { type: 'string' },
+        href: { type: 'string' },
+        hide_when_ended: { type: 'boolean' },
       },
+    },
+  },
+  {
+    key: 'coupon_strip',
+    label: 'Coupon strip',
+    fields: ['code', 'title', 'hint', 'cta_label', 'cta_href', 'ends_at'],
+    props_schema: {
+      type: 'object',
+      properties: {
+        code: { type: 'string' },
+        title: { type: 'string' },
+        hint: { type: 'string' },
+        cta_label: { type: 'string' },
+        cta_href: { type: 'string' },
+        ends_at: { type: ['string', 'null'] },
+      },
+      required: ['code'],
     },
   },
   {
@@ -280,12 +300,14 @@ export const SECTION_REGISTRY = [
   {
     key: 'collection_banner',
     label: 'Collection banner',
-    fields: ['title', 'banner_url', 'collection_slug'],
+    fields: ['title', 'intro', 'banner_url', 'empty_copy', 'collection_slug'],
     props_schema: {
       type: 'object',
       properties: {
         title: { type: 'string' },
+        intro: { type: 'string' },
         banner_url: { type: 'string' },
+        empty_copy: { type: 'string' },
         collection_slug: { type: 'string' },
       },
     },

@@ -48,7 +48,20 @@ function defaultProps(type: string): Record<string, unknown> {
     case 'cta_banner':
       return { title: 'CTA', cta: 'Go', cta_href: '/' };
     case 'countdown':
-      return { label: 'Kết thúc', ends_at: new Date(Date.now() + 86400000).toISOString() };
+      return {
+        title: 'Flash sale',
+        label: 'Kết thúc',
+        ends_at: new Date(Date.now() + 86400000).toISOString(),
+        hide_when_ended: true,
+      };
+    case 'coupon_strip':
+      return {
+        code: 'FLASH10',
+        title: 'Mã giảm giá',
+        hint: 'Áp dụng tại checkout',
+        cta_label: 'Đến checkout',
+        cta_href: '/checkout',
+      };
     case 'footer_links':
       return {
         columns: [{ title: 'Shop', links: [{ label: 'Home', href: '/' }] }],
@@ -211,6 +224,8 @@ export function BuilderCanvas({
       'featured',
       'flash_sale',
       'promo_banner',
+      'countdown',
+      'coupon_strip',
       'lead_form',
       'hero_slider',
       'collections',

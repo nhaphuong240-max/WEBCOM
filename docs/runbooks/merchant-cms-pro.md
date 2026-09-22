@@ -19,6 +19,8 @@ pnpm --filter @ptt/admin-api exec prisma migrate deploy
 - `/console/website/settings` — Thiết lập website (Chung / Floating / Bán hàng / Popup)
 - `/console/website/builder` — Site Builder
 - `/console/website/collections` — Merch banner/SEO
+- `/console/website/nav` — Mega menu merch
+- `/console/website/campaigns` — Promo landing (countdown + coupon)
 - `/console/website/leads` — Leads + CSV
 - `/console/website/golive` — Checklist (identity, floating, commerce…)
 
@@ -31,14 +33,36 @@ pnpm --filter @ptt/admin-api exec prisma migrate deploy
 ## e2e
 
 ```bash
+# Foundation
 API_URL=http://127.0.0.1:3101 ./scripts/e2e-cms-pro-s1.sh
+
+# PRO-C2 · UC-13 + collection/cart/promo/mega/golive
+# Full pass needs C2 deploy (coupon_strip + nav mega). Pre-deploy smoke:
+#   C2_PARTIAL=1 API_URL=http://127.0.0.1:3101 ./scripts/e2e-cms-pro-c2.sh
+API_URL=http://127.0.0.1:3101 \
+STOREFRONT_URL=https://themes.ngoinhahomnay.vn \
+  ./scripts/e2e-cms-pro-c2.sh
+
 node scripts/check-section-parity.mjs
 ```
+
+## UAT checklist bán hàng (PC2-11 / PRO-3)
+
+| # | Bước | Kỳ vọng |
+|---|---|---|
+| 1 | Settings → Bán hàng: empty cart, mini-cart, policy, thank-you | Lưu → runtime `commerce_ux` |
+| 2 | Bộ sưu tập: banner + SEO → Publish | SF `/collections/{slug}` hiện banner |
+| 3 | Campaign: countdown + coupon → Publish | SF `/promo/{slug}` · hết hạn ẩn deal |
+| 4 | Mega menu: gắn collection + SP | Desktop hover hiện panel |
+| 5 | PLP → PDP → ATC → mini-cart → checkout | UC-13; policy links trên checkout |
+| 6 | Go-live | `catalog_sync` / `commerce_atc` / `merch_home` pass |
+
+**Phân biệt:** `/products` = SKU/giá/tồn (Core) · Settings/Builder/Collections = trình bày CMS.
 
 ## Phân biệt
 
 | Path | Việc |
 |---|---|
-| `/website/settings` · Builder | Trình bày / merchandising |
+| `/website/settings` · Builder · Collections · Nav · Campaigns | Trình bày / merchandising |
 | `/products` · `/inventory` | SKU / giá / tồn (Commerce Core) |
 | `/platform/*` | Platform GTM — không dùng cho shop khách |

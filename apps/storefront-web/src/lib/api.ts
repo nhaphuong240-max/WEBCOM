@@ -79,13 +79,21 @@ export type Runtime = {
     sticky_atc_mobile?: boolean;
     announcement?: { text: string; href: string } | null;
     empty_cart?: { title: string; cta_label: string; cta_href: string };
+    mini_cart?: { title: string; checkout_label: string; continue_label: string };
+    cart_trust_badges?: string[];
+    cart_cross_sell?: { title: string; limit: number };
+    coupon_placeholder?: string;
+    free_shipping_threshold?: number | null;
     header_cta?: { label: string; href: string };
     floating?: Array<{ key: string; label: string; href: string; color1?: string }>;
     catalog_card?: { primary_cta?: string; show_price?: boolean };
     show_compare_at_price?: boolean;
     sold_out_behavior?: 'hide' | 'badge' | 'waitlist';
+    checkout?: { headline: string; cod_note: string; guest_hint: string };
     checkout_policy_links?: Array<{ label: string; href: string }>;
     coupon_entry_cart?: boolean;
+    coupon_entry_checkout?: boolean;
+    thank_you?: { message: string; cta_label: string; cta_href: string };
     related_mode?: string;
     related_limit?: number;
     plp_default_sort?: string;
@@ -133,7 +141,7 @@ export async function getPage(slug: string) {
     title: string;
     template_key?: string;
     content: Record<string, unknown>;
-    seo: Record<string, unknown>;
+    seo: { title?: string; description?: string; og_image?: string } & Record<string, unknown>;
   }>(`/v1/storefronts/${storefrontId}/pages/${slug}`, { cache: 'no-store' });
 }
 

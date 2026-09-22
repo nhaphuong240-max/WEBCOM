@@ -18,7 +18,14 @@ export function AddToCartButton({
     <button
       type="button"
       disabled={disabled || pending}
-      onClick={() => start(async () => addItem(skuId, 1))}
+      onClick={() =>
+        start(async () => {
+          await addItem(skuId, 1);
+          if (typeof window !== 'undefined') {
+            window.dispatchEvent(new Event('ptt:mini-cart-open'));
+          }
+        })
+      }
       style={{
         width: '100%',
         height: 44,

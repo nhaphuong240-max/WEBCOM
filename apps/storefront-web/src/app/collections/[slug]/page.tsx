@@ -1,3 +1,4 @@
+import type { Metadata } from 'next';
 import Link from 'next/link';
 import { StoreShell } from '../../../components/StoreShell';
 import { AddToCartButton } from '../../../components/AddToCartButton';
@@ -10,6 +11,73 @@ const SORTS = [
   { key: 'price_asc', label: 'Giá ↑' },
   { key: 'price_desc', label: 'Giá ↓' },
 ] as const;
+
+function readMerchBanner(merch: Awaited<ReturnType<typeof getPage>> | null) {
+  const content = (merch?.content || {}) as {
+    hero?: { headline?: string; sub?: string; banner_url?: string };
+    banner?: { title?: string; image_url?: string; href?: string };
+    sections?: Record<string, { type?: string; props?: Record<string, unknown> }>;
+    section_order?: string[];
+  };
+  const fromSections = Object.values(content.sections || {}).find(
+    (s) =>
+      s.type === 'collection_banner' ||
+      s.type === 'promo_banner' ||
+      s.type === 'hero' ||
+      s.type === 'cta_banner',
+  )?.props;
+  return {
+    title:
+      (fromSections?.title as string) ||
+      (fromSections?.headline as string) ||
+      content.banner?.title ||
+      content.hero?.headline ||
+      '',
+    intro:
+      (fromSections?.intro as string) ||
+      (fromSections?.sub as string) ||
+      (fromSections?.body as string) ||
+      content.hero?.sub ||
+      '',
+    image:
+      (fromSections?.banner_url as string) ||
+      (fromSections?.image_url as string) ||
+      content.banner?.image_url ||
+      content.hero?.banner_url ||
+      '',
+    emptyCopy: (fromSections?.empty_copy as string) || '',
+  };
+}
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}): Promise<Metadata> {
+  const { slug } = await params;
+  try {
+    const [runtime, merch] = await Promise.all([
+      getRuntime(),
+      getPage(`collection--${slug}`).catch(() => null),
+    ]);
+    const themeTitle =
+      ((runtime.theme.config as { collections?: Array<{ slug: string; title: string }> })
+        ?.collections || []).find((c) => c.slug === slug)?.title || slug;
+    const banner = readMerchBanner(merch);
+    const seo = merch?.seo || {};
+    return {
+      title: seo.title || banner.title || themeTitle,
+      description: seo.description || banner.intro || undefined,
+      openGraph: {
+        title: seo.title || banner.title || themeTitle,
+        description: seo.description || banner.intro || undefined,
+        images: banner.image ? [banner.image] : undefined,
+      },
+    };
+  } catch {
+    return { title: slug };
+  }
+}
 
 export default async function CollectionPage({
   params,
@@ -33,10 +101,12 @@ export default async function CollectionPage({
     getPage(`collection--${slug}`).catch(() => null),
   ]);
 
+  const banner = readMerchBanner(merch);
   const title =
+    banner.title ||
     ((runtime.theme.config as { collections?: Array<{ slug: string; title: string }> })?.collections || [])
       .find((c) => c.slug === slug)?.title ||
-    merch?.title ||
+    merch?.title?.replace(/^Collection( ·| merch ·) /, '') ||
     slug;
 
   const accent =
@@ -65,29 +135,6 @@ export default async function CollectionPage({
   const quickAdd =
     ux?.show_cart !== false && ux?.catalog_card?.primary_cta === 'add_to_cart';
 
-  const merchContent = (merch?.content || {}) as {
-    hero?: { headline?: string; sub?: string; banner_url?: string };
-    banner?: { title?: string; image_url?: string; href?: string };
-    sections?: Record<string, { type?: string; props?: Record<string, unknown> }>;
-  };
-  const bannerFromSections = Object.values(merchContent.sections || {}).find(
-    (s) => s.type === 'promo_banner' || s.type === 'hero' || s.type === 'cta_banner',
-  )?.props;
-  const bannerTitle =
-    merchContent.banner?.title ||
-    merchContent.hero?.headline ||
-    (bannerFromSections?.title as string) ||
-    (bannerFromSections?.headline as string) ||
-    '';
-  const bannerImage =
-    merchContent.banner?.image_url ||
-    merchContent.hero?.banner_url ||
-    (bannerFromSections?.banner_url as string) ||
-    (bannerFromSections?.image_url as string) ||
-    '';
-  const bannerSub =
-    merchContent.hero?.sub || (bannerFromSections?.sub as string) || (bannerFromSections?.body as string) || '';
-
   function hrefFor(next: { sort?: string; in_stock?: boolean }) {
     const q = new URLSearchParams();
     const s = next.sort ?? sort;
@@ -98,6 +145,9 @@ export default async function CollectionPage({
     return `/collections/${slug}${qs ? `?${qs}` : ''}`;
   }
 
+  const emptyCopy =
+    banner.emptyCopy || 'Chưa có SP khớp bộ lọc — thử Serum trên home.';
+
   return (
     <StoreShell
       accent={accent}
@@ -107,20 +157,22 @@ export default async function CollectionPage({
       bottomLinks={bottomLinks}
       showCart={ux?.show_cart !== false}
       showCartCount={ux?.show_cart_count !== false}
+      showMiniCart={ux?.show_mini_cart !== false}
+      miniCart={ux?.mini_cart || null}
       headerCta={ux?.header_cta || null}
       announcement={ux?.announcement || null}
       floating={ux?.floating || []}
     >
-      {bannerTitle || bannerImage ? (
+      {banner.title || banner.image || banner.intro ? (
         <div
           style={{
             position: 'relative',
-            minHeight: bannerImage ? 140 : 72,
+            minHeight: banner.image ? 140 : 72,
             padding: '28px 16px',
-            background: bannerImage
-              ? `linear-gradient(180deg,rgba(26,18,20,0.45),rgba(26,18,20,0.55)), url(${bannerImage}) center/cover`
+            background: banner.image
+              ? `linear-gradient(180deg,rgba(26,18,20,0.45),rgba(26,18,20,0.55)), url(${banner.image}) center/cover`
               : `linear-gradient(135deg, ${accent}22, ${cream})`,
-            color: bannerImage ? '#fff' : ink,
+            color: banner.image ? '#fff' : ink,
           }}
         >
           <h1
@@ -131,10 +183,12 @@ export default async function CollectionPage({
               letterSpacing: '-0.03em',
             }}
           >
-            {bannerTitle || title}
+            {title}
           </h1>
-          {bannerSub ? (
-            <p style={{ margin: '8px 0 0', fontSize: 14, opacity: 0.9, maxWidth: 420 }}>{bannerSub}</p>
+          {banner.intro ? (
+            <p style={{ margin: '8px 0 0', fontSize: 14, opacity: 0.9, maxWidth: 420 }}>
+              {banner.intro}
+            </p>
           ) : null}
         </div>
       ) : (
@@ -238,7 +292,9 @@ export default async function CollectionPage({
                   ) : null}
                   {showPrice ? (
                     <div style={{ marginTop: 6, display: 'flex', gap: 8, alignItems: 'baseline' }}>
-                      <span style={{ color: accent, fontWeight: 700 }}>{formatVnd(sku?.unit_price)}</span>
+                      <span style={{ color: accent, fontWeight: 700 }}>
+                        {formatVnd(sku?.unit_price)}
+                      </span>
                       {showCompare ? (
                         <span
                           style={{
@@ -259,9 +315,7 @@ export default async function CollectionPage({
               </div>
             );
           })}
-          {list.length === 0 ? (
-            <p style={{ color: '#6b5559' }}>Chưa có SP khớp bộ lọc — thử Serum trên home.</p>
-          ) : null}
+          {list.length === 0 ? <p style={{ color: '#6b5559' }}>{emptyCopy}</p> : null}
         </div>
       </div>
     </StoreShell>

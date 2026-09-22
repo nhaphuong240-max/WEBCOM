@@ -325,6 +325,7 @@ export default async function BuilderPage() {
             <option value="static">static</option>
             <option value="blog_post">blog_post</option>
             <option value="landing">landing</option>
+            <option value="landing_promo">landing_promo</option>
           </select>
           <Button type="submit" variant="ghost">
             Tạo page

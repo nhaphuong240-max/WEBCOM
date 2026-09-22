@@ -93,7 +93,7 @@ export function CatalogPicker({
           <button
             type="button"
             style={{ border: 'none', background: 'transparent', color: '#f88', cursor: 'pointer' }}
-            onClick={() => onChange(mode === 'products' ? [] : '')}
+            onClick={() => onChange(mode === 'products' || Array.isArray(value) ? [] : '')}
           >
             xóa
           </button>
@@ -109,6 +109,11 @@ export function CatalogPicker({
                 type="button"
                 onClick={() => {
                   if (mode === 'collection') {
+                    if (Array.isArray(value)) {
+                      const next = active ? selected.filter((x) => x !== id) : [...selected, id];
+                      onChange(next);
+                      return;
+                    }
                     onChange(id);
                     return;
                   }

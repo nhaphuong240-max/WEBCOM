@@ -3,6 +3,9 @@ import type { DemoContentV1 } from '../../lib/demo-package';
 import { HeroBlock } from '../HeroBlock';
 import { CollectionStrip, TrustGrid } from '../ProductHero';
 import { LeadFormBlock } from '../LeadFormBlock';
+import { CountdownBlock } from '../CountdownBlock';
+import { CouponStrip } from '../CouponStrip';
+import { parseCampaignEnd } from '../CountdownBlock';
 
 export function SectionStack({
   content,
@@ -99,7 +102,7 @@ export function SectionStack({
         }
 
         if (node.type === 'flash_sale' || node.type === 'promo_banner') {
-          const ends = props.ends_at ? Date.parse(String(props.ends_at)) : NaN;
+          const ends = props.ends_at ? parseCampaignEnd(String(props.ends_at)) : NaN;
           if (Number.isFinite(ends) && ends < Date.now()) {
             return (
               <section key={key} style={{ padding: '12px clamp(14px, 3vw, 48px)', opacity: 0.7 }}>
@@ -122,12 +125,27 @@ export function SectionStack({
                 {String(props.title || props.badge || 'Flash sale')}
               </div>
               {props.ends_at ? (
-                <div style={{ fontSize: 12, opacity: 0.85, marginTop: 4 }}>
-                  Kết thúc: {String(props.ends_at)}
+                <div style={{ fontSize: 12, opacity: 0.85, marginTop: 6 }}>
+                  Kết thúc (VN): {String(props.ends_at)}
                 </div>
               ) : null}
               {productsSlot}
             </section>
+          );
+        }
+
+        if (node.type === 'coupon_strip') {
+          return (
+            <CouponStrip
+              key={key}
+              code={String(props.code || '')}
+              title={String(props.title || 'Mã giảm giá')}
+              hint={props.hint ? String(props.hint) : undefined}
+              ctaLabel={String(props.cta_label || 'Áp dụng khi checkout')}
+              ctaHref={String(props.cta_href || '/checkout')}
+              endsAt={props.ends_at ? String(props.ends_at) : null}
+              accent={accent}
+            />
           );
         }
 
@@ -211,19 +229,15 @@ export function SectionStack({
 
         if (node.type === 'countdown') {
           return (
-            <section
+            <CountdownBlock
               key={key}
-              style={{
-                margin: '8px clamp(14px, 3vw, 48px)',
-                padding: '12px 14px',
-                borderRadius: 10,
-                border: `1px solid ${accent}44`,
-                fontSize: 14,
-                fontWeight: 600,
-              }}
-            >
-              {String(props.label || 'Countdown')} · {String(props.ends_at || '')}
-            </section>
+              title={props.title ? String(props.title) : undefined}
+              label={String(props.label || 'Kết thúc sau')}
+              endsAt={String(props.ends_at || '')}
+              href={props.href ? String(props.href) : undefined}
+              hideWhenEnded={props.hide_when_ended !== false}
+              accent={accent}
+            />
           );
         }
 

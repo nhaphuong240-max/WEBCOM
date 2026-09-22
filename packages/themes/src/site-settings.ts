@@ -63,12 +63,23 @@ export type SiteSettingsData = {
     min_order_amount: number | null;
     coupon_entry_cart: boolean;
     coupon_entry_checkout: boolean;
+    coupon_placeholder: string;
     empty_cart_title: string;
     empty_cart_cta_label: string;
     empty_cart_cta_href: string;
     cart_trust_badges: string[];
+    cart_cross_sell_title: string;
+    cart_cross_sell_limit: number;
+    mini_cart_title: string;
+    mini_cart_checkout_label: string;
+    mini_cart_continue_label: string;
+    checkout_headline: string;
+    checkout_cod_note: string;
     checkout_policy_links: Array<{ label: string; href: string }>;
     guest_checkout_hint: string;
+    thank_you_message: string;
+    thank_you_cta_label: string;
+    thank_you_cta_href: string;
     sold_out_behavior: 'hide' | 'badge' | 'waitlist';
     show_compare_at_price: boolean;
     show_member_price_badge: boolean;
@@ -168,15 +179,26 @@ export function defaultSiteSettings(archetype: SiteArchetype = 'commerce'): Site
       min_order_amount: null,
       coupon_entry_cart: !lead,
       coupon_entry_checkout: !lead,
+      coupon_placeholder: 'Nhập mã giảm giá',
       empty_cart_title: lead ? 'Xem dự án / sản phẩm' : 'Giỏ hàng trống',
       empty_cart_cta_label: lead ? 'Xem danh mục' : 'Tiếp tục mua sắm',
       empty_cart_cta_href: '/',
       cart_trust_badges: ['COD toàn quốc', 'Đổi trả 7 ngày', 'Chính hãng'],
+      cart_cross_sell_title: 'Có thể bạn thích',
+      cart_cross_sell_limit: 4,
+      mini_cart_title: 'Giỏ hàng',
+      mini_cart_checkout_label: 'Thanh toán',
+      mini_cart_continue_label: 'Tiếp tục mua',
+      checkout_headline: 'Thanh toán',
+      checkout_cod_note: 'Thanh toán khi nhận hàng · kiểm tra hàng trước khi trả tiền',
       checkout_policy_links: [
         { label: 'Điều khoản', href: '/p/terms' },
         { label: 'Vận chuyển', href: '/p/shipping' },
       ],
       guest_checkout_hint: 'Thanh toán không cần tài khoản',
+      thank_you_message: 'Cảm ơn bạn đã đặt hàng! Chúng tôi sẽ liên hệ xác nhận sớm.',
+      thank_you_cta_label: 'Tiếp tục mua sắm',
+      thank_you_cta_href: '/',
       sold_out_behavior: 'badge',
       show_compare_at_price: true,
       show_member_price_badge: false,
@@ -273,6 +295,18 @@ export function commerceUxFromSettings(data: SiteSettingsData) {
       cta_label: data.commerce.empty_cart_cta_label,
       cta_href: data.commerce.empty_cart_cta_href,
     },
+    mini_cart: {
+      title: data.commerce.mini_cart_title,
+      checkout_label: data.commerce.mini_cart_checkout_label,
+      continue_label: data.commerce.mini_cart_continue_label,
+    },
+    cart_trust_badges: data.commerce.cart_trust_badges,
+    cart_cross_sell: {
+      title: data.commerce.cart_cross_sell_title,
+      limit: data.commerce.cart_cross_sell_limit,
+    },
+    coupon_placeholder: data.commerce.coupon_placeholder,
+    free_shipping_threshold: data.commerce.free_shipping_threshold,
     header_cta: {
       label: data.header.cta_label,
       href: data.header.cta_href,
@@ -281,8 +315,19 @@ export function commerceUxFromSettings(data: SiteSettingsData) {
     catalog_card: data.catalog_card,
     privacy: data.privacy,
     lead_popup: data.lead_popup,
+    checkout: {
+      headline: data.commerce.checkout_headline,
+      cod_note: data.commerce.checkout_cod_note,
+      guest_hint: data.commerce.guest_checkout_hint,
+    },
     checkout_policy_links: data.commerce.checkout_policy_links,
     coupon_entry_cart: data.commerce.coupon_entry_cart,
+    coupon_entry_checkout: data.commerce.coupon_entry_checkout,
+    thank_you: {
+      message: data.commerce.thank_you_message,
+      cta_label: data.commerce.thank_you_cta_label,
+      cta_href: data.commerce.thank_you_cta_href,
+    },
     show_compare_at_price: data.commerce.show_compare_at_price,
     sold_out_behavior: data.commerce.sold_out_behavior,
     related_mode: data.commerce.related_mode,

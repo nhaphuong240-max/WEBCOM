@@ -2,6 +2,8 @@ export const websiteNav = [
   { href: '/website/builder', label: 'CMS · Site Builder', mockup: '06' },
   { href: '/website/settings', label: 'Thiết lập website', mockup: 'SET' },
   { href: '/website/collections', label: 'Bộ sưu tập (merch)', mockup: 'PLP' },
+  { href: '/website/nav', label: 'Mega menu', mockup: 'NAV' },
+  { href: '/website/campaigns', label: 'Campaign promo', mockup: 'PROMO' },
   { href: '/website/leads', label: 'Leads', mockup: 'LEAD' },
   { href: '/website/templates', label: 'Template Store', mockup: '04' },
   { href: '/website/themes', label: 'Theme Library', mockup: '05' },

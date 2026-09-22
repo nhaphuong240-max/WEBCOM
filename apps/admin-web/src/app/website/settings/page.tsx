@@ -74,6 +74,36 @@ async function saveSettings(formData: FormData) {
       empty_cart_title: String(formData.get('empty_cart_title') || ''),
       empty_cart_cta_label: String(formData.get('empty_cart_cta_label') || ''),
       empty_cart_cta_href: String(formData.get('empty_cart_cta_href') || '/'),
+      coupon_placeholder: String(formData.get('coupon_placeholder') || 'Nhập mã giảm giá'),
+      cart_trust_badges: String(formData.get('cart_trust_badges') || '')
+        .split('|')
+        .map((s) => s.trim())
+        .filter(Boolean),
+      cart_cross_sell_title: String(formData.get('cart_cross_sell_title') || 'Có thể bạn thích'),
+      cart_cross_sell_limit: Number(formData.get('cart_cross_sell_limit') || 4),
+      mini_cart_title: String(formData.get('mini_cart_title') || 'Giỏ hàng'),
+      mini_cart_checkout_label: String(formData.get('mini_cart_checkout_label') || 'Thanh toán'),
+      mini_cart_continue_label: String(formData.get('mini_cart_continue_label') || 'Tiếp tục mua'),
+      checkout_headline: String(formData.get('checkout_headline') || 'Thanh toán'),
+      checkout_cod_note: String(formData.get('checkout_cod_note') || ''),
+      guest_checkout_hint: String(formData.get('guest_checkout_hint') || ''),
+      thank_you_message: String(formData.get('thank_you_message') || ''),
+      thank_you_cta_label: String(formData.get('thank_you_cta_label') || 'Tiếp tục mua sắm'),
+      thank_you_cta_href: String(formData.get('thank_you_cta_href') || '/'),
+      free_shipping_threshold: (() => {
+        const raw = String(formData.get('free_shipping_threshold') || '').trim();
+        if (!raw) return null;
+        const n = Number(raw);
+        return Number.isFinite(n) ? n : null;
+      })(),
+      checkout_policy_links: String(formData.get('checkout_policy_links') || '')
+        .split('\n')
+        .map((line) => line.trim())
+        .filter(Boolean)
+        .map((line) => {
+          const [label, href] = line.split('|').map((s) => s.trim());
+          return { label: label || href, href: href || '/' };
+        }),
       plp_default_sort: String(formData.get('plp_default_sort') || 'newest'),
       announcement_bar: {
         enabled: formData.get('announce_enabled') === 'on',
@@ -270,6 +300,39 @@ export default async function WebsiteSettingsPage({
               <Input name="empty_cart_title" placeholder="Empty cart title" defaultValue={commerce.empty_cart_title || ''} />
               <Input name="empty_cart_cta_label" placeholder="Empty CTA label" defaultValue={commerce.empty_cart_cta_label || ''} />
               <Input name="empty_cart_cta_href" placeholder="Empty CTA href" defaultValue={commerce.empty_cart_cta_href || '/'} />
+              <Input name="coupon_placeholder" placeholder="Coupon placeholder" defaultValue={commerce.coupon_placeholder || 'Nhập mã giảm giá'} />
+              <Input
+                name="cart_trust_badges"
+                placeholder="Trust badges (a|b|c)"
+                defaultValue={(commerce.cart_trust_badges || []).join(' | ')}
+              />
+              <Input name="cart_cross_sell_title" placeholder="Cross-sell title" defaultValue={commerce.cart_cross_sell_title || ''} />
+              <Input name="cart_cross_sell_limit" type="number" placeholder="Cross-sell limit" defaultValue={commerce.cart_cross_sell_limit ?? 4} />
+              <Input name="free_shipping_threshold" placeholder="Freeship threshold (VND)" defaultValue={commerce.free_shipping_threshold ?? ''} />
+              <hr style={{ border: 0, borderTop: '1px solid var(--ptt-line)' }} />
+              <strong style={{ fontSize: 13 }}>Mini-cart</strong>
+              <Input name="mini_cart_title" defaultValue={commerce.mini_cart_title || 'Giỏ hàng'} />
+              <Input name="mini_cart_checkout_label" defaultValue={commerce.mini_cart_checkout_label || 'Thanh toán'} />
+              <Input name="mini_cart_continue_label" defaultValue={commerce.mini_cart_continue_label || 'Tiếp tục mua'} />
+              <hr style={{ border: 0, borderTop: '1px solid var(--ptt-line)' }} />
+              <strong style={{ fontSize: 13 }}>Checkout & thank-you</strong>
+              <Input name="checkout_headline" defaultValue={commerce.checkout_headline || 'Thanh toán'} />
+              <Input name="checkout_cod_note" defaultValue={commerce.checkout_cod_note || ''} placeholder="COD note" />
+              <Input name="guest_checkout_hint" defaultValue={commerce.guest_checkout_hint || ''} placeholder="Guest hint" />
+              <label style={{ fontSize: 13 }}>
+                Policy links (mỗi dòng: Label|/path)
+                <textarea
+                  name="checkout_policy_links"
+                  rows={3}
+                  defaultValue={(commerce.checkout_policy_links || [])
+                    .map((p: { label: string; href: string }) => `${p.label}|${p.href}`)
+                    .join('\n')}
+                  style={{ display: 'block', width: '100%', marginTop: 4, padding: 8 }}
+                />
+              </label>
+              <Input name="thank_you_message" defaultValue={commerce.thank_you_message || ''} placeholder="Thank-you message" />
+              <Input name="thank_you_cta_label" defaultValue={commerce.thank_you_cta_label || ''} />
+              <Input name="thank_you_cta_href" defaultValue={commerce.thank_you_cta_href || '/'} />
               <label style={{ fontSize: 13 }}>
                 PLP sort mặc định
                 <select name="plp_default_sort" defaultValue={commerce.plp_default_sort || 'newest'} style={{ display: 'block', width: '100%', height: 36, marginTop: 4 }}>

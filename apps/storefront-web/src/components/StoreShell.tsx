@@ -8,6 +8,9 @@ import { TrackingPixels } from './TrackingPixels';
 import { PageViewTracker } from './PageViewTracker';
 import { useThemePreview } from './ThemePreviewChrome';
 import { FloatingContacts } from './FloatingContacts';
+import { MiniCart, openMiniCart } from './MiniCart';
+import { MegaNav } from './MegaNav';
+import type { NavLink } from '../lib/nav';
 
 export function StoreShell({
   children,
@@ -21,6 +24,8 @@ export function StoreShell({
   bottomLinks,
   showCart = true,
   showCartCount = true,
+  showMiniCart = false,
+  miniCart,
   headerCta,
   announcement,
   floating,
@@ -34,10 +39,12 @@ export function StoreShell({
   accent?: string;
   cream?: string;
   ink?: string;
-  headerLinks?: Array<{ label: string; href: string }>;
+  headerLinks?: NavLink[];
   bottomLinks?: Array<{ label: string; href: string }>;
   showCart?: boolean;
   showCartCount?: boolean;
+  showMiniCart?: boolean;
+  miniCart?: { title?: string; checkout_label?: string; continue_label?: string } | null;
   headerCta?: { label: string; href: string } | null;
   announcement?: { text: string; href: string } | null;
   floating?: Array<{ key: string; label: string; href: string; color1?: string }>;
@@ -48,7 +55,7 @@ export function StoreShell({
   const preview = useThemePreview();
   const desktop = preview.active && preview.mode === 'desktop';
   const mobilePreview = preview.active && preview.mode === 'mobile';
-  const navLinks =
+  const navLinks: NavLink[] =
     headerLinks && headerLinks.length > 0
       ? headerLinks
       : [
@@ -123,23 +130,23 @@ export function StoreShell({
         >
           {brand}
         </Link>
-        {desktop ? (
-          <nav
-            style={{
-              display: 'flex',
-              gap: 22,
-              fontSize: 14,
-              fontWeight: 500,
-              color: '#6b5559',
-            }}
-          >
-            {navLinks.map((l) => (
-              <Link key={l.href + l.label} href={l.href} style={{ color: 'inherit', textDecoration: 'none' }}>
-                {l.label}
-              </Link>
-            ))}
-          </nav>
-        ) : null}
+        <div
+          className="ptt-header-mega-wrap"
+          style={{
+            flex: 1,
+            display: 'flex',
+            justifyContent: 'center',
+            height: '100%',
+            alignItems: 'center',
+          }}
+        >
+          <MegaNav items={navLinks} accent={accent} ink={ink} />
+        </div>
+        <style>{`
+          @media (max-width: 899px) {
+            .ptt-header-mega-wrap { display: none !important; }
+          }
+        `}</style>
         <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
           {headerCta?.label ? (
             <Link
@@ -161,17 +168,35 @@ export function StoreShell({
             {desktop ? 'Tài khoản' : 'Tìm'}
           </Link>
           {showCart ? (
-            <Link
-              href="/cart"
-              style={{
-                fontSize: 13,
-                fontWeight: 700,
-                color: ink,
-                textDecoration: 'none',
-              }}
-            >
-              Giỏ{showCartCount && qty > 0 ? ` (${qty})` : ''}
-            </Link>
+            showMiniCart ? (
+              <button
+                type="button"
+                onClick={() => openMiniCart()}
+                style={{
+                  fontSize: 13,
+                  fontWeight: 700,
+                  color: ink,
+                  background: 'transparent',
+                  border: 'none',
+                  cursor: 'pointer',
+                  padding: 0,
+                }}
+              >
+                Giỏ{showCartCount && qty > 0 ? ` (${qty})` : ''}
+              </button>
+            ) : (
+              <Link
+                href="/cart"
+                style={{
+                  fontSize: 13,
+                  fontWeight: 700,
+                  color: ink,
+                  textDecoration: 'none',
+                }}
+              >
+                Giỏ{showCartCount && qty > 0 ? ` (${qty})` : ''}
+              </Link>
+            )
           ) : null}
         </div>
       </header>
@@ -179,6 +204,13 @@ export function StoreShell({
       <BottomNav links={bottomLinks} />
       <ConsentBanner />
       <FloatingContacts channels={floating || []} />
+      <MiniCart
+        enabled={showCart && showMiniCart}
+        title={miniCart?.title}
+        checkoutLabel={miniCart?.checkout_label}
+        continueLabel={miniCart?.continue_label}
+        accent={accent}
+      />
     </div>
   );
 }
